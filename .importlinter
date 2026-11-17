@@ -1,0 +1,46 @@
+[importlinter]
+root_packages =
+    app
+    core
+    modules
+    controller_api
+    erp_shared
+
+[importlinter:contract:school-not-owner]
+name = school-erp must not import owner code
+type = forbidden
+source_modules =
+    app
+    core
+    modules
+forbidden_modules =
+    controller_api
+
+[importlinter:contract:owner-not-school]
+name = owner must not import school-erp code
+type = forbidden
+source_modules =
+    controller_api
+forbidden_modules =
+    app
+    core
+    modules
+
+[importlinter:contract:shared-isolated]
+name = shared must import neither zone
+type = forbidden
+source_modules =
+    erp_shared
+forbidden_modules =
+    app
+    core
+    modules
+    controller_api
+
+[importlinter:contract:school-layers]
+name = routers and modules depend on core, never the reverse
+type = forbidden
+source_modules =
+    core
+forbidden_modules =
+    modules
