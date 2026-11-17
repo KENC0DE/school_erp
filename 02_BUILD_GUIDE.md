@@ -10,6 +10,8 @@
 1. Open `docs/PROGRESS.md` and find the first unchecked task.
 2. Read only the ARCH sections that task cites. Do **not** load the whole repository or whole documents into context.
 3. Do the task. Run its **Verify** step. Tick it in `PROGRESS.md`. Commit. Continue.
+4. **Work autonomously until the whole build is complete.** Do not stop for per-task confirmation and do not ask whether to continue between tasks. Continue with the next unchecked task immediately after each commit. Stop only when every task is ticked, or when a task is genuinely blocked by a credential, physical device, paid service or ambiguous product decision; record that in `docs/QUESTIONS.md` and continue with the next unblocked task. The same loop is mirrored in `AGENTS.md` at the repository root, which is loaded at session start and after compaction.
+5. After a compaction or a new session, run `git log --oneline -5` and `git status --short`, re-read `docs/PROGRESS.md`, and resume the loop from the first unchecked task.
 
 ### 0.2 Non-negotiable rules
 1. **One task at a time, in order.** Never start the next task while the current one fails verification.

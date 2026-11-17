@@ -130,6 +130,16 @@ async def navigation(
                 "module": "core",
             }
         )
+    if principal.can("audit.activity.view"):
+        items.append(
+            {
+                "key": "activity",
+                "label_key": "nav.activity",
+                "path": "/activity",
+                "icon": "history",
+                "module": "core",
+            }
+        )
     if principal.can("settings.view"):
         items.append(
             {

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { Shell } from "./components/Shell";
+import { ActivityPage } from "./pages/ActivityPage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
 import { LoginPage } from "./pages/Login";
@@ -62,6 +63,7 @@ export function AppRoutes() {
           <Route path="users" element={<UsersPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="sample" element={<SamplePage />} />
+          <Route path="activity" element={<ActivityPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
         </Route>

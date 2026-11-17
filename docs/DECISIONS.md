@@ -452,3 +452,33 @@ and recorded here (date, decision, reason).
 - **Heartbeats report the real chain head.** `audit_chain_head`/`audit_seq` come
   from the latest local entry, letting the controller detect gaps between what
   was ingested and what the instance holds.
+
+## 2026-11-17 — P1-10 activity history visibility
+
+- **Activity is a business view of the audit chain, not a raw log dump.** Tier A
+  entries only are exposed: controller-session plumbing, password reset/session/
+  TOTP actions and `jobs.`, `system.`, `worker.` and `infra.` actions stay out.
+  `auth.user.invited` and `auth.user.updated` remain visible because they are
+  real user-management events. Entries are serialised with business fields only
+  (`actor_name`, `on_behalf_of_name`, `before`, `after`, `reason`, …); IP
+  addresses, user agents, hashes and request identifiers are never returned.
+- **Scope comes from the permission, not a second request parameter.**
+  `audit.activity.view` is granted with a module scope; `all` or `*` sees every
+  module. A request may narrow to a module inside that scope. Asking for a module
+  outside the scope returns `403 PERMISSION_DENIED`, and an entry outside the
+  scope behaves as absent (`404` on detail) so existence is not leaked.
+- **Super Admin actions need a second permission.**
+  `audit.activity.view_admin_actions` unmasks entries whose actor currently
+  holds the active `super_admin` role. Controller actions stay visible and are
+  labelled as controller activity because they are accountability events in
+  their own right, not ordinary admin noise.
+- **Filters and option lists are server-driven.** The list accepts actor,
+  module, entity type/id, action and inclusive date boundaries with cursor
+  pagination. `GET /audit/activity/options` returns only the modules, actions and
+  actors the caller may see, so the UI never offers a filter that would return
+  an empty or forbidden result.
+- **The UI lives at `/activity` and is permission-gated.** Navigation adds an
+  Activity item for `audit.activity.view`. The page shows human labels for
+  modules and actors, renders a before/after diff per entry, treats `*` as a
+  wildcard permission, and explains a permission denial inline instead of
+  rendering an empty history.

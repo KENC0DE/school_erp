@@ -37,10 +37,10 @@ async def test_toggle_requires_permission(client, limited_headers):
     assert response.status_code == 403
 
 
-async def test_toggle_is_audited(client, superadmin_headers, auditor_headers):
+async def test_toggle_is_audited(client, superadmin_headers):
     await client.put("/api/v1/system/modules/sample", json={"enabled": False}, headers=superadmin_headers)
     await client.put("/api/v1/system/modules/sample", json={"enabled": True}, headers=superadmin_headers)
-    activity = await client.get("/api/v1/audit/activity", headers=auditor_headers)
+    activity = await client.get("/api/v1/audit/activity", headers=superadmin_headers)
     actions = [item["action"] for item in activity.json()["items"]]
     assert "modules.toggle" in actions
 
