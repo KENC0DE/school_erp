@@ -17,6 +17,8 @@ class Principal:
     is_controller: bool = False
     read_only: bool = False
     reason: str | None = None
+    session_id: str | None = None
+    must_enroll_2fa: bool = False
 
     def can(self, permission: str) -> bool:
         if "*" in self.permissions or permission in self.permissions:

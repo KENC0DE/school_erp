@@ -33,6 +33,8 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         live_index = connection.execute(
             "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = 'ix_sample_notes_live'"
         ).fetchone()
+        user_columns = {row[1] for row in connection.execute("PRAGMA table_info(users)")}
+        role_columns = {row[1] for row in connection.execute("PRAGMA table_info(roles)")}
     finally:
         connection.close()
 
@@ -43,9 +45,19 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "sample_notes",
         "idempotency_keys",
         "settings",
+        "password_reset_tokens",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0005_settings"
+    assert version == "0006_auth_hardening"
+
+    assert {
+        "failed_login_count",
+        "locked_until",
+        "totp_secret",
+        "totp_enabled",
+        "totp_recovery_hashes",
+    } <= user_columns
+    assert "require_totp" in role_columns
 
     assert live_index is not None
     assert "WHERE deleted_at IS NULL" in live_index[0]

@@ -49,6 +49,20 @@ class Settings(BaseSettings):
     idempotency_enabled: bool = True
     idempotency_ttl_seconds: int = 86_400
 
+    # Auth hardening (P1-04). Failures are per account; rate limits are per IP.
+    login_max_failures: int = 5
+    login_lockout_minutes: int = 15
+    login_rate_limit: int = 20
+    login_rate_window_seconds: int = 60
+    password_reset_minutes: int = 30
+    password_reset_rate_limit: int = 5
+    password_reset_window_seconds: int = 3600
+    totp_issuer: str = "School ERP"
+    totp_window: int = 1
+    web_cookie_secure: bool = False
+    mail_adapter: str = "smtp"
+    sms_adapter: str = "log"
+
     ai_provider: str = "fake"
     ai_model: str = "fake-echo"
     ai_api_key: str = ""

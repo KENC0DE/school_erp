@@ -15,6 +15,7 @@ class Role(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str | None] = mapped_column(String(500))
     is_system: Mapped[bool] = mapped_column(Boolean, default=False)
+    require_totp: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
 
 class RolePermission(UUIDPrimaryKeyMixin, Base):

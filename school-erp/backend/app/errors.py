@@ -101,6 +101,31 @@ class RateLimited(AppError):
     code = "RATE_LIMITED"
 
 
+class AccountLocked(AppError):
+    status_code = 423
+    code = "ACCOUNT_LOCKED"
+
+
+class TOTPRequired(Unauthorized):
+    code = "TOTP_REQUIRED"
+
+
+class TOTPInvalid(Unauthorized):
+    code = "TOTP_INVALID"
+
+
+class TOTPEnrollmentRequired(Forbidden):
+    code = "TOTP_ENROLLMENT_REQUIRED"
+
+
+class TOTPRequiredByRole(Forbidden):
+    code = "TOTP_REQUIRED_BY_ROLE"
+
+
+class CSRFFailed(Forbidden):
+    code = "CSRF_FAILED"
+
+
 def error_body(*, code: str, message_key: str, message: str, details: Any, request_id: str) -> dict[str, Any]:
     return {
         "error": {

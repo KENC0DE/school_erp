@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 import jwt
-from app.errors import Forbidden, Unauthorized
+from app.errors import Forbidden, TOTPEnrollmentRequired, Unauthorized
 from app.settings import Settings
 from core.auth.principal import Principal
 from core.auth.security import decode_access_token
@@ -68,7 +68,17 @@ async def _principal_from_token(
         roles=roles,
         permissions=permissions,
         scopes=scopes,
+        session_id=claims.get("sid"),
+        must_enroll_2fa=await _must_enroll(session, user),
     )
+
+
+async def _must_enroll(session: AsyncSession, user: Any) -> bool:
+    if user.totp_enabled:
+        return False
+    from core.auth.service import role_requires_totp
+
+    return await role_requires_totp(session, user.id)
 
 
 def _bearer_value(request: Request) -> str | None:
@@ -134,6 +144,11 @@ def require(permission: str, *, scope: str | None = None) -> Callable[..., Any]:
         request: Request,
         principal: Principal = Depends(get_current_principal),
     ) -> Principal:
+        if principal.must_enroll_2fa and not request.url.path.startswith("/api/v1/auth/2fa"):
+            raise TOTPEnrollmentRequired(
+                "Two-factor authentication enrollment is required for your role",
+                message_key="error.totp_enrollment_required",
+            )
         if principal.is_controller and principal.read_only and request.method not in {"GET", "HEAD"}:
             raise Forbidden(
                 "This controller session is read-only",

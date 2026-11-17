@@ -271,3 +271,37 @@ and recorded here (date, decision, reason).
   i18n bundle; the `core` bundle also carries the page chrome and enum labels.
 - `settings.view` gates the page/navigation, `settings.manage` gates writes; the
   seeded director gets both, the `limited` test role gets neither.
+
+## 2026-11-17 — P1-04 auth hardening
+
+- **Account lockout is per user, not per IP.** Five failed passwords or TOTP /
+  recovery codes within a session lock the account for 15 minutes
+  (`423 ACCOUNT_LOCKED` with `locked_until`). A successful login clears the
+  counter, and an expired lock clears itself on the next attempt.
+- **Online guessing limits are per IP and in-process.** `SlidingWindowLimiter`
+  guards login (20/min) and password-reset requests/attempts; the interface is
+  tiny so moving to Redis when the shared cache lands is a one-file change.
+  Tests reset the global limiters between apps to keep cases isolated.
+- **TOTP is implemented in-repo** (RFC 6238, SHA-1, 6 digits, 30-second period,
+  ±1 window) instead of adding a dependency. Secrets are encrypted at rest with
+  Fernet derived from `SECRET_KEY`; recovery codes are stored as SHA-256 hashes
+  and consumed one at a time.
+- **2FA can be forced by role.** `roles.require_totp` makes `require()` reject
+  every endpoint except `/api/v1/auth/2fa/*` with `403 TOTP_ENROLLMENT_REQUIRED`
+  until the user confirms enrollment. Login still succeeds so the app can show
+  the enrollment screen; `/me` reports `must_enroll_2fa`.
+- **Password policy:** at least 12 characters with a letter and a digit,
+  reported as `422 WEAK_PASSWORD` with the unmet rules. Reset tokens are stored
+  hashed, expire in 30 minutes, are single use, and invalidate all other
+  outstanding email/SMS tokens plus every refresh session for that user.
+  Email carries a long link token; SMS carries a 6-digit code through the
+  logging adapter until a provider is chosen (SMS is a stub, not a blocker).
+- **Web sessions use a path-scoped HttpOnly refresh cookie plus a readable CSRF
+  cookie** (`erp_refresh`, `erp_csrf`, path `/api/v1/auth/web`). Every refresh
+  must echo the CSRF value in `X-CSRF-Token`; cookies are `Secure` in production.
+  The access token stays short-lived and is returned in JSON. The school web app
+  still uses the JSON token flow until the roles/users UI task (P1-07) switches
+  it to the cookie flow.
+- **Logout revokes every refresh family for the user.** Per-device logout and
+  revocation is available through `GET/DELETE /auth/sessions`; the session list
+  groups rotations by family and marks the current one.

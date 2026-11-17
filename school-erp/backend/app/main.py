@@ -6,7 +6,12 @@ from contextlib import asynccontextmanager
 from core.ai.router import router as ai_router
 from core.api.idempotency import IdempotencyMiddleware
 from core.audit.router import router as audit_router
+from core.auth.rate_limit import reset_all as reset_auth_limits
+from core.auth.recovery import router as recovery_router
 from core.auth.router import router as auth_router
+from core.auth.sessions import router as sessions_router
+from core.auth.twofa import router as twofa_router
+from core.auth.web import router as web_auth_router
 from core.bootstrap import bootstrap
 from core.db.session import Database
 from core.i18n.router import router as i18n_router
@@ -14,6 +19,7 @@ from core.jobs.router import router as jobs_router
 from core.modules.gating import module_gate
 from core.modules.registry import ModuleRegistry
 from core.modules.router import router as modules_router
+from core.notifications.adapters import build_adapters
 from core.rbac.router import router as rbac_router
 from core.settings.router import router as settings_router
 from core.themes.router import router as themes_router
@@ -38,6 +44,10 @@ logger = logging.getLogger("erp.app")
 
 CORE_ROUTERS = [
     auth_router,
+    web_auth_router,
+    sessions_router,
+    twofa_router,
+    recovery_router,
     rbac_router,
     audit_router,
     modules_router,
@@ -56,6 +66,7 @@ def create_app(settings: Settings | None = None, registry: ModuleRegistry | None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        reset_auth_limits()
         if settings.auto_create_schema:
             await app.state.db.create_all()
         await bootstrap(app)
@@ -74,6 +85,7 @@ def create_app(settings: Settings | None = None, registry: ModuleRegistry | None
     app.state.settings = settings
     app.state.registry = registry
     app.state.db = Database(settings.database_url)
+    app.state.mailer, app.state.sms = build_adapters(settings)
 
     # Innermost: it buffers the request body once and records the completed JSON
     # response. CORS and request-id stay outermost so replays still get both.

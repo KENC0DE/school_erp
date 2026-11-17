@@ -8,6 +8,7 @@ import pytest
 from app.main import create_app
 from app.settings import Settings
 from core.auth.models import User
+from core.auth.rate_limit import reset_all as reset_auth_limits
 from core.auth.security import hash_password
 from core.bootstrap import bootstrap
 from core.rbac.models import Role, RolePermission, UserRole
@@ -31,11 +32,13 @@ def make_settings(tmp_path, **overrides) -> Settings:
 
 @pytest.fixture
 async def app(tmp_path):
+    reset_auth_limits()
     application = create_app(make_settings(tmp_path))
     await application.state.db.create_all()
     await bootstrap(application)
     yield application
     await application.state.db.dispose()
+    reset_auth_limits()
 
 
 @pytest.fixture

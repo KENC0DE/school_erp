@@ -71,7 +71,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-01 — API conventions
 - [x] P1-02 — Soft-delete base
 - [x] P1-03 — Settings system
-- [ ] P1-04 — Auth hardening
+- [x] P1-04 — Auth hardening (lockout, rate limits, password reset by email + SMS stub, session list/revoke, cookie+CSRF, TOTP 2FA per role)
 - [ ] P1-05 — Full RBAC
 - [ ] P1-06 — Default roles seeded and editable (Super Admin, Director, Academic Head, Department Head, Registrar,…
 - [ ] P1-07 — Roles and users UI (web)
