@@ -47,6 +47,7 @@ export function createApiClient(options: ApiClientOptions) {
     path: string,
     body?: unknown,
     extraHeaders?: Record<string, string>,
+    formBody = false,
   ): Promise<T> {
     const headers: Record<string, string> = {
       Accept: "application/json",
@@ -58,11 +59,11 @@ export function createApiClient(options: ApiClientOptions) {
     if (options.clientVia) headers["X-Client-Via"] = options.clientVia;
     const token = options.getToken?.();
     if (token) headers.Authorization = `Bearer ${token}`;
-    if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (body !== undefined && !formBody) headers["Content-Type"] = "application/json";
     const response = await doFetch(`${baseUrl}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : formBody ? (body as FormData) : JSON.stringify(body),
     });
     if (!response.ok) {
       let payload: ApiError | undefined;
@@ -91,6 +92,9 @@ export function createApiClient(options: ApiClientOptions) {
     put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
     patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
     del: <T>(path: string) => request<T>("DELETE", path),
+    // Multipart uploads must not set Content-Type: the browser adds the
+    // boundary for the FormData body.
+    postForm: <T>(path: string, form: FormData) => request<T>("POST", path, form, undefined, true),
   };
 }
 

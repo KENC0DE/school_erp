@@ -25,6 +25,8 @@ def make_settings(tmp_path, **overrides) -> Settings:
         "auto_create_schema": False,
         "secret_key": "test-secret-key-0123456789abcdef0123",
         "refresh_secret": "test-refresh-key-0123456789abcdef",
+        "storage_dir": f"{tmp_path}/storage",
+        "public_base_url": "http://testserver",
     }
     values.update(overrides)
     return Settings(**values)

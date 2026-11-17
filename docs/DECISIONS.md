@@ -668,3 +668,51 @@ and recorded here (date, decision, reason).
 - **The committed OpenAPI client was regenerated.** `shared/ts/api-client/src/schema.d.ts`
   now includes the P1-18 editor routes (previously missed) and the P1-21 theme
   routes. The change is additive within `/api/v1`.
+
+## 2026-11-17 — P1-22 Files service
+
+- **Storage is an interface with two drivers.** `STORAGE_DRIVER=local` writes
+  under `STORAGE_DIR` and is the default for development and this host, which
+  has no Docker or MinIO. `STORAGE_DRIVER=s3` talks to any S3-compatible
+  endpoint using a dependency-free SigV4 query presigner (`core/files/s3.py`);
+  both path-style and virtual-host-style buckets are supported. Adding boto3
+  would have pulled a large SDK in just to sign URLs, so signatures are built
+  from the standard library and requests use httpx.
+- **Signed URLs are absolute and short-lived.** Local links are HMAC-SHA256
+  over `GET`, the object key and the expiry, served by
+  `/api/v1/files/content/{key}`. S3 links go straight to the bucket. The
+  default TTL is `STORAGE_SIGNED_URL_SECONDS` (600) and callers may request up
+  to 24 hours. Local URLs use `PUBLIC_BASE_URL`, so a web page can put the URL
+  in an `img`/`a` tag without knowing the API host.
+- **Uploads are inspected, not trusted.** The extension must be in the
+  allowlist, the browser-declared MIME must match (octet-stream is tolerated
+  for clients that cannot know), and the body must agree: Pillow decodes
+  images and checks the detected format, PDFs must start with `%PDF-`, Office
+  files must be ZIPs containing their main part, and CSV/text must be UTF-8
+  without NUL bytes. SVG is intentionally excluded because it can carry
+  script. Empty files and files over `STORAGE_MAX_UPLOAD_BYTES` (25 MB) are
+  rejected before anything is written.
+- **Files are private by default.** A private file is visible to its uploader
+  and to holders of `files.view`; other signed-in users receive 403. Public
+  files are visible to any session, but they still require a signed URL for the
+  bytes. `files.manage` holders and the uploader may soft-delete. Delete stamps
+  the row and the content route stops serving it immediately; the object stays
+  in storage so the audit trail and recovery remain possible.
+- **Object keys are generated, never user-supplied.** Keys look like
+  `yyyy/mm/<uuid><ext>`; the local driver additionally rejects absolute paths
+  and `..` segments and resolves symlinks before reading or writing.
+- **Thumbnails are a background job.** Image uploads enqueue
+  `files.thumbnail` with the file id. The worker creates a max-320 px JPEG at
+  `thumbnails/<key>.jpg` and stores its key on the row. Test runs do not call
+  the broker: the service function is exercised directly, avoiding both a Redis
+  dependency and accidental writes to the production database.
+- **The upload component posts multipart through the shared client.**
+  `createApiClient` gained `postForm`, which deliberately omits
+  `Content-Type` so the browser adds the boundary. `FileUpload` enforces the
+  size limit client-side and maps 413/415 failures to translated messages; it
+  is reusable by the setup wizard (P1-24) and student documents.
+- **`files.*` is declared but not added to the shipped role matrix.** The
+  P1-06 default roles are asserted exactly by tests and the documented matrix
+  did not include file permissions. Schools (and the P1-SEED limited role) can
+  grant `files.view`, `files.upload` and `files.manage`; the Super Admin holds
+  them through `*`.

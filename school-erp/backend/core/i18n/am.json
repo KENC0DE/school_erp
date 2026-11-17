@@ -440,5 +440,13 @@
   "themes.sample_button": "የናሙና ቁልፍ",
   "themes.school_default": "የትምህርት ቤት ነባሪ",
   "themes.choice": "የእርስዎ ገጽታ",
-  "themes.status": "ሁኔታ"
+  "themes.status": "ሁኔታ",
+  "files.choose": "ፋይል ይምረጡ",
+  "files.upload": "ስቀል",
+  "files.uploading": "በመስቀል ላይ…",
+  "files.uploaded": "{{name}} ተስቀል።",
+  "files.hint": "ምስሎች (PNG፣ JPEG፣ WebP)፣ PDF፣ CSV፣ ጽሑፍ፣ Word እና Excel እስከ {{max}} ሜጋባይት።",
+  "files.error.too_large": "ይህ ፋይል ከ{{max}} ሜጋባይት ገደብ ይበልጣል።",
+  "files.error.unsupported": "ይህ የፋይል ዓይነት አይፈቀድም።",
+  "files.error.failed": "ፋይሉን መስቀል አልተቻለም። እንደገና ይሞክሩ።"
 }

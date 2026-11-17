@@ -35,6 +35,14 @@ class Settings(BaseSettings):
 
     storage_driver: str = "local"
     storage_dir: str = "./data/storage"
+    storage_max_upload_bytes: int = 25_000_000
+    storage_signed_url_seconds: int = 600
+    storage_s3_endpoint: str = "http://localhost:9000"
+    storage_s3_region: str = "us-east-1"
+    storage_s3_bucket: str = "school-erp"
+    storage_s3_access_key: str = ""
+    storage_s3_secret_key: str = ""
+    storage_s3_path_style: bool = True
 
     smtp_host: str = "localhost"
     smtp_port: int = 1025

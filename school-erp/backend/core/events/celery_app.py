@@ -83,6 +83,26 @@ def ping(job_id: str) -> dict:
     return {"job_id": job_id, "pong": True}
 
 
+@celery_app.task(name="erp.files_thumbnail")
+def files_thumbnail_task(job_id: str, file_id: str) -> dict:
+    asyncio.run(_mark_job(job_id, "running"))
+
+    async def work(session):
+        from core.files.service import generate_thumbnail
+        from core.files.storage import build_storage
+
+        return await generate_thumbnail(session, build_storage(get_settings()), file_id)
+
+    try:
+        result = asyncio.run(_run_in_session(work))
+    except Exception as exc:  # pragma: no cover - storage and image failures
+        logger.warning("thumbnail failed: %s", exc)
+        asyncio.run(_mark_job(job_id, "failed", error="The thumbnail could not be generated"))
+        return {"job_id": job_id, "ok": False}
+    asyncio.run(_mark_job(job_id, "succeeded", result=result))
+    return {"job_id": job_id, "ok": True}
+
+
 @celery_app.task(name="erp.heartbeat")
 def heartbeat_task() -> dict:
     from core.controller_link.service import heartbeat

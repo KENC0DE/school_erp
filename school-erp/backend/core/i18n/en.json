@@ -440,5 +440,13 @@
   "themes.sample_button": "Sample button",
   "themes.school_default": "School default",
   "themes.choice": "Your theme",
-  "themes.status": "Status"
+  "themes.status": "Status",
+  "files.choose": "Choose a file",
+  "files.upload": "Upload",
+  "files.uploading": "Uploading…",
+  "files.uploaded": "{{name}} uploaded.",
+  "files.hint": "Images (PNG, JPEG, WebP), PDF, CSV, text, Word and Excel up to {{max}} MB.",
+  "files.error.too_large": "This file is larger than the {{max}} MB limit.",
+  "files.error.unsupported": "This file type is not allowed.",
+  "files.error.failed": "The file could not be uploaded. Try again."
 }

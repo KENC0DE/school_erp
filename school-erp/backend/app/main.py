@@ -15,6 +15,8 @@ from core.auth.web import router as web_auth_router
 from core.bootstrap import bootstrap
 from core.custom_fields.router import router as custom_fields_router
 from core.db.session import Database
+from core.files.router import router as files_router
+from core.files.storage import build_storage
 from core.i18n.editor_router import router as i18n_editor_router
 from core.i18n.router import router as i18n_router
 from core.jobs.router import router as jobs_router
@@ -59,6 +61,7 @@ CORE_ROUTERS = [
     i18n_editor_router,
     i18n_router,
     themes_router,
+    files_router,
     settings_router,
     ai_router,
     jobs_router,
@@ -78,6 +81,9 @@ def create_app(settings: Settings | None = None, registry: ModuleRegistry | None
         await bootstrap(app)
         logger.info("instance started", extra={"event": "startup"})
         yield
+        storage = getattr(app.state, "storage", None)
+        if storage is not None and hasattr(storage, "close"):
+            await storage.close()
         await app.state.db.dispose()
 
     app = FastAPI(
@@ -91,6 +97,7 @@ def create_app(settings: Settings | None = None, registry: ModuleRegistry | None
     app.state.settings = settings
     app.state.registry = registry
     app.state.db = Database(settings.database_url)
+    app.state.storage = build_storage(settings)
     app.state.mailer, app.state.sms = build_adapters(settings)
 
     # Innermost: it buffers the request body once and records the completed JSON

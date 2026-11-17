@@ -6,6 +6,7 @@ from core.audit.models import AuditLog, AuditOutbox  # noqa: F401
 from core.auth.models import PasswordResetToken, RefreshToken, User  # noqa: F401
 from core.custom_fields.models import CustomFieldDef  # noqa: F401
 from core.events.models import DomainEvent, Job  # noqa: F401
+from core.files.models import StoredFile  # noqa: F401
 from core.i18n.models import TranslationEntry  # noqa: F401
 from core.modules.models import InstanceModule, LicenseState  # noqa: F401
 from core.people.models import Person  # noqa: F401

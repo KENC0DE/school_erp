@@ -39,6 +39,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
             row[1] for row in connection.execute("PRAGMA table_info(user_permission_overrides)")
         }
         outbox_columns = {row[1] for row in connection.execute("PRAGMA table_info(audit_outbox)")}
+        file_columns = {row[1] for row in connection.execute("PRAGMA table_info(files)")}
     finally:
         connection.close()
 
@@ -52,9 +53,11 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "password_reset_tokens",
         "persons",
         "custom_field_defs",
+        "themes",
+        "files",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0012_theme_manager"
+    assert version == "0013_files"
 
     assert {
         "failed_login_count",
@@ -71,3 +74,16 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
 
     assert live_index is not None
     assert "WHERE deleted_at IS NULL" in live_index[0]
+
+    assert {
+        "object_key",
+        "original_name",
+        "mime",
+        "size_bytes",
+        "checksum_sha256",
+        "owner_entity_type",
+        "owner_entity_id",
+        "is_private",
+        "thumbnail_key",
+        "uploaded_by",
+    } <= file_columns

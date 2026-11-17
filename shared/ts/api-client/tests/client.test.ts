@@ -32,6 +32,24 @@ describe("api client", () => {
     expect((init.headers as Record<string, string>)["X-Client-Via"]).toBe("mobile");
   });
 
+  it("posts FormData without overriding the multipart content type", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ id: "f1" }), { status: 201 }));
+    const client = createApiClient({
+      baseUrl: "http://localhost:8000",
+      getToken: () => "abc",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const form = new FormData();
+    form.append("file", new Blob(["hello"], { type: "text/plain" }), "hello.txt");
+    const result = await client.postForm<{ id: string }>("/api/v1/files", form);
+    expect(result.id).toBe("f1");
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Content-Type"]).toBeUndefined();
+    expect(headers.Authorization).toBe("Bearer abc");
+    expect(init.body).toBe(form);
+  });
+
   it("turns the standard error body into an exception", async () => {
     const fetchImpl = vi.fn(
       async () =>
