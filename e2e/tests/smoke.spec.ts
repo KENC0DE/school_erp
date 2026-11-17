@@ -138,3 +138,32 @@ test("removing a role permission hides that module from the menu", async ({ brow
   await limitedContext.close();
   await adminContext.close();
 });
+
+test("super admin manages modules from settings", async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(SCHOOL_WEB);
+  await login(page, SCHOOL_ADMIN, OWNER_PASSWORD);
+
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page.getByText("Choose which licensed modules this school can use.")).toBeVisible();
+  await page.getByRole("link", { name: "Manage modules", exact: true }).click();
+
+  await expect(page.getByTestId("modules-page")).toBeVisible();
+  const sampleRow = page.getByTestId("module-row-sample");
+  await expect(sampleRow.getByTestId("module-licensed-sample")).toHaveText("Yes");
+  await expect(sampleRow.getByTestId("module-enabled-sample")).toHaveText("Yes");
+  await expect(sampleRow.getByTestId("module-permitted-sample")).toHaveText("Yes");
+
+  const toggle = sampleRow.getByTestId("module-toggle-sample");
+  await expect(toggle).toBeChecked();
+  await toggle.click();
+  await expect(sampleRow.getByTestId("module-enabled-sample")).toHaveText("No");
+  await expect(page.getByRole("link", { name: "Sample module" })).toHaveCount(0);
+
+  await toggle.click();
+  await expect(sampleRow.getByTestId("module-enabled-sample")).toHaveText("Yes");
+  await expect(page.getByRole("link", { name: "Sample module" }).first()).toBeVisible();
+
+  await context.close();
+});

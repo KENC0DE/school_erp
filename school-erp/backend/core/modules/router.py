@@ -51,10 +51,10 @@ async def capabilities(
     return {"features": features, "languages": ["en", "am"], "calendar": "ethiopian"}
 
 
-@router.get("/modules", dependencies=[Depends(authenticated)])
+@router.get("/modules", dependencies=[Depends(require("modules.view"))])
 async def list_modules(
     request: Request,
-    principal: Principal = Depends(authenticated),
+    principal: Principal = Depends(require("modules.view")),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     registry = request.app.state.registry
@@ -63,6 +63,23 @@ async def list_modules(
     for manifest in registry.all():
         state = states[manifest.key]
         permitted = any(principal.can(perm.code) for perm in manifest.permissions) or not manifest.permissions
+        dependencies = [
+            {
+                "key": dependency,
+                "name": states.get(dependency, {}).get("name", dependency),
+                "available": bool(states.get(dependency, {}).get("available", False)),
+            }
+            for dependency in manifest.depends_on
+        ]
+        dependants = [
+            {
+                "key": other.key,
+                "name": other.name,
+                "enabled": bool(states.get(other.key, {}).get("enabled", False)),
+            }
+            for other in registry.all()
+            if manifest.key in other.depends_on
+        ]
         items.append(
             {
                 "key": manifest.key,
@@ -72,6 +89,9 @@ async def list_modules(
                 "core": manifest.core,
                 "licensable": manifest.licensable,
                 "depends_on": manifest.depends_on,
+                "dependencies": dependencies,
+                "dependants": dependants,
+                "blocked_by": [item["key"] for item in dependencies if not item["available"]],
                 "permitted": permitted,
                 **{k: state[k] for k in ("licensed", "enabled", "available")},
             }
@@ -95,14 +115,20 @@ async def toggle_module(
     before = (await module_states(session, registry, request.app.state.settings)).get(key)
     await set_module_enabled(session, registry, key, payload.enabled, principal.actor_id)  # type: ignore[arg-type]
     after = (await module_states(session, registry, request.app.state.settings)).get(key)
+
+    def snapshot(state: dict | None) -> dict | None:
+        if state is None:
+            return None
+        return {k: state[k] for k in ("licensed", "enabled", "available")}
+
     await record(
         session,
         action="modules.toggle",
         module="core",
         entity_type="module",
         entity_id=key,
-        before={"available": before["available"] if before else None},
-        after={"available": after["available"] if after else None},
+        before=snapshot(before),
+        after=snapshot(after),
         actor=principal,
         ip=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),

@@ -6,6 +6,7 @@ import { Shell } from "./components/Shell";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
 import { LoginPage } from "./pages/Login";
+import { ModulesPage } from "./pages/ModulesPage";
 import { NotFoundPage } from "./pages/NotFound";
 import { ResetPasswordPage } from "./pages/ResetPassword";
 import { RolesPage } from "./pages/RolesPage";
@@ -62,6 +63,7 @@ export function AppRoutes() {
           <Route path="roles" element={<RolesPage />} />
           <Route path="sample" element={<SamplePage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/modules" element={<ModulesPage />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

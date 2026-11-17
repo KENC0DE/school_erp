@@ -388,3 +388,31 @@ and recorded here (date, decision, reason).
   `roles.view|roles.manage`, and Settings for `settings.view`. Role, assignment
   and deactivation mutations invalidate the navigation query and re-read `/me`,
   so the current session’s menu changes without a reload.
+
+## 2026-11-17 — P1-08 module management UI
+
+- **The module state API is permissioned.** `GET /system/modules` now needs
+  `modules.view`; `PUT /system/modules/{key}` keeps `modules.manage`. The API
+  returns the three gates (`licensed`, `enabled`, `permitted`) plus `available`,
+  the module's resolved dependencies and dependants, and `blocked_by` keys so
+  the UI can explain a disabled toggle without guessing.
+- **Dependency rules stay server-side and are mirrored in the UI.** Enabling a
+  module with an unavailable dependency returns `409 CONFLICT` with
+  `modules.dependency_disabled`; disabling one with enabled dependants returns
+  `modules.dependants_enabled`. The page disables those toggles and shows the
+  names involved, but still renders any server conflict (for example a stale
+  list or a race) as an alert.
+- **Core modules cannot be toggled and unlicensed modules cannot be enabled.**
+  An already-enabled module that lost its licence can still be disabled, so an
+  administrator is never trapped by an expired licence. `permitted` is shown as
+  information about the current user and does not change the school-wide toggle.
+- **Settings → Modules is reachable from both the sidebar and Settings.**
+  Navigation adds Modules for `modules.view|modules.manage` at
+  `/settings/modules`; the Settings page also links there for holders of either
+  permission. Read-only viewers see the full state but no enabled switches.
+- **Toggles are audited with the full gate snapshot.** `modules.toggle` records
+  `licensed`, `enabled` and `available` before and after, so a later investigation
+  can distinguish a licence change from an administrator's action.
+- **Wildcard holders count as settings managers.** The Settings page now treats
+  `*` like `settings.manage` (and like the module permissions), matching the
+  backend's wildcard semantics.

@@ -1,10 +1,11 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { api } from "../lib/api";
 import { useAuth } from "../providers/AuthProvider";
@@ -209,7 +210,12 @@ function FieldRow({
 export function SettingsPage() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const canManage = user?.permissions?.includes("settings.manage") ?? false;
+  const permissions = user?.permissions ?? [];
+  const canManage = permissions.includes("*") || permissions.includes("settings.manage");
+  const canViewModules =
+    permissions.includes("*") ||
+    permissions.includes("modules.view") ||
+    permissions.includes("modules.manage");
 
   const settings = useQuery({
     queryKey: ["settings"],
@@ -229,6 +235,23 @@ export function SettingsPage() {
       ) : null}
       {settings.isError ? (
         <p className="text-sm text-destructive">{t("common.error")}</p>
+      ) : null}
+
+      {canViewModules ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.modules.title")}</CardTitle>
+            <CardDescription>{t("settings.modules.hint")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              to="/settings/modules"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {t("settings.modules.link")}
+            </Link>
+          </CardContent>
+        </Card>
       ) : null}
 
       {(settings.data?.items ?? []).map((module) => (

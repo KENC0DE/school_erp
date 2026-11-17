@@ -231,7 +231,7 @@ describe("users page", () => {
     fireEvent.change(screen.getByTestId("invite-email"), {
       target: { value: "new.teacher@demo.school" },
     });
-    fireEvent.click(screen.getByTestId("invite-role-teacher"));
+    fireEvent.click(await screen.findByTestId("invite-role-teacher"));
     fireEvent.click(screen.getByTestId("invite-submit"));
 
     await waitFor(() => {
