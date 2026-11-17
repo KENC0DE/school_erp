@@ -1,3 +1,4 @@
+from erp_shared.api_compat import BreakingChange, compare_schemas
 from erp_shared.license import (
     KeyPair,
     LicenseError,
@@ -11,10 +12,12 @@ from erp_shared.license import (
 from erp_shared.money import MoneyError, allocate, format_santim, parse
 
 __all__ = [
+    "BreakingChange",
     "KeyPair",
     "LicenseError",
     "MoneyError",
     "allocate",
+    "compare_schemas",
     "format_santim",
     "generate_keypair",
     "parse",

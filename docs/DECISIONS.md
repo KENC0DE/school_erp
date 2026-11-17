@@ -832,3 +832,33 @@ and recorded here (date, decision, reason).
 - **Retry history is preserved.** The audit chain keeps every failed attempt;
   the single mutable row is restored to `queued`, matching the platform rule
   that jobs are operational state rather than an append-only record.
+
+## 2026-11-18 — P1-26 API compatibility guard
+
+- **The released contract is a committed snapshot, not the live schema.**
+  `shared/openapi/v1.json` is produced from `create_app().openapi()` without a
+  server and committed at release time. CI and the test suite compare the
+  current schema against that file, so an endpoint can be removed in a branch
+  and still fail the check. Additive changes pass without updating the
+  snapshot, which keeps the diff meaningful.
+- **The checker lives in `erp_shared`.** `shared/py/erp_shared/api_compat.py`
+  is pure standard library, so the CI script, the backend test and the shared
+  unit tests run exactly the same rules. It resolves local `$ref`/`allOf`
+  pointers and reports endpoint, parameter, request-body, response, field,
+  type, enum, union and constraint changes inside `/api/v1` only.
+- **Two snapshots enforce the deprecation window.** `--write` rotates the
+  existing baseline to `shared/openapi/v1.previous.json` before writing the new
+  one. A removed operation or field is accepted only when it carried
+  `deprecated: true` in *both* snapshots, i.e. it survived two releases. Without
+  a previous snapshot the first removal is still refused.
+- **Only release managers run `--write`.** Running it in a feature branch would
+  move the baseline and hide a breaking change from the guard. The README says
+  so explicitly, and the generated snapshot is reviewed like any other release
+  artefact.
+- **Request constraints are checked directionally.** Raising `minimum` or
+  `minLength`, or lowering `maximum` or `maxLength`, is breaking for a request
+  and reported; the same change in a response is not. Widening a request is
+  always allowed.
+- **System routes stay outside the policy.** `/health`, `/ready` and other
+  non-`/api/v1` paths are ignored by the checker; the versioning policy and the
+  snapshot cover the school API surface only.

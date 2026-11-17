@@ -80,6 +80,23 @@ The school OpenAPI document is produced from `create_app()` in-process, without
 starting uvicorn. The controller document is optional and written under
 `data/` (gitignored).
 
+## API compatibility guard
+
+`shared/openapi/v1.json` is the last released `/api/v1` contract. CI compares
+the generated schema with it and fails on removed or renamed endpoints and
+fields, narrowed types, and new required request fields or parameters:
+
+```bash
+uv run python scripts/check-api-compat.py           # CI check
+uv run python scripts/check-api-compat.py --write   # release step: snapshot
+```
+
+Additive changes pass without touching the snapshot. `--write` rotates the old
+snapshot to `shared/openapi/v1.previous.json`, which lets the checker enforce
+the "deprecations stay for at least two releases" policy: a removed item must
+be marked `deprecated: true` in both snapshots. Only run `--write` when cutting
+a release, never to silence a breaking change in a feature branch.
+
 ## i18n check
 
 `scripts/check-i18n.py` is offline and deterministic:
