@@ -8,6 +8,7 @@ class Principal:
     actor_id: str
     actor_type: str = "user"
     via: str = "web"
+    on_behalf_of: str | None = None
     display_name: str = ""
     email: str | None = None
     locale: str = "en"

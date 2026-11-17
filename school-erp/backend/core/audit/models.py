@@ -42,6 +42,9 @@ class AuditOutbox(UUIDPrimaryKeyMixin, Base):
     shipped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     batch_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
     attempts: Mapped[int] = mapped_column(default=0)
+    available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str | None] = mapped_column(Text)
 
 
 @event.listens_for(AuditLog.__table__, "after_create")

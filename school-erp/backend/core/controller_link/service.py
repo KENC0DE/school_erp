@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime
 
 import httpx
@@ -12,8 +13,8 @@ from erp_shared.signing import sign_detached
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.audit.models import AuditLog
-from core.audit.service import mark_shipped, unshipped
+from core.audit.models import AuditLog, AuditOutbox
+from core.audit.service import mark_failed, mark_shipped, unshipped
 from core.modules.licensing import apply_license, get_license
 from core.modules.models import InstanceIdentity
 
@@ -94,6 +95,9 @@ async def heartbeat(
     if state is None or not state.instance_id:
         return None
     ident = await identity(session)
+    head = (
+        await session.execute(select(AuditLog).order_by(AuditLog.seq.desc()).limit(1))
+    ).scalar_one_or_none()
     payload = {
         "instance_id": state.instance_id,
         "app_version": settings.app_version,
@@ -105,8 +109,8 @@ async def heartbeat(
         "student_count": 0,
         "staff_count": 0,
         "last_backup_at": None,
-        "audit_chain_head": None,
-        "audit_seq": 0,
+        "audit_chain_head": head.hash if head else None,
+        "audit_seq": head.seq if head else 0,
     }
     payload["signature"] = sign_detached(ident.private_key, payload)
     owns_client = client is None
@@ -179,17 +183,43 @@ async def ship_audit(
     owns_client = client is None
     http = client or _client()
     try:
-        response = await http.post(
-            f"{settings.controller_url.rstrip('/')}/controller/v1/audit/ingest", json=payload
-        )
+        try:
+            response = await http.post(
+                f"{settings.controller_url.rstrip('/')}/controller/v1/audit/ingest", json=payload
+            )
+        except Exception as exc:
+            await _record_ship_failure(session, settings, batch, str(exc))
+            raise
+        if response.status_code >= 400:
+            error = ControllerLinkError(f"Audit shipping failed ({response.status_code}): {response.text}")
+            await _record_ship_failure(session, settings, batch, str(error))
+            raise error
     finally:
         if owns_client:
             await http.aclose()
-    if response.status_code >= 400:
-        raise ControllerLinkError(f"Audit shipping failed ({response.status_code}): {response.text}")
-    import uuid
 
     batch_id = uuid.uuid4()
     await mark_shipped(session, [row.id for row in batch], batch_id)
     await session.commit()
     return response.json()
+
+
+async def _record_ship_failure(
+    session: AsyncSession,
+    settings: Settings,
+    batch: list[AuditOutbox],
+    error: str,
+) -> None:
+    """Persist the retry state before the caller sees the exception.
+
+    Without this commit the backoff would be rolled back together with the
+    failed request, so a controller outage would spin every shipping tick.
+    """
+    await mark_failed(
+        session,
+        batch,
+        error,
+        base_seconds=settings.audit_retry_base_seconds,
+        max_seconds=settings.audit_retry_max_seconds,
+    )
+    await session.commit()

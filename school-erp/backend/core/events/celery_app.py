@@ -22,9 +22,13 @@ def build_celery() -> Celery:
         timezone="UTC",
         beat_schedule={
             "heartbeat": {"task": "erp.heartbeat", "schedule": float(settings.heartbeat_seconds)},
+            "ship-audit": {
+                "task": "erp.ship_audit",
+                "schedule": float(settings.audit_ship_interval_seconds),
+            },
             "verify-audit-chain": {
                 "task": "erp.verify_audit_chain",
-                "schedule": 60 * 60 * 24,
+                "schedule": float(settings.audit_verify_interval_seconds),
             },
         },
     )
@@ -93,6 +97,20 @@ def heartbeat_task() -> dict:
         return {"ok": False, "error": str(exc)}
 
 
+@celery_app.task(name="erp.ship_audit")
+def ship_audit_task() -> dict:
+    from core.controller_link.service import ship_audit
+
+    async def work(session):
+        return await ship_audit(session, get_settings())
+
+    try:
+        return asyncio.run(_run_in_session(work)) or {"ok": True, "shipped": 0}
+    except Exception as exc:  # pragma: no cover - controller outages are normal
+        logger.warning("audit shipping failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
 @celery_app.task(name="erp.verify_audit_chain")
 def verify_audit_chain() -> dict:
     from core.audit.service import verify_chain
@@ -100,4 +118,7 @@ def verify_audit_chain() -> dict:
     async def work(session):
         return await verify_chain(session)
 
-    return asyncio.run(_run_in_session(work))
+    result = asyncio.run(_run_in_session(work))
+    if not result.get("ok"):
+        logger.error("audit chain verification failed: %s", result)
+    return result

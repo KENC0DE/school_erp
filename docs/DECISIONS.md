@@ -416,3 +416,39 @@ and recorded here (date, decision, reason).
 - **Wildcard holders count as settings managers.** The Settings page now treats
   `*` like `settings.manage` (and like the module permissions), matching the
   backend's wildcard semantics.
+
+## 2026-11-17 — P1-09 audit completion
+
+- **Actor and channel vocabularies are enforced at write time.**
+  `actor_type ∈ {user, ai, controller, automation, system}` and
+  `via ∈ {web, mobile, api, ai, controller, automation}`. `record()` rejects
+  anything else, and `Principal.on_behalf_of`/an explicit `on_behalf_of`
+  argument fills the delegated-actor field. `reason` falls back to the
+  principal's controller-session reason.
+- **Clients may only claim client channels.** `X-Client-Via` is honoured for
+  `web`, `mobile` and `api`; `ai`, `controller` and `automation` stay
+  server-derived. Controller principals ignore the header entirely, so a
+  support session can never be relabelled as ordinary web traffic.
+- **Reads of sensitive records are audited.** `GET /audit/activity/{seq}`
+  records `audit.activity.read` and `GET /rbac/users/{id}/permissions` records
+  `rbac.permissions.read`, with actor, `via`, IP and user agent. These routes
+  commit the read entry themselves because a GET has no later mutation to commit.
+  Ordinary list endpoints remain unaudited to avoid log floods; P1-10 owns the
+  activity-history visibility rules.
+- **Sequence allocation takes a PostgreSQL advisory lock.**
+  `pg_advisory_xact_lock` serialises `max(seq) + 1` until commit; SQLite keeps
+  its existing single-writer behaviour. The lock key is a fixed constant so all
+  app processes agree on it.
+- **Audit shipping retries with exponential backoff.** Outbox rows carry
+  `available_at`, `last_attempt_at` and `last_error`. A failed ship increments
+  `attempts`, stores the (bounded) error and delays the next attempt by
+  `base × 2^(attempts-1)`, capped by `AUDIT_RETRY_MAX_SECONDS`. The failure is
+  committed before the exception leaves the service, so an offline controller
+  does not spin every beat tick. Successful shipping clears the error.
+- **Celery beat ships every 30 s and verifies nightly.** `erp.ship_audit` and
+  `erp.verify_audit_chain` are scheduled from settings
+  (`AUDIT_SHIP_INTERVAL_SECONDS`, `AUDIT_VERIFY_INTERVAL_SECONDS`). The verify
+  task logs an error when the chain is broken instead of silently returning.
+- **Heartbeats report the real chain head.** `audit_chain_head`/`audit_seq` come
+  from the latest local entry, letting the controller detect gaps between what
+  was ingested and what the instance holds.

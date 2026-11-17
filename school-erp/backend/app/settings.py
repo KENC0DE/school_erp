@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     enrollment_token: str = ""
     heartbeat_seconds: int = 60
     audit_ship_batch: int = 100
+    audit_ship_interval_seconds: int = 30
+    audit_retry_base_seconds: int = 30
+    audit_retry_max_seconds: int = 3_600
+    audit_verify_interval_seconds: int = 86_400
 
     idempotency_enabled: bool = True
     idempotency_ttl_seconds: int = 86_400

@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.errors import Conflict, NotFound, ValidationFailed
-from core.audit.service import record
+from core.audit.service import record, record_read
 from core.auth.deps import require
 from core.auth.models import User
 from core.auth.principal import Principal
@@ -296,7 +296,12 @@ async def set_role_permissions(
 
 
 @router.get("/users/{user_id}/permissions", dependencies=[Depends(require("roles.view"))])
-async def user_permissions(user_id: uuid.UUID, session: AsyncSession = Depends(get_session)) -> dict:
+async def user_permissions(
+    user_id: uuid.UUID,
+    request: Request,
+    principal: Principal = Depends(require("roles.view")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
     user = await _get_user(session, user_id)
     permissions, scopes = await effective_permissions(session, user.id)
     role_rows = (
@@ -320,6 +325,17 @@ async def user_permissions(user_id: uuid.UUID, session: AsyncSession = Depends(g
         .all()
     )
     now = datetime.now(UTC)
+    await record_read(
+        session,
+        action="rbac.permissions.read",
+        module="core",
+        entity_type="user_permissions",
+        entity_id=str(user.id),
+        actor=principal,
+        via=principal.via,
+        **_request_meta(request),
+    )
+    await session.commit()
     return {
         "user_id": str(user.id),
         "roles": await roles_for_user(session, user.id),

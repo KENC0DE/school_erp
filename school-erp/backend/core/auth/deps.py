@@ -9,6 +9,7 @@ from typing import Any
 import jwt
 from app.errors import Forbidden, TOTPEnrollmentRequired, Unauthorized
 from app.settings import Settings
+from core.audit.constants import CLIENT_VIA_CHANNELS
 from core.auth.principal import Principal
 from core.auth.security import decode_access_token
 from core.db.deps import get_session
@@ -96,7 +97,9 @@ async def get_current_principal(
     if not token:
         raise Unauthorized("Authentication required", message_key="error.auth_required")
     principal = await _principal_from_token(request, token, session, request.app.state.settings)
-    principal.via = request.headers.get("x-client-via", principal.via)
+    client_via = (request.headers.get("x-client-via") or "").strip().lower()
+    if client_via in CLIENT_VIA_CHANNELS and principal.actor_type != "controller":
+        principal.via = client_via
     request.state.principal = principal
     request.state.actor_type = principal.actor_type
     return principal

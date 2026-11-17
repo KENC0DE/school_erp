@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+
 import httpx
 import pytest
 from app.main import create_app
 from controller_api.keys import ensure_signing_keys
 from controller_api.main import create_controller_app
-from controller_api.models import CPUser
+from controller_api.models import CPUser, Heartbeat
 from controller_api.security import hash_password
 from controller_api.settings import ControllerSettings
+from core.audit.models import AuditLog, AuditOutbox
+from core.audit.service import unshipped
 from core.bootstrap import bootstrap
-from core.controller_link.service import enroll, heartbeat, ship_audit
+from core.controller_link.service import ControllerLinkError, enroll, heartbeat, ship_audit
 from core.modules.models import LicenseState
 from erp_shared.license import sign_payload
+from sqlalchemy import select
 
 from tests.conftest import (
     create_role,
@@ -119,6 +124,26 @@ async def test_enroll_heartbeat_module_toggle_and_audit_shipping(controller, tmp
             "/api/v1/sample/notes", json={"content": "shipped to the vault"}, headers=manager
         )
         assert created.status_code == 200, created.text
+
+        # The heartbeat carries the real local chain head so the controller can
+        # compare it with the last ingested sequence.
+        async with app.state.db.session() as session:
+            await heartbeat(session, settings, client=cclient)
+        async with app.state.db.session() as session:
+            head = (
+                await session.execute(select(AuditLog).order_by(AuditLog.seq.desc()).limit(1))
+            ).scalar_one()
+        async with capp.state.db.session() as session:
+            beat = (
+                await session.execute(
+                    select(Heartbeat)
+                    .where(Heartbeat.school_id == school["id"])
+                    .order_by(Heartbeat.received_at.desc())
+                    .limit(1)
+                )
+            ).scalar_one()
+        assert beat.payload["audit_chain_head"] == head.hash
+        assert beat.payload["audit_seq"] == head.seq
 
         # Ship the audit batch; the controller verifies and stores the chain.
         async with app.state.db.session() as session:
@@ -244,3 +269,66 @@ async def test_expired_and_tampered_controller_tokens_are_rejected(controller, t
     finally:
         await client.aclose()
         await application.state.db.dispose()
+
+
+class _UnavailableController:
+    """Stands in for an unreachable controller (transport stays healthy)."""
+
+    async def post(self, *_args, **_kwargs):
+        return httpx.Response(
+            503,
+            text="maintenance",
+            request=httpx.Request("POST", "http://controller/controller/v1/audit/ingest"),
+        )
+
+
+async def test_shipping_failure_backs_off_then_succeeds(controller, tmp_path):
+    capp, cclient = controller
+    school, _ = await _create_school(cclient, ["sample"])
+    app, client, settings = await _instance(tmp_path)
+    await _seed_instance(app)
+    try:
+        async with app.state.db.session() as session:
+            await enroll(session, settings, enrollment_token=school["enrollment_token"], client=cclient)
+
+        manager = await login(client, "manager@demo.school")
+        created = await client.post("/api/v1/sample/notes", json={"content": "retry me"}, headers=manager)
+        assert created.status_code == 200, created.text
+
+        async with app.state.db.session() as session:
+            assert await unshipped(session, limit=1000)
+            with pytest.raises(ControllerLinkError):
+                await ship_audit(session, settings, client=_UnavailableController())
+
+            # The failure is committed, scheduled with backoff and hidden from
+            # the next shipping tick.
+            assert await unshipped(session, limit=1000) == []
+            pending = (
+                (await session.execute(select(AuditOutbox).where(AuditOutbox.shipped_at.is_(None))))
+                .scalars()
+                .all()
+            )
+            assert pending
+            for row in pending:
+                assert row.attempts >= 1
+                assert row.last_attempt_at is not None
+                assert row.last_error and "503" in row.last_error
+                assert row.available_at is not None
+                assert row.available_at > datetime.now(UTC)
+                row.available_at = datetime.now(UTC) - timedelta(seconds=1)
+            await session.commit()
+
+        async with app.state.db.session() as session:
+            result = await ship_audit(session, settings, client=cclient)
+        assert result["accepted"] >= 1
+
+        async with app.state.db.session() as session:
+            assert await unshipped(session, limit=1000) == []
+            shipped = (await session.execute(select(AuditOutbox))).scalars().all()
+            assert shipped
+            assert all(row.shipped_at is not None for row in shipped)
+            assert all(row.last_error is None for row in shipped)
+            assert any(row.attempts >= 1 for row in shipped)
+    finally:
+        await client.aclose()
+        await app.state.db.dispose()
