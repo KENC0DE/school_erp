@@ -8,8 +8,6 @@ import { useTheme } from "../providers/ThemeProvider";
 import { ChatPanel } from "./ChatPanel";
 import { Button } from "./ui/Button";
 
-const LANGUAGE_LABELS: Record<string, string> = { en: "English", am: "አማርኛ" };
-
 export function Shell() {
   const { t, locale, languages, setLocale } = useI18n();
   const { mode, toggle } = useTheme();
@@ -25,7 +23,7 @@ export function Shell() {
       <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground">
-            SE
+            {t("app.short_name")}
           </span>
           <span className="font-semibold">{t("app.name")}</span>
         </div>
@@ -70,7 +68,7 @@ export function Shell() {
             >
               {languages.map((code) => (
                 <option key={code} value={code}>
-                  {LANGUAGE_LABELS[code] ?? code}
+                  {t(`settings.enum.${code}`)}
                 </option>
               ))}
             </select>

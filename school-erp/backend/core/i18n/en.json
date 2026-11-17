@@ -378,5 +378,8 @@
   "translations.ai_draft": "AI draft",
   "error.ai.not_configured": "AI is not configured yet",
   "error.ai.suggest_failed": "The AI provider returned an empty suggestion",
-  "error.i18n.suggest_source": "English is the source language, not a translation target"
+  "error.i18n.suggest_source": "English is the source language, not a translation target",
+  "app.short_name": "SE",
+  "common.format.json": "JSON",
+  "common.format.csv": "CSV"
 }

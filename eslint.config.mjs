@@ -1,5 +1,3 @@
-// Zone boundaries for the TypeScript half of the repo (ARCH §4.4).
-// CI and pre-commit run this at the workspace root.
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -16,6 +14,48 @@ const ban = (zones) => ({
   ],
 });
 
+const noLiteralUiText = {
+  meta: {
+    type: "problem",
+    docs: {
+      description: "Ban hard-coded user-facing text in JSX; use t('key') instead.",
+    },
+    schema: [],
+    messages: {
+      literal:
+        "Hard-coded UI text \"{{text}}\" is not allowed. Move it to an i18n bundle and use t().",
+    },
+  },
+  create(context) {
+    const namedAttributes = new Set(["title", "placeholder", "aria-label", "alt", "label"]);
+    const decorative = (node) => {
+      const attributes = node.parent?.attributes ?? [];
+      return attributes.some(
+        (attribute) =>
+          attribute.type === "JSXAttribute" &&
+          attribute.name?.name === "aria-hidden" &&
+          attribute.value?.value === "true",
+      );
+    };
+    const report = (node, value) => {
+      const text = value.trim();
+      if (!text || !/\p{L}/u.test(text)) return;
+      if (decorative(node)) return;
+      context.report({ node, messageId: "literal", data: { text } });
+    };
+    return {
+      JSXText(node) {
+        report(node, node.value);
+      },
+      JSXAttribute(node) {
+        if (!namedAttributes.has(node.name?.name)) return;
+        if (node.value?.type !== "Literal" || typeof node.value.value !== "string") return;
+        report(node.value, node.value.value);
+      },
+    };
+  },
+};
+
 export default [
   { ignores: ["**/dist/**", "**/node_modules/**", "**/.expo/**", "**/coverage/**"] },
   js.configs.recommended,
@@ -23,6 +63,17 @@ export default [
   {
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
+  {
+    files: [
+      "school-erp/web/src/**/*.{ts,tsx}",
+      "owner/controller-web/src/**/*.{ts,tsx}",
+      "owner/mobile/app/**/*.{ts,tsx}",
+      "owner/mobile/src/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    plugins: { i18n: { rules: { "no-literal-ui-text": noLiteralUiText } } },
+    rules: { "i18n/no-literal-ui-text": "error" },
   },
   {
     files: ["school-erp/web/**/*.{ts,tsx}"],

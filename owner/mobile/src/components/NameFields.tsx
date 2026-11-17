@@ -37,7 +37,8 @@ export function NameFields({
   value: NameValue;
   onChange: (value: NameValue) => void;
 }) {
-  const t = (key: string) => UI_MESSAGES[locale][key] ?? key;
+  const messages: Record<string, string> = UI_MESSAGES[locale];
+  const t = (key: string) => messages[key] ?? key;
   const set = (field: keyof NameValue) => (next: string) => onChange({ ...value, [field]: next });
 
   const group = (script: "en" | "am") => (

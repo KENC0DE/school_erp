@@ -378,5 +378,8 @@
   "translations.ai_draft": "የAI ረቂቅ",
   "error.ai.not_configured": "AI እስካሁን አልተዘጋጀም",
   "error.ai.suggest_failed": "የAI አቅራቢው ባዶ ጥቆማ መለሰ",
-  "error.i18n.suggest_source": "እንግሊዝኛ የምንጭ ቋንቋ ነው፣ የትርጉም ግብ አይደለም"
+  "error.i18n.suggest_source": "እንግሊዝኛ የምንጭ ቋንቋ ነው፣ የትርጉም ግብ አይደለም",
+  "app.short_name": "SE",
+  "common.format.json": "JSON",
+  "common.format.csv": "CSV"
 }

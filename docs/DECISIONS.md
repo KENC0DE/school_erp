@@ -595,3 +595,25 @@ and recorded here (date, decision, reason).
 - **English is not a target.** Suggestions are rejected for `locale=en` because
   English is the source column; the editor only offers the button on target
   locales.
+
+## 2026-11-17 — P1-20 i18n tooling and Ethiopic font
+
+- **A local ESLint rule bans hard-coded UI text.** `i18n/no-literal-ui-text`
+  reports non-empty JSX text and literal values for `title`, `placeholder`,
+  `aria-label`, `alt` and `label` in the web, controller-web and mobile apps
+  (test files are excluded). Elements marked `aria-hidden="true"` are treated
+  as decorative. The rule intentionally does not guess at runtime-built
+  strings; those still need review.
+- **Missing English keys fail CI; missing Amharic keys are a report.**
+  `scripts/check-i18n.py` fails when source code references a key that is not
+  in the English bundle, when an Amharic bundle contains a key English does
+  not, or when strict mode (`--strict-am`) is requested. Plain missing Amharic
+  keys print a backlog summary and exit 0 so translation work does not block
+  code delivery; the Translation Editor's `missing` filter is the source of
+  the list. `ERP_I18N_ROOT` lets the checker run against a fixture tree.
+- **Noto Sans Ethiopic ships with both clients.** The same OFL-licensed TTF
+  (and its `OFL.txt`) is copied into `school-erp/web/public/fonts` and
+  `owner/mobile/assets/fonts`. Web declares it with `@font-face` +
+  `font-display: swap`; mobile loads it with `expo-font`'s `useFonts` and uses
+  it in the shared text primitives, so Ge'ez glyphs do not depend on the
+  device's installed fonts.

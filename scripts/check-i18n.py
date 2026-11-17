@@ -2,8 +2,12 @@
 """Deterministic i18n checks for CI.
 
 1. Every literal key used through ``t("...")`` in the web/mobile source exists in
-   the default English bundle (core or a module's namespace).
-2. Every English bundle has the same key set as its Amharic counterpart.
+   the default English bundle (core or a module's namespace). This is fatal.
+2. An Amharic bundle must never contain a key that English does not (a stale or
+   misspelled key). This is fatal.
+3. Missing Amharic keys are reported so the Translation Editor backlog is
+   visible in CI, but they do not fail the build while translation is in
+   progress. ``--strict-am`` promotes them to failures.
 
 The check is offline and does not need the API running: it reads the JSON files
 that the seed/startup loads into ``translation_entries``.
@@ -12,11 +16,12 @@ that the seed/startup loads into ``translation_entries``.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("ERP_I18N_ROOT") or Path(__file__).resolve().parents[1]).resolve()
 BACKEND = ROOT / "school-erp" / "backend"
 CORE_I18N = BACKEND / "core" / "i18n"
 MODULES_DIR = BACKEND / "modules"
@@ -62,8 +67,9 @@ def bundles() -> list[tuple[str, Path, Path]]:
     return found
 
 
-def collect_keys() -> tuple[set[str], list[str]]:
+def collect_keys() -> tuple[set[str], list[str], list[str]]:
     problems: list[str] = []
+    missing_am: list[str] = []
     keys: set[str] = set()
     for namespace, en_path, am_path in bundles():
         en = load_json(en_path)
@@ -72,19 +78,17 @@ def collect_keys() -> tuple[set[str], list[str]]:
             keys.update(en)
         else:
             keys.update(f"{namespace}.{key}" for key in en)
-        missing_am = sorted(set(en) - set(am))
-        missing_en = sorted(set(am) - set(en))
-        for key in missing_am:
-            problems.append(f"{en_path.relative_to(ROOT)}: missing am key '{key}'")
-        for key in missing_en:
-            problems.append(f"{am_path.relative_to(ROOT)}: missing en key '{key}'")
+        for key in sorted(set(en) - set(am)):
+            missing_am.append(f"{namespace}:{key}")
+        for key in sorted(set(am) - set(en)):
+            problems.append(f"{am_path.relative_to(ROOT)}: unknown key '{key}' (missing in en)")
 
     for path in LOCAL_MESSAGE_FILES:
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
         keys.update(match.group(1) for match in LOCAL_KEY_PATTERN.finditer(text))
-    return keys, problems
+    return keys, problems, missing_am
 
 
 def collect_references() -> dict[str, list[str]]:
@@ -102,13 +106,25 @@ def collect_references() -> dict[str, list[str]]:
 
 
 def main() -> int:
-    keys, problems = collect_keys()
+    strict_am = "--strict-am" in sys.argv[1:]
+    keys, problems, missing_am = collect_keys()
     references = collect_references()
 
     for key in sorted(references):
         if key not in keys:
             locations = ", ".join(sorted(set(references[key])))
             problems.append(f"missing i18n key '{key}' (used in {locations})")
+
+    if missing_am:
+        label = "problem" if strict_am else "report"
+        print(
+            f"i18n {label}: {len(missing_am)} missing Amharic key(s) "
+            "(use the Translation Editor to fill them)"
+        )
+        for key in missing_am:
+            print(f"  - {key}")
+        if strict_am:
+            problems.extend(f"missing am key '{key}'" for key in missing_am)
 
     scanned = sum(1 for directory in UI_DIRS if directory.exists())
     if problems:
@@ -121,6 +137,8 @@ def main() -> int:
         f"i18n: ok - {len(keys)} keys across {len(bundles())} bundle(s), "
         f"{len(references)} referenced key(s), {scanned} UI source dir(s)"
     )
+    if missing_am:
+        print(f"i18n: {len(missing_am)} Amharic key(s) still need translation")
     return 0
 
 

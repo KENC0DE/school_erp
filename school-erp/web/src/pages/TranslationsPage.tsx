@@ -243,7 +243,7 @@ function EntryEditor({
 }
 
 export function TranslationsPage() {
-  const { t, reload, locale } = useI18n();
+  const { t, reload } = useI18n();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const canView = hasPermission(user?.permissions, "i18n.view");
@@ -389,8 +389,8 @@ export function TranslationsPage() {
             value={draft.locale}
             onChange={(event) => setDraft({ ...draft, locale: event.target.value })}
           >
-            <option value="am">አማርኛ</option>
-            <option value="en">English</option>
+            <option value="am">{t("settings.enum.am")}</option>
+            <option value="en">{t("settings.enum.en")}</option>
           </select>
         </label>
         <label className="space-y-1 text-sm">
@@ -616,8 +616,8 @@ export function TranslationsPage() {
                 value={importFormat}
                 onChange={(event) => setImportFormat(event.target.value as "json" | "csv")}
               >
-                <option value="json">JSON</option>
-                <option value="csv">CSV</option>
+                <option value="json">{t("common.format.json")}</option>
+                <option value="csv">{t("common.format.csv")}</option>
               </select>
             </label>
           </div>

@@ -115,12 +115,24 @@ export function Card({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  title: { fontSize: 28, fontWeight: "700", marginBottom: 8 },
-  muted: { fontSize: 15, lineHeight: 22 },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 8,
+    fontFamily: "NotoSansEthiopic",
+  },
+  muted: { fontSize: 15, lineHeight: 22, fontFamily: "NotoSansEthiopic" },
   button: { borderRadius: 10, paddingVertical: 14, paddingHorizontal: 18, alignItems: "center" },
-  buttonLabel: { fontSize: 16, fontWeight: "600" },
+  buttonLabel: { fontSize: 16, fontWeight: "600", fontFamily: "NotoSansEthiopic" },
   field: { marginBottom: 14 },
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 6 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16 },
+  label: { fontSize: 14, fontWeight: "600", marginBottom: 6, fontFamily: "NotoSansEthiopic" },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    fontFamily: "NotoSansEthiopic",
+  },
   card: { borderWidth: 1, borderRadius: 14, padding: 16 },
 });
