@@ -161,6 +161,16 @@ async def navigation(
                 "module": "core",
             }
         )
+    if principal.can("jobs.view"):
+        items.append(
+            {
+                "key": "jobs",
+                "label_key": "nav.jobs",
+                "path": "/jobs",
+                "icon": "activity",
+                "module": "core",
+            }
+        )
     if principal.can("modules.view") or principal.can("modules.manage"):
         items.append(
             {

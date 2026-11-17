@@ -729,6 +729,42 @@ async def list_deliveries(
     return [_delivery_view(row) for row in rows]
 
 
+async def reset_failed_deliveries(
+    session: AsyncSession,
+    notification_id: str,
+) -> int:
+    """Return a notification's failed channels to the queue (P1-25 retry).
+
+    ``deliver_notification`` only touches ``queued`` logs, so retrying a failed
+    delivery job must first move its failures back to ``queued``. Skipped
+    channels are left alone: they were skipped for a reason (no recipient or no
+    adapter) and retrying them would only skip them again. The caller owns the
+    transaction.
+    """
+    try:
+        identifier = uuid.UUID(str(notification_id))
+    except ValueError as exc:
+        raise NotFound("No such notification", message_key="error.notification.not_found") from exc
+    logs = (
+        (
+            await session.execute(
+                select(DeliveryLog).where(
+                    DeliveryLog.notification_id == identifier,
+                    DeliveryLog.status == "failed",
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for log in logs:
+        log.status = "queued"
+        log.error = None
+        log.sent_at = None
+    await session.flush()
+    return len(logs)
+
+
 async def deliver_notification(
     session: AsyncSession,
     notification_id: str,
@@ -822,6 +858,7 @@ __all__ = [
     "list_templates",
     "mark_all_read",
     "mark_read",
+    "reset_failed_deliveries",
     "send_notification",
     "send_to_users",
     "unread_count",

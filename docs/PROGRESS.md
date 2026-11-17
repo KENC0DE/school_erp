@@ -92,7 +92,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-22 — Files service
 - [x] P1-23 — Notification service
 - [x] P1-24 — Instance setup wizard
-- [ ] P1-25 — Jobs UI
+- [x] P1-25 — Jobs UI
 - [ ] P1-26 — API compatibility guard
 - [ ] P1-SEED — Update seed
 

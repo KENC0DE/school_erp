@@ -24,6 +24,7 @@ CORE_PERMISSIONS = [
     Perm("settings.view", "core.perm.settings.view"),
     Perm("settings.manage", "core.perm.settings.manage"),
     Perm("jobs.view", "core.perm.jobs.view"),
+    Perm("jobs.manage", "core.perm.jobs.manage"),
     Perm("files.view", "core.perm.files.view"),
     Perm("files.upload", "core.perm.files.upload"),
     Perm("files.manage", "core.perm.files.manage"),

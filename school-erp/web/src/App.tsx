@@ -6,6 +6,7 @@ import { Shell } from "./components/Shell";
 import { ActivityPage } from "./pages/ActivityPage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
+import { JobsPage } from "./pages/JobsPage";
 import { LoginPage } from "./pages/Login";
 import { ModulesPage } from "./pages/ModulesPage";
 import { NotFoundPage } from "./pages/NotFound";
@@ -66,6 +67,7 @@ export function AppRoutes() {
         <Route element={<Shell />}>
           <Route index element={<DashboardPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="jobs" element={<JobsPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="sample" element={<SamplePage />} />

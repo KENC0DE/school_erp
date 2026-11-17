@@ -800,3 +800,35 @@ and recorded here (date, decision, reason).
   admin, and the reused theme/file services add their own `theme.default` and
   `file.upload` entries. No password or logo bytes enter the audit chain.
 
+
+## 2026-11-18 — P1-25 Jobs UI
+
+- **The API never returns `Job.error`.** Workers store the raw exception for
+  operators, but SQL, file paths or provider responses must not reach a user.
+  The list view exposes only `error_key`, one of a small set of translated
+  messages chosen by job kind, and an unknown kind falls back to a generic
+  failure message. Tests assert the raw text is absent from the response body.
+- **Retry is a separate permission.** `jobs.view` shows the queue (director
+  and academic head already held it); the new `jobs.manage` gates
+  `POST /jobs/{id}/retry`. As with `files.*`, `jobs.manage` is declared but not
+  added to the shipped default-role matrix, so schools can grant it without
+  changing the documented defaults; the Super Admin holds it through `*`.
+- **Retry resets the row and audits it.** Only `failed` jobs are accepted
+  (`409 JOB_NOT_FAILED`); unsupported kinds (`422`) and missing payload ids
+  (`422`) are refused before any mutation. A retry clears progress, error,
+  result and timestamps, records `job.retry` with the before/after views, and
+  re-enqueues through the same Celery task. Queueing is skipped under
+  `app_env=test` so no test run touches Redis.
+- **Notification retries requeue failed channels first.** `deliver_notification`
+  only processes `queued` delivery logs, so the retry path moves that
+  notification's `failed` logs back to `queued` and clears their error while
+  keeping `attempts` as history. `skipped` logs are deliberately untouched:
+  they were skipped for a reason (no phone number, no adapter) and would only
+  be skipped again.
+- **The page polls only while work is active.** `GET /jobs` supports `status`,
+  `kind`, `limit` and `offset`; an unknown status returns `INVALID_FILTER` with
+  the allowed list. The web page refetches every five seconds only when a
+  visible row is `queued` or `running`, so a quiet page makes no requests.
+- **Retry history is preserved.** The audit chain keeps every failed attempt;
+  the single mutable row is restored to `queued`, matching the platform rule
+  that jobs are operational state rather than an append-only record.
