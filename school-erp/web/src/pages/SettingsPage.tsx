@@ -216,6 +216,10 @@ export function SettingsPage() {
     permissions.includes("*") ||
     permissions.includes("modules.view") ||
     permissions.includes("modules.manage");
+  const canViewLanguages =
+    permissions.includes("*") ||
+    permissions.includes("i18n.view") ||
+    permissions.includes("i18n.manage");
 
   const settings = useQuery({
     queryKey: ["settings"],
@@ -249,6 +253,23 @@ export function SettingsPage() {
               className="text-sm font-medium text-primary hover:underline"
             >
               {t("settings.modules.link")}
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {canViewLanguages ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.languages.title")}</CardTitle>
+            <CardDescription>{t("settings.languages.hint")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              to="/settings/languages"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {t("settings.languages.link")}
             </Link>
           </CardContent>
         </Card>

@@ -18,8 +18,8 @@ async def test_school_layer_override_wins(app, client):
     async with app.state.db.session() as session:
         await session.execute(
             text(
-                "INSERT INTO translation_entries (id, namespace, key, locale, value, status, source, layer, created_at, updated_at) "
-                "VALUES ('11111111-1111-1111-1111-111111111111', 'core', 'app.name', 'en', 'Demo Academy ERP', 'approved', 'human', 'school', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+                "INSERT INTO translation_entries (id, namespace, key, locale, value, status, source, layer, row_version, created_at, updated_at) "
+                "VALUES ('11111111-1111-1111-1111-111111111111', 'core', 'app.name', 'en', 'Demo Academy ERP', 'approved', 'human', 'school', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
             )
         )
         await session.commit()

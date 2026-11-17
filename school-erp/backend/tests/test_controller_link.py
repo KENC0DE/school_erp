@@ -314,7 +314,11 @@ async def test_shipping_failure_backs_off_then_succeeds(controller, tmp_path):
                 assert row.last_attempt_at is not None
                 assert row.last_error and "503" in row.last_error
                 assert row.available_at is not None
-                assert row.available_at > datetime.now(UTC)
+                # SQLite returns naive datetimes even for timezone=True columns.
+                available_at = row.available_at
+                if available_at.tzinfo is None:
+                    available_at = available_at.replace(tzinfo=UTC)
+                assert available_at > datetime.now(UTC)
                 row.available_at = datetime.now(UTC) - timedelta(seconds=1)
             await session.commit()
 

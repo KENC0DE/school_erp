@@ -85,7 +85,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-15 — Ethiopian calendar package (TS) and module (Python)
 - [x] P1-16 — Money package and library (ETB, santim)
 - [x] P1-17 — Custom fields engine
-- [ ] P1-18 — Translation Editor
+- [x] P1-18 — Translation Editor
 - [ ] P1-19 — "Suggest with AI" hook in the editor (calls the action registry
 - [ ] P1-20 — i18n tooling
 - [ ] P1-21 — Theme Manager

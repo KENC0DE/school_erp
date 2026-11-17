@@ -22,6 +22,38 @@ describe("i18n runtime loader", () => {
     expect((init.headers as Record<string, string>)["If-None-Match"]).toBe('W/"abc"');
   });
 
+  it("picks up an edited translation without a redeploy", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            locale: "am",
+            namespace: "core",
+            messages: { "nav.dashboard": "ዳሽቦርድ" },
+          }),
+          { status: 200, headers: { etag: 'W/"v1"' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            locale: "am",
+            namespace: "core",
+            messages: { "nav.dashboard": "ዋና ገጽ" },
+          }),
+          { status: 200, headers: { etag: 'W/"v2"' } },
+        ),
+      );
+    const loader = new TranslationLoader({ baseUrl: "http://localhost:8000", fetcher });
+    expect((await loader.load("am", "core")).messages["nav.dashboard"]).toBe("ዳሽቦርድ");
+    // The editor write changes the ETag, so the same loader instance fetches the
+    // new bundle on the next load instead of keeping the stale cache.
+    expect((await loader.load("am", "core")).messages["nav.dashboard"]).toBe("ዋና ገጽ");
+    const [, init] = fetcher.mock.calls[1] as unknown as [string, RequestInit];
+    expect((init.headers as Record<string, string>)["If-None-Match"]).toBe('W/"v1"');
+  });
+
   it("keeps other bundles when one namespace is unavailable", async () => {
     const fetcher = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);

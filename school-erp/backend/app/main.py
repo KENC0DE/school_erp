@@ -15,6 +15,7 @@ from core.auth.web import router as web_auth_router
 from core.bootstrap import bootstrap
 from core.custom_fields.router import router as custom_fields_router
 from core.db.session import Database
+from core.i18n.editor_router import router as i18n_editor_router
 from core.i18n.router import router as i18n_router
 from core.jobs.router import router as jobs_router
 from core.modules.gating import module_gate
@@ -55,6 +56,7 @@ CORE_ROUTERS = [
     modules_router,
     custom_fields_router,
     people_router,
+    i18n_editor_router,
     i18n_router,
     themes_router,
     settings_router,

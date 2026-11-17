@@ -54,7 +54,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "custom_field_defs",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0010_custom_fields"
+    assert version == "0011_i18n_soft_delete"
 
     assert {
         "failed_login_count",

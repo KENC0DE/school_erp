@@ -56,6 +56,7 @@ DEFAULT_ROLES: tuple[DefaultRole, ...] = (
             "audit.activity.view",
             "audit.rollback",
             "i18n.view",
+            "i18n.manage",
             "themes.view",
             "jobs.view",
             "settings.view",

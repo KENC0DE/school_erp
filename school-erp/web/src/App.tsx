@@ -13,6 +13,7 @@ import { ResetPasswordPage } from "./pages/ResetPassword";
 import { RolesPage } from "./pages/RolesPage";
 import { SamplePage } from "./pages/SamplePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { TranslationsPage } from "./pages/TranslationsPage";
 import { UsersPage } from "./pages/UsersPage";
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
 import { I18nProvider, useI18n } from "./providers/I18nProvider";
@@ -66,6 +67,7 @@ export function AppRoutes() {
           <Route path="activity" element={<ActivityPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
+          <Route path="settings/languages" element={<TranslationsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

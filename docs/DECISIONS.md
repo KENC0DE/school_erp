@@ -541,3 +541,36 @@ and recorded here (date, decision, reason).
 - **Definitions are audited and soft-deleted** (`custom_fields.create/update/
   delete`, entity type `custom_field_def`). A deleted definition is hidden from
   forms immediately; existing entity JSON keeps its historical values.
+
+## 2026-11-17 — P1-18 translation editor
+
+- **English is the source column; the target is the effective target row.**
+  Each editor row is one `(namespace, key)` pair. `source` always comes from
+  the effective English row and `value` from the most specific target layer
+  (`default < central < school`). A key with no target-locale row is reported
+  as `missing` even though the runtime still falls back to English, so the
+  editor never hides untranslated text behind the fallback.
+- **The school app only writes the `school` layer.** Creating or editing a
+  translation never mutates a bundled default or a central entry. Reset
+  soft-deletes the school override and restores the underlying default or
+  central value, so the original rows remain auditable and a later edit
+  restores the same override row instead of creating a duplicate.
+- **Imports are all-or-nothing.** The whole file is parsed, every key must
+  already exist in the module (typos cannot create orphan translations), and
+  every value is validated before the first write. `dry_run` reports what
+  would change without writing. Imports record one `i18n.import` audit entry
+  with the namespace, locale, format and changed keys; this action is not
+  revertible as a single batch.
+- **`needs_review` is a real status, not a label.** Import can insert drafts
+  as `needs_review` (the future "Suggest with AI" flow uses the same status),
+  and the editor can promote them to `approved`. Status filters query the
+  effective target row.
+- **Editor routes live under `/api/v1/i18n/editor`** and are registered before
+  the public `/{locale}/{namespace}` bundle route. Otherwise `editor` would be
+  parsed as a locale. Bundle responses keep their ETag and are re-fetched by
+  the web and mobile loaders on the next load, so an edit appears without a
+  redeploy.
+- **`translation_entries` now carries `row_version`** (in addition to
+  `deleted_at`/`deleted_by` from migration `0011_i18n_soft_delete`) because
+  every business table follows the shared soft-delete/row-version rules and
+  reset is a soft delete.

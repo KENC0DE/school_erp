@@ -160,6 +160,16 @@ async def navigation(
                 "module": "core",
             }
         )
+    if principal.can("i18n.view") or principal.can("i18n.manage"):
+        items.append(
+            {
+                "key": "languages",
+                "label_key": "nav.languages",
+                "path": "/settings/languages",
+                "icon": "languages",
+                "module": "core",
+            }
+        )
     for manifest in registry.all():
         state = states.get(manifest.key)
         if not state or not state["available"]:
