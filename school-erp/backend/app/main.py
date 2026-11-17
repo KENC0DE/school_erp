@@ -19,6 +19,7 @@ from core.jobs.router import router as jobs_router
 from core.modules.gating import module_gate
 from core.modules.registry import ModuleRegistry
 from core.modules.router import router as modules_router
+from core.people.router import router as people_router
 from core.notifications.adapters import build_adapters
 from core.rbac.router import router as rbac_router
 from core.settings.router import router as settings_router
@@ -51,6 +52,7 @@ CORE_ROUTERS = [
     rbac_router,
     audit_router,
     modules_router,
+    people_router,
     i18n_router,
     themes_router,
     settings_router,

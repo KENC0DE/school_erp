@@ -4,6 +4,8 @@ from core.modules.manifest import Perm
 
 CORE_PERMISSIONS = [
     Perm("users.view", "core.perm.users.view"),
+    Perm("people.view", "core.perm.people.view"),
+    Perm("people.manage", "core.perm.people.manage"),
     Perm("users.manage", "core.perm.users.manage"),
     Perm("roles.view", "core.perm.roles.view"),
     Perm("roles.manage", "core.perm.roles.manage"),

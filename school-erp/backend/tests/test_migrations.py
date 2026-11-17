@@ -50,9 +50,10 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "idempotency_keys",
         "settings",
         "password_reset_tokens",
+        "persons",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0008_audit_retries"
+    assert version == "0009_people"
 
     assert {
         "failed_login_count",

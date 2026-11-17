@@ -80,8 +80,8 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-10 — Activity history UI (school)
 - [x] P1-11 — Rollback/restore
 - [x] P1-12 — Controller audit vault UI
-- [ ] P1-13 — Person and name model
-- [ ] P1-14 — Name form component (web and mobile) with both script fields, a hint to fill both, and no "last name"…
+- [x] P1-13 — Person and name model
+- [x] P1-14 — Name form component (web and mobile) with both script fields, a hint to fill both, and no "last name"…
 - [ ] P1-15 — Ethiopian calendar package (TS) and module (Python)
 - [ ] P1-16 — Money package and library (ETB, santim)
 - [ ] P1-17 — Custom fields engine

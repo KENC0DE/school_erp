@@ -251,5 +251,20 @@
   "auth.back_to_sign_in": "Back to sign in",
   "core.perm.audit.rollback": "Roll back changes",
   "activity.revert": "Roll back",
-  "activity.restore": "Restore"
+  "activity.restore": "Restore",
+  "core.perm.people.view": "Search people",
+  "core.perm.people.manage": "Create and edit people",
+  "error.invalid_name": "Provide at least one full three-part name",
+  "error.reason_required": "A reason is required",
+  "name.title": "Full name",
+  "name.latin": "Latin script",
+  "name.amharic": "Amharic script",
+  "name.given": "Given name",
+  "name.father": "Father's name",
+  "name.grandfather": "Grandfather's name",
+  "name.given.am": "የራስ ስም",
+  "name.father.am": "የአባት ስም",
+  "name.grandfather.am": "የአያት ስም",
+  "name.hint": "Fill in both scripts when you can; official documents usually use the Amharic name.",
+  "name.no_last_name": "Ethiopian names have no last name: given name, father’s name, grandfather’s name."
 }

@@ -99,6 +99,8 @@ DEFAULT_ROLES: tuple[DefaultRole, ...] = (
         permissions=(
             "users.view",
             "users.manage",
+            "people.view",
+            "people.manage",
             "roles.view",
             "audit.activity.view",
             "ai.use",
