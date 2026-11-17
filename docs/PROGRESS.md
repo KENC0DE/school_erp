@@ -44,7 +44,7 @@ Last verified: 2026-11-17 (see "Phase 0 verification" at the end of this section
 - [x] Every connection in the architecture diagram (ARCH §4.1) is exercised by backend/controller tests
 - [ ] Mobile app verified in Expo Go on a physical phone — **not possible on this host**; `expo-doctor` 20/20, Jest 21/21, web+android `expo export` succeed, and the signed directory record verifies against the embedded dev key
 - [x] `docs/PROGRESS.md` and `docs/DECISIONS.md` are current
-- [ ] Tag `v0.0-skeleton` (after the P0 commits)
+- [x] Tag `v0.0-skeleton` (after the P0 commits)
 
 ### Phase 0 verification (2026-11-17)
 
@@ -95,6 +95,27 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-25 — Jobs UI
 - [x] P1-26 — API compatibility guard
 - [x] P1-SEED — Update seed
+
+### Checkpoint P1
+- [x] All tests green. `test_permission_matrix_covers_every_route_and_seeded_role` covers every route × shipped role.
+- [x] Owner script verified against a fresh seed: all 11 accounts log in with distinct menus; granting `users.view` to the limited role makes the menu appear; an Amharic edit reaches the public bundle; an imported theme is available; Super Admin sees activity history; a note update is rolled back; the audit chain verifies; the entries ship to and appear in the controller vault.
+- [x] Tag `v0.1-foundations`.
+
+### Phase 1 verification (2026-11-18)
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest school-erp/backend/tests` | 207 passed |
+| `uv run pytest tests shared/py/tests owner/controller-api/tests` | 55 passed |
+| school web `npx tsc --noEmit && npx vitest run` + `npm run build` | 51 passed (13 files); build OK |
+| controller web `npx tsc --noEmit && npx vitest run` + `npm run build` | 13 passed (5 files); build OK |
+| mobile `npx tsc --noEmit && npx jest` | 27 passed (7 suites) |
+| shared TS packages (api-client, i18n, tokens, module-sdk, calendar, money) | typecheck + Vitest pass |
+| `uv run ruff check .` / `uv run ruff format --check .` | clean |
+| `./scripts/check-boundaries.sh` / `uv run lint-imports` | clean (4 contracts kept) |
+| `python3 scripts/check-i18n.py` | 702 keys, 408 referenced, 0 missing |
+| `./scripts/gen-api.sh` / `uv run python scripts/check-api-compat.py` | client current; 95 released paths compatible |
+| P1 owner script (automated against the seeded SQLite instance) | 11 role logins, permission change, Amharic edit, theme import, activity history, rollback, chain verify; 28 entries in the controller vault |
 
 ## Phase 2 — Academic structure, students and admissions
 
