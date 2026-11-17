@@ -78,9 +78,7 @@ def apply_visibility(
             return stmt.where(false())
         stmt = stmt.where(AuditLog.module.in_(modules))
     if hide_actor_ids:
-        stmt = stmt.where(
-            or_(AuditLog.actor_id.is_(None), ~AuditLog.actor_id.in_(hide_actor_ids))
-        )
+        stmt = stmt.where(or_(AuditLog.actor_id.is_(None), ~AuditLog.actor_id.in_(hide_actor_ids)))
     return stmt
 
 

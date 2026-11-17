@@ -70,9 +70,7 @@ def is_revertible(entity_type: str | None, action: str) -> bool:
     return True
 
 
-async def _load_entry(
-    session: AsyncSession, principal: Principal, seq: int
-) -> AuditLog:
+async def _load_entry(session: AsyncSession, principal: Principal, seq: int) -> AuditLog:
     row = (
         await session.execute(
             apply_visibility(
@@ -97,9 +95,7 @@ async def revert_entry(
 ) -> dict:
     """Apply the earlier state of one audit entry and audit the rollback."""
     if not reason or not reason.strip():
-        raise ValidationFailed(
-            "A reason is required to revert a change", message_key="error.reason_required"
-        )
+        raise ValidationFailed("A reason is required to revert a change", message_key="error.reason_required")
     row = await _load_entry(session, principal, seq)
     reverter = get_reverter(row.entity_type)
     if reverter is None or not row.entity_id:
@@ -116,13 +112,9 @@ async def revert_entry(
         )
     is_delete = row.action.endswith(".delete")
     if restore and not is_delete:
-        raise Conflict(
-            "Only a deletion can be restored", message_key="error.not_revertible"
-        )
+        raise Conflict("Only a deletion can be restored", message_key="error.not_revertible")
     if restore and reverter.restore is None:
-        raise Conflict(
-            "This record has no restore handler", message_key="error.not_revertible"
-        )
+        raise Conflict("This record has no restore handler", message_key="error.not_revertible")
 
     ctx = RevertContext(
         session=session,

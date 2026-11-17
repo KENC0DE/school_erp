@@ -93,6 +93,72 @@ describe("VaultPage", () => {
     expect(seen[0]).toContain("limit=100");
   });
 
+  it("filters by search text and shows chain health plus alerts", async () => {
+    const seen: string[] = [];
+    installFetch((url) => {
+      const auth = handleAuth(url);
+      if (auth) return auth;
+      if (url.endsWith("/controller/v1/schools")) {
+        return { body: { items: [SCHOOL], next_cursor: null } };
+      }
+      if (url.includes("/controller/v1/vault/status")) {
+        return {
+          body: {
+            items: [
+              {
+                school_id: "s1",
+                school_name: "Demo Academy",
+                last_seq: 42,
+                chain_head: "abc123",
+                entries: 42,
+                broken_entries: 1,
+                ok: false,
+              },
+            ],
+            ok: false,
+          },
+        };
+      }
+      if (url.includes("/controller/v1/vault/alerts")) {
+        return {
+          body: {
+            items: [
+              {
+                id: "a1",
+                school_id: "s1",
+                school_name: "Demo Academy",
+                kind: "MASS_DELETE",
+                message: "12 deletions by u1 within 10 minutes",
+                created_at: null,
+                resolved_at: null,
+              },
+            ],
+            next_cursor: null,
+          },
+        };
+      }
+      if (url.includes("/controller/v1/vault")) {
+        seen.push(url);
+        return { body: { items: [BROKEN_ENTRY], next_cursor: null } };
+      }
+      return notFound(url);
+    });
+
+    render(<App />);
+
+    expect(await screen.findByTestId("vault-alert-a1")).toHaveTextContent("MASS_DELETE");
+    expect(screen.getByTestId("vault-status-s1")).toHaveTextContent("42 entries");
+
+    fireEvent.change(screen.getByTestId("vault-search"), {
+      target: { value: "invoice" },
+    });
+    fireEvent.click(screen.getByTestId("vault-search-apply"));
+
+    await waitFor(() =>
+      expect(seen.some((url) => url.includes("q=invoice"))).toBe(true),
+    );
+  });
+
   it("shows an error state when the vault request fails", async () => {
     installFetch((url) => {
       const auth = handleAuth(url);

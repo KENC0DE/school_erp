@@ -63,11 +63,38 @@ export interface VaultResponse {
 
 export interface VaultStatus {
   school_id: string;
+  school_name?: string | null;
   last_seq: number;
   chain_head: string | null;
   entries: number;
   broken_entries: number;
   ok: boolean;
+}
+
+export interface VaultStatusResponse {
+  school_id?: string;
+  school_name?: string | null;
+  last_seq?: number;
+  chain_head?: string | null;
+  entries?: number;
+  broken_entries?: number;
+  ok?: boolean;
+  items?: VaultStatus[];
+}
+
+export interface VaultAlert {
+  id: string;
+  school_id: string | null;
+  school_name: string | null;
+  kind: string;
+  message: string;
+  created_at: string | null;
+  resolved_at: string | null;
+}
+
+export interface VaultAlertsResponse {
+  items: VaultAlert[];
+  next_cursor: string | null;
 }
 
 /**

@@ -55,10 +55,7 @@ async def test_tier_b_actions_are_never_returned(app, client, manager_headers, a
     assert "auth.password_reset" not in actions
     assert "auth.user.invited" in actions
     assert "sample.notes.create" in actions
-    assert all(
-        not ({"ip", "user_agent", "request_id", "prev_hash", "hash"} & set(item))
-        for item in items
-    )
+    assert all(not ({"ip", "user_agent", "request_id", "prev_hash", "hash"} & set(item)) for item in items)
     assert next(item for item in items if item["seq"] == business_seq)["after"] == {
         "email": "new@demo.school"
     }
@@ -137,9 +134,7 @@ async def test_super_admin_actions_are_hidden_without_the_extra_permission(
     await client.post(
         "/api/v1/sample/notes", json={"content": "by the super admin"}, headers=superadmin_headers
     )
-    await client.post(
-        "/api/v1/sample/notes", json={"content": "by the manager"}, headers=manager_headers
-    )
+    await client.post("/api/v1/sample/notes", json={"content": "by the manager"}, headers=manager_headers)
 
     activity = await client.get("/api/v1/audit/activity", headers=auditor_headers)
     items = activity.json()["items"]
@@ -188,15 +183,11 @@ async def test_navigation_links_activity_only_for_viewers(client, limited_header
     assert item["label_key"] == "nav.activity"
 
 
-async def test_filters_by_actor_module_entity_action_and_date(
-    app, client, manager_headers, auditor_headers
-):
+async def test_filters_by_actor_module_entity_action_and_date(app, client, manager_headers, auditor_headers):
     me = await client.get("/api/v1/auth/me", headers=manager_headers)
     manager_id = me.json()["id"]
 
-    first = await client.post(
-        "/api/v1/sample/notes", json={"content": "filter one"}, headers=manager_headers
-    )
+    first = await client.post("/api/v1/sample/notes", json={"content": "filter one"}, headers=manager_headers)
     second = await client.post(
         "/api/v1/sample/notes", json={"content": "filter two"}, headers=manager_headers
     )

@@ -19,9 +19,7 @@ async def _note_activity(client, headers, note_id):
 async def test_revert_updates_entity_and_links_the_new_entry(
     app, client, manager_headers, superadmin_headers, auditor_headers
 ):
-    created = await client.post(
-        "/api/v1/sample/notes", json={"content": "original"}, headers=manager_headers
-    )
+    created = await client.post("/api/v1/sample/notes", json={"content": "original"}, headers=manager_headers)
     assert created.status_code == 200
     note_id = created.json()["id"]
     version = created.json()["row_version"]
@@ -76,9 +74,7 @@ async def test_revert_updates_entity_and_links_the_new_entry(
         assert stored.reverts_id is None
 
 
-async def test_revert_requires_a_reason_and_a_revertible_entity(
-    client, superadmin_headers
-):
+async def test_revert_requires_a_reason_and_a_revertible_entity(client, superadmin_headers):
     created = await client.post(
         "/api/v1/sample/notes", json={"content": "reason please"}, headers=superadmin_headers
     )
@@ -107,9 +103,7 @@ async def test_restore_brings_back_a_soft_deleted_note(client, superadmin_header
     )
     note_id = created.json()["id"]
 
-    deleted = await client.delete(
-        f"/api/v1/sample/notes/{note_id}", headers=superadmin_headers
-    )
+    deleted = await client.delete(f"/api/v1/sample/notes/{note_id}", headers=superadmin_headers)
     assert deleted.status_code == 200
     entries = await _note_activity(client, superadmin_headers, note_id)
     delete_entry = next(item for item in entries if item["action"] == "sample.notes.delete")
@@ -130,16 +124,12 @@ async def test_restore_brings_back_a_soft_deleted_note(client, superadmin_header
     assert note.json()["content"] == "delete me"
 
     entries = await _note_activity(client, superadmin_headers, note_id)
-    restore_entry = next(
-        item for item in entries if item["seq"] == restored.json()["audit_seq"]
-    )
+    restore_entry = next(item for item in entries if item["seq"] == restored.json()["audit_seq"])
     assert restore_entry["action"] == "sample_note.restore"
     assert restore_entry["reverts_id"] == str(delete_entry["seq"])
 
 
-async def test_non_revertible_entities_return_a_clear_conflict(
-    app, client, superadmin_headers
-):
+async def test_non_revertible_entities_return_a_clear_conflict(app, client, superadmin_headers):
     async with app.state.db.session() as session:
         from core.audit.service import record
 

@@ -90,9 +90,7 @@ async def activity(
     if date_to:
         stmt = stmt.where(AuditLog.ts <= as_utc(date_to))
 
-    rows = list(
-        (await session.execute(stmt.order_by(AuditLog.seq.desc()).limit(limit))).scalars().all()
-    )
+    rows = list((await session.execute(stmt.order_by(AuditLog.seq.desc()).limit(limit))).scalars().all())
     names = await actor_names(session, rows)
     return {"items": [serialize_entry(row, names) for row in rows], "next_cursor": None}
 
@@ -109,14 +107,10 @@ async def activity_options(
         return apply_visibility(stmt, modules=modules, hide_actor_ids=hide)
 
     module_rows = (
-        await session.execute(
-            visible(select(AuditLog.module).order_by(AuditLog.module).distinct())
-        )
+        await session.execute(visible(select(AuditLog.module).order_by(AuditLog.module).distinct()))
     ).scalars()
     action_rows = (
-        await session.execute(
-            visible(select(AuditLog.action).order_by(AuditLog.action).distinct())
-        )
+        await session.execute(visible(select(AuditLog.action).order_by(AuditLog.action).distinct()))
     ).scalars()
     actor_rows = (
         await session.execute(

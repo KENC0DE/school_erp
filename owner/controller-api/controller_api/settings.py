@@ -40,6 +40,13 @@ class ControllerSettings(BaseSettings):
     support_session_minutes: int = 10
     directory_rate_limit_per_minute: int = 30
 
+    # Audit vault suspicious-pattern thresholds (P1-12)
+    vault_mass_delete_threshold: int = 10
+    vault_mass_delete_window_minutes: int = 10
+    vault_off_hours_start: int = 22
+    vault_off_hours_end: int = 6
+    vault_off_hours_threshold: int = 5
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
