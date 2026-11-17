@@ -862,3 +862,39 @@ and recorded here (date, decision, reason).
 - **System routes stay outside the policy.** `/health`, `/ready` and other
   non-`/api/v1` paths are ignored by the checker; the versioning policy and the
   snapshot cover the school API surface only.
+
+## 2026-11-18 — P1-SEED demo data
+
+- **Every mutation goes through the audited service path.** Earlier seed code
+  inserted `SampleNote` and school translations directly. The seed now calls
+  `set_entry`, `import_theme`, `set_setting` + `record` and the `sample.notes.create`
+  action, and records the role assignments it makes. A fresh demo instance
+  therefore starts with real activity history (role grants, role-permission
+  change, i18n creates, theme imports, a settings update and a note) instead of
+  an empty audit page, and the entries hash-chain exactly like live changes.
+- **Audit history is generated only when something changes.** Re-running the
+  seed is a no-op: role assignments are compared before replacing, translation
+  `set_entry` audits only real edits, themes are imported only when missing or
+  drifted, and the sample setting/note are skipped when already present.
+  Running the seed twice leaves every table count and the audit count unchanged.
+- **The demo-only `limited` role is verified, not recreated blindly.** Its
+  permission set is compared with `DEMO_LIMITED_PERMISSIONS`; only a difference
+  triggers the bulk replace and the `rbac.role.permissions` audit entry. All
+  shipped default roles still come from `ensure_default_roles`, so §1 accounts
+  always map to the documented role keys.
+- **Four school-layer overrides and two example themes.** The overrides cover
+  the dashboard subtitle, the app tagline, the welcome line and the language
+  hint, which exercises `default < central < school` on more than one key. The
+  `highlands` and `sunset` themes reuse the shipped token map with different
+  primary/accent colours and radii; they pass the same WCAG contrast checks as
+  any imported theme, stay selectable, and do not replace the builtin default,
+  so first-run theme behaviour remains predictable.
+- **Seed scripts are not a privileged back door.** They still talk to the same
+  services and the same license verification path as the application, and the
+  seed refuses `APP_ENV=production`.
+- **The seed registers every mapper before creating tables.** `create_all()`
+  only creates tables whose models have been imported. The seed imports
+  `app.main` (which imports every router and therefore every model) before
+  `Database.create_all()`, so the demo database has `notification_templates`,
+  `jobs`, `files` and the rest. Without this, the seed succeeded but the first
+  request that touched notifications failed with "no such table".

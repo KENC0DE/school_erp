@@ -51,9 +51,79 @@ DEMO_SCHOOL_CODE = "DEMO"
 DEMO_SCHOOL_NAME = "Demo Academy"
 DEMO_API_BASE_URL = "http://localhost:8000"
 CANONICAL_ENROLLMENT_TOKEN = "dev-enroll-DEMO-2026"
-SCHOOL_I18N_OVERRIDE_KEY = ("core", "dashboard.subtitle", "am")
-SCHOOL_I18N_OVERRIDE_VALUE = "ይህ ጽሑፍ በትምህርት ቤቱ ተተክቷል። (school override)"
+# School-layer translation overrides. They prove the default < central < school
+# precedence and give the activity history real i18n entries to show.
+SCHOOL_I18N_OVERRIDES: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "core",
+        "dashboard.subtitle",
+        "am",
+        "ይህ ጽሑፍ በትምህርት ቤቱ ተተክቷል። (school override)",
+    ),
+    (
+        "core",
+        "app.tagline",
+        "am",
+        "ትምህርት ቤትዎን በግልጽ ያስተዳድሩ",
+    ),
+    (
+        "core",
+        "dashboard.welcome",
+        "am",
+        "እንኳን ደህና መጡ፣ {{name}}",
+    ),
+    (
+        "core",
+        "dashboard.language_hint",
+        "am",
+        "ቋንቋውን ቀይረው ተመሳሳዩን ገጽ በአማርኛ ይመልከቱ።",
+    ),
+)
+
+# Two selectable themes prove that imported themes survive a reset and appear in
+# the Theme Manager next to the builtin default. Colours are checked against the
+# same WCAG contrast pairs as every imported theme.
+DEMO_THEMES: tuple[dict, ...] = (
+    {
+        "key": "highlands",
+        "name": "Highlands",
+        "description": "Cool blue highlights inspired by the Ethiopian highlands.",
+        "light": {
+            "primary": "oklch(0.42 0.12 250)",
+            "primary-foreground": "oklch(0.985 0 0)",
+            "accent": "oklch(0.95 0.04 250)",
+            "accent-foreground": "oklch(0.205 0 0)",
+        },
+        "dark": {
+            "primary": "oklch(0.72 0.13 250)",
+            "primary-foreground": "oklch(0.145 0 0)",
+            "accent": "oklch(0.3 0.05 250)",
+            "accent-foreground": "oklch(0.985 0 0)",
+        },
+        "radius": "0.75rem",
+    },
+    {
+        "key": "sunset",
+        "name": "Sunset",
+        "description": "Warm amber highlights for a softer evening palette.",
+        "light": {
+            "primary": "oklch(0.48 0.12 60)",
+            "primary-foreground": "oklch(0.985 0 0)",
+            "accent": "oklch(0.95 0.05 60)",
+            "accent-foreground": "oklch(0.205 0 0)",
+        },
+        "dark": {
+            "primary": "oklch(0.75 0.14 60)",
+            "primary-foreground": "oklch(0.145 0 0)",
+            "accent": "oklch(0.32 0.06 60)",
+            "accent-foreground": "oklch(0.985 0 0)",
+        },
+        "radius": "0.5rem",
+    },
+)
+
 SAMPLE_NOTE = "Welcome to the demo school! This note was created by the seed."
+SAMPLE_SETTING_KEY = "school_profile.name"
 
 
 def fail(message: str, code: int = 1) -> None:
@@ -225,19 +295,59 @@ DEMO_USERS: list[tuple[str, str, str]] = [
 ]
 
 
+def _demo_theme_tokens(spec: dict) -> dict:
+    """Build a full token map from the shipped palette plus the demo accents."""
+    from core.themes.tokens import DARK, LIGHT
+
+    light = {**LIGHT, **spec["light"], "radius": spec["radius"]}
+    dark = {**DARK, **spec["dark"], "radius": spec["radius"]}
+    for values in (light, dark):
+        values["sidebar-primary"] = values["primary"]
+        values["sidebar-primary-foreground"] = values["primary-foreground"]
+    return {"light": light, "dark": dark}
+
+
+def _school_principal(user) -> object:
+    """A Super Admin principal used to run audited service functions in the seed."""
+    from core.auth.principal import Principal
+
+    return Principal(
+        actor_id=str(user.id),
+        actor_type="user",
+        via="api",
+        display_name=user.display_name,
+        email=user.email,
+        roles=["super_admin"],
+        permissions={"*"},
+        scopes={"*": {"all"}},
+    )
+
+
 async def seed_school(school_settings, controller_summary: dict) -> dict:
+    # Importing the app factory module registers every core and module ORM mapper
+    # with Base.metadata, so create_all() makes every table the running server
+    # expects (notifications, files, jobs, ...).
+    import app.main  # noqa: F401
+    from core.actions.registry import ActionContext
+    from core.audit.service import record
     from core.auth.models import User
     from core.auth.security import hash_password, verify_password
     from core.controller_link.service import identity
     from core.db.session import Database
-    from core.i18n.models import TranslationEntry
+    from core.i18n.editor import set_entry
     from core.i18n.service import load_defaults
     from core.modules.licensing import apply_license, ensure_module_rows
     from core.modules.models import InstanceModule
     from core.modules.registry import ModuleRegistry
     from core.rbac.defaults import ensure_default_roles
     from core.rbac.models import Role, RolePermission, UserRole
-    from core.themes.service import ensure_default_theme
+    from core.settings.core_schema import CoreSettings
+    from core.settings.models import INSTANCE, Setting
+    from core.settings.service import set_setting
+    from core.themes.importers import ImportedTheme
+    from core.themes.models import Theme
+    from core.themes.service import ensure_default_theme, import_theme
+    from modules.sample.actions import create_note
     from modules.sample.models import SampleNote
     from sqlalchemy import delete, select
 
@@ -285,13 +395,26 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
                 limited.description = "Demo-only role with a deliberately narrow permission set."
                 limited.is_system = True
                 limited.is_active = True
-            await session.execute(delete(RolePermission).where(RolePermission.role_id == limited.id))
-            for code in sorted(set(DEMO_LIMITED_PERMISSIONS) & declared):
-                session.add(RolePermission(role_id=limited.id, permission=code, scope="all"))
+            limited_permissions_changed: tuple[list[tuple[str, str]], list[tuple[str, str]]] | None = None
+            desired_limited = {(code, "all") for code in sorted(set(DEMO_LIMITED_PERMISSIONS) & declared)}
+            current_limited = {
+                (row.permission, row.scope)
+                for row in (
+                    await session.execute(select(RolePermission).where(RolePermission.role_id == limited.id))
+                )
+                .scalars()
+                .all()
+            }
+            if current_limited != desired_limited:
+                limited_permissions_changed = (sorted(current_limited), sorted(desired_limited))
+                await session.execute(delete(RolePermission).where(RolePermission.role_id == limited.id))
+                for permission, scope in sorted(desired_limited):
+                    session.add(RolePermission(role_id=limited.id, permission=permission, scope=scope))
             role_rows["limited"] = limited
             await session.flush()
 
             user_rows: dict[str, User] = {}
+            role_changes: list[tuple[User, Role]] = []
             for email, display_name, role_key in DEMO_USERS:
                 user = (await session.execute(select(User).where(User.email == email))).scalar_one_or_none()
                 if user is None:
@@ -310,38 +433,121 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
                     user.is_active = True
                     if not verify_password(DEV_PASSWORD, user.password_hash):
                         user.password_hash = hash_password(DEV_PASSWORD)
-                await session.execute(delete(UserRole).where(UserRole.user_id == user.id))
-                session.add(UserRole(user_id=user.id, role_id=role_rows[role_key].id))
+                target_role = role_rows[role_key]
+                current_roles = {
+                    row.role_id
+                    for row in (await session.execute(select(UserRole).where(UserRole.user_id == user.id)))
+                    .scalars()
+                    .all()
+                }
+                if current_roles != {target_role.id}:
+                    await session.execute(delete(UserRole).where(UserRole.user_id == user.id))
+                    session.add(UserRole(user_id=user.id, role_id=target_role.id))
+                    role_changes.append((user, target_role))
                 user_rows[email] = user
             await session.flush()
 
-            # School-layer translation override: proves default < central < school.
-            namespace, key, locale = SCHOOL_I18N_OVERRIDE_KEY
-            override = (
+            superadmin = user_rows["superadmin@demo.school"]
+            principal = _school_principal(superadmin)
+
+            # Every change below goes through the audited service function, so a
+            # fresh demo instance already has representative activity history.
+            if limited_permissions_changed is not None:
+                before, after = limited_permissions_changed
+                await record(
+                    session,
+                    action="rbac.role.permissions",
+                    module="core",
+                    entity_type="role",
+                    entity_id=str(limited.id),
+                    before={"permissions": [f"{code}@{scope}" for code, scope in before]},
+                    after={"permissions": [f"{code}@{scope}" for code, scope in after]},
+                    actor=principal,
+                    via="api",
+                    reason="Demo seed limited role",
+                )
+            for user, role in role_changes:
+                await record(
+                    session,
+                    action="rbac.user.role_assigned",
+                    module="core",
+                    entity_type="user",
+                    entity_id=str(user.id),
+                    after={"role": role.key, "role_id": str(role.id)},
+                    actor=principal,
+                    via="api",
+                    reason="Demo seed role assignment",
+                )
+            await session.flush()
+
+            for namespace, key, locale, value in SCHOOL_I18N_OVERRIDES:
+                await set_entry(session, principal, namespace, key, locale, value)
+
+            theme_created: list[str] = []
+            for spec in DEMO_THEMES:
+                tokens = _demo_theme_tokens(spec)
+                existing = (
+                    await session.execute(
+                        select(Theme).where(Theme.key == spec["key"]).execution_options(include_deleted=True)
+                    )
+                ).scalar_one_or_none()
+                if (
+                    existing is not None
+                    and existing.deleted_at is None
+                    and existing.is_active
+                    and existing.name == spec["name"]
+                    and existing.tokens == tokens
+                ):
+                    continue
+                await import_theme(
+                    session,
+                    principal,
+                    ImportedTheme(
+                        key=spec["key"],
+                        name=spec["name"],
+                        tokens=tokens,
+                        source="json",
+                    ),
+                    description=spec["description"],
+                )
+                theme_created.append(spec["key"])
+
+            setting_row = (
                 await session.execute(
-                    select(TranslationEntry).where(
-                        TranslationEntry.namespace == namespace,
-                        TranslationEntry.key == key,
-                        TranslationEntry.locale == locale,
-                        TranslationEntry.layer == "school",
+                    select(Setting).where(
+                        Setting.layer == INSTANCE,
+                        Setting.module == "core",
+                        Setting.key == SAMPLE_SETTING_KEY,
                     )
                 )
             ).scalar_one_or_none()
-            if override is None:
-                override = TranslationEntry(
-                    namespace=namespace,
-                    key=key,
-                    locale=locale,
-                    value=SCHOOL_I18N_OVERRIDE_VALUE,
-                    layer="school",
-                    status="approved",
-                    source="human",
+            if (
+                setting_row is None
+                or setting_row.deleted_at is not None
+                or setting_row.value != DEMO_SCHOOL_NAME
+            ):
+                before = {"value": setting_row.value if setting_row else None}
+                await set_setting(
+                    session,
+                    "core",
+                    CoreSettings,
+                    SAMPLE_SETTING_KEY,
+                    DEMO_SCHOOL_NAME,
+                    layer=INSTANCE,
+                    actor=principal,
                 )
-                session.add(override)
-            else:
-                override.value = SCHOOL_I18N_OVERRIDE_VALUE
-                override.status = "approved"
-            await session.flush()
+                await record(
+                    session,
+                    action="settings.update",
+                    module="core",
+                    entity_type="setting",
+                    entity_id=f"core.{SAMPLE_SETTING_KEY}",
+                    before=before,
+                    after={"value": DEMO_SCHOOL_NAME, "source": "instance"},
+                    actor=principal,
+                    via="api",
+                )
+                await session.flush()
 
             note = (
                 (
@@ -355,15 +561,10 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
                 .first()
             )
             if note is None:
-                superadmin = user_rows["superadmin@demo.school"]
-                note = SampleNote(
-                    content=SAMPLE_NOTE,
-                    author_name=superadmin.display_name,
-                    author_id=superadmin.id,
-                    created_by=superadmin.id,
+                note = await create_note(
+                    ActionContext(principal=principal, session=session, via="api"),
+                    {"content": SAMPLE_NOTE},
                 )
-                session.add(note)
-                await session.flush()
 
             # Instance identity + license. Signing the license with the controller
             # key mirrors the enroll endpoint and avoids an HTTP dependency.
@@ -386,7 +587,10 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
                     "roles": sorted(role_rows),
                     "users": [email for email, _, _ in DEMO_USERS],
                     "note_id": str(note.id),
-                    "override_key": f"{namespace}.{key}",
+                    "override_key": f"{SCHOOL_I18N_OVERRIDES[0][0]}.{SCHOOL_I18N_OVERRIDES[0][1]}",
+                    "override_count": len(SCHOOL_I18N_OVERRIDES),
+                    "themes": ["default", *(spec["key"] for spec in DEMO_THEMES)],
+                    "themes_created": theme_created,
                     "licensed_modules": controller_summary["modules"],
                 }
             )
@@ -468,8 +672,17 @@ async def _run() -> int:
         print(f"   {email:<28} {display_name:<30} {role_key:<14} DevPass#2026")
     print()
     print(" Ports: API 8000 · Controller API 8100 · Web 5173 · Controller web 5174 · Expo 8081")
-    print(f" School i18n override: {school_summary['override_key']} (am, school layer)")
+    print(
+        f" School i18n overrides: {school_summary['override_count']} "
+        f"(first: {school_summary['override_key']}, am, school layer)"
+    )
+    print(f" Themes ............... {', '.join(school_summary['themes'])}")
+    if school_summary["themes_created"]:
+        print(f"                        created: {', '.join(school_summary['themes_created'])}")
     print(f" Sample note ......... {school_summary['note_id']}")
+    print(
+        " Activity history ..... seeded through audited service calls (roles, i18n, themes, settings, note)"
+    )
     print(" " + "-" * 66)
     print(" All demo accounts use DevPass#2026. Never use these in production.")
     print()
