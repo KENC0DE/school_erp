@@ -35,6 +35,9 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         ).fetchone()
         user_columns = {row[1] for row in connection.execute("PRAGMA table_info(users)")}
         role_columns = {row[1] for row in connection.execute("PRAGMA table_info(roles)")}
+        override_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(user_permission_overrides)")
+        }
     finally:
         connection.close()
 
@@ -48,7 +51,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "password_reset_tokens",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0006_auth_hardening"
+    assert version == "0007_rbac"
 
     assert {
         "failed_login_count",
@@ -57,7 +60,8 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "totp_enabled",
         "totp_recovery_hashes",
     } <= user_columns
-    assert "require_totp" in role_columns
+    assert {"require_totp", "is_active"} <= role_columns
+    assert {"reason", "granted_by"} <= override_columns
 
     assert live_index is not None
     assert "WHERE deleted_at IS NULL" in live_index[0]

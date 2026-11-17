@@ -305,3 +305,33 @@ and recorded here (date, decision, reason).
 - **Logout revokes every refresh family for the user.** Per-device logout and
   revocation is available through `GET/DELETE /auth/sessions`; the session list
   groups rotations by family and marks the current one.
+
+## 2026-11-17 — P1-05 full RBAC
+
+- **Scopes are a containment rule, not a hierarchy of magic strings.**
+  `core/rbac/scopes.py` defines the vocabulary (`all`, `department`,
+  `assigned_subjects`, `own_class`, `own_children`, `self`); `all` covers any
+  requested scope, otherwise the scope must match exactly. Modules declare which
+  scopes their permissions accept, and `require(permission, scope=...)` uses the
+  same check as the menu and AI tool filters. Data resolvers (a teacher's
+  sections, a parent's children) land with the domain modules.
+- **Denies always win and are per permission.** Active `deny` overrides remove
+  the permission regardless of role grants or insertion order; expired rows are
+  ignored. Deny rows are stored with scope `all` so the outcome is unambiguous.
+  Grants with an expiry are the delegation mechanism.
+- **A caller can only grant or deny what they hold.** Role permission additions,
+  role assignment (all permissions of the role) and every override are checked
+  against the caller's own effective permissions and scopes; a wildcard caller
+  (`*`) is the documented exception. This prevents a `roles.manage` holder from
+  minting `users.manage`.
+- **Roles are deactivated, never hard-deleted.** `DELETE /rbac/roles/{id}` sets
+  `is_active=false`; inactive roles contribute no permissions and disappear from
+  `/me`. Join rows are the only rows replaced/removed when a role's permission
+  set or a user's assignment changes.
+- **All RBAC mutations are audited** (`rbac.role.create|update|deactivate|
+  permissions`, `rbac.user.role_assigned|role_removed|override_set|
+  override_cleared`) with before/after and, for overrides, the caller's reason.
+- **The permission matrix test is executable.** It walks every mounted API route,
+  collects the real `require()` guards, and evaluates each guard for every seeded
+  role through the same dependency code the request would use. It also fails if a
+  route declares a permission that no manifest defines.

@@ -78,6 +78,7 @@ async def me(
         "locale": principal.locale,
         "roles": principal.roles,
         "permissions": sorted(principal.permissions),
+        "scopes": {key: sorted(value) for key, value in sorted(principal.scopes.items())},
         "is_controller": principal.is_controller,
         "read_only": principal.read_only,
         "must_change_password": bool(user.must_change_password) if user else False,
