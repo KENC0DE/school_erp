@@ -482,3 +482,34 @@ and recorded here (date, decision, reason).
   modules and actors, renders a before/after diff per entry, treats `*` as a
   wildcard permission, and explains a permission denial inline instead of
   rendering an empty history.
+
+## 2026-11-17 — P1-15 Ethiopian calendar vectors
+
+- **The arithmetic follows the standard JDN formula** `1723856 + 365*year +
+  floor(year/4) + 30*month + day - 31` with `year % 4 == 3` as the leap rule
+  (Pagume has six days). Both the TypeScript and Python packages implement it
+  directly and are cross-checked by round-trip tests over 100+ years.
+- **Published dates are used as vectors:** 1 Meskerem 2016 = 12 Sep 2023 and
+  1 Meskerem 2017 = 11 Sep 2024 (Ethiopian New Year announcements), Pagume 6
+  2015 = 11 Sep 2023, and Genna/Timkat 2017 = 7/19 Jan 2025. Genna falls on
+  7 **or** 8 January depending on whether the preceding Ethiopian year was a
+  leap year, so tests use the year where the published date is unambiguous.
+- **Storage stays Gregorian ISO.** The picker converts only for display and
+  always emits `YYYY-MM-DD`; no Ethiopian date is ever persisted.
+
+## 2026-11-17 — P1-16 money semantics
+
+- **No floats cross a boundary.** Strings, `Decimal` (Python) and the decimal
+  text of JS numbers are parsed digit-by-digit and rounded half-up on the third
+  decimal, so `1.005` is 101 santim and never 100. Values above the signed
+  64-bit BIGINT range (Python) or `Number.MAX_SAFE_INTEGER` (TypeScript) are
+  rejected rather than silently truncated.
+- **Integer inputs mean different things by language, deliberately.** In
+  TypeScript a `number` argument is birr (`parseMoney(1250) === 125000`); in
+  Python an `int` is already the storage unit (`parse(1250) == 1250`) while
+  strings and `Decimal` are birr. API payloads always carry money as strings,
+  so this only affects in-process helpers.
+- **Allocation sends leftover santim to the largest weights first** (ties by
+  input order), which is stable and auditable. Negative amounts allocate the
+  absolute value and reapply the sign, so shares always sum exactly to the
+  input.

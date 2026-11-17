@@ -83,7 +83,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-13 — Person and name model
 - [x] P1-14 — Name form component (web and mobile) with both script fields, a hint to fill both, and no "last name"…
 - [x] P1-15 — Ethiopian calendar package (TS) and module (Python)
-- [ ] P1-16 — Money package and library (ETB, santim)
+- [x] P1-16 — Money package and library (ETB, santim)
 - [ ] P1-17 — Custom fields engine
 - [ ] P1-18 — Translation Editor
 - [ ] P1-19 — "Suggest with AI" hook in the editor (calls the action registry
