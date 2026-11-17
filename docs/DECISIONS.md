@@ -759,3 +759,44 @@ and recorded here (date, decision, reason).
 - **The notification centre is web-only for now.** Mobile notification UI is
   part of the Phase 12 mobile parity sweep; the API and rendered rows are
   already platform-neutral.
+
+## 2026-11-18 — P1-24 Instance setup wizard
+
+- **"Set up" is derived, not stored.** An instance still needs setup exactly
+  while it has zero users. There is no `setup_complete` flag or table to drift
+  out of sync, and a soft-deleted or deactivated user cannot reopen the window
+  because the check counts every account. The public `POST /api/v1/setup`
+  re-checks at the top of its transaction and returns `409 SETUP_COMPLETE`
+  afterwards.
+- **The whole wizard is one transaction.** The first admin, role assignment,
+  settings overrides, theme default and logo metadata commit together. File
+  upload and `set_default_theme` gained a `commit=False` mode so the setup
+  service can validate everything first and roll back as a unit. On PostgreSQL
+  a transaction-scoped advisory lock serialises two simultaneous setup calls;
+  SQLite serialises writers at commit and the wizard only submits once.
+- **The logo arrives as a base64 data URL.** The files upload route requires
+  `files.upload`, and nobody is signed in yet, so the wizard sends the image
+  inline. It is decoded through the same `validate_upload` path (extension,
+  MIME and magic-byte sniffing, 25 MB limit, no SVG) and stored as a **public**
+  file owned by `school/profile`. Logos do not get thumbnails.
+- **Profile and logo live in settings.** `school_profile.logo_file_id` was
+  added to the typed core settings model, so the existing layered-settings
+  machinery, validation and form metadata apply. The status endpoint resolves
+  a fresh signed URL from that id; it never returns a raw storage key.
+- **Theme selection updates both sources.** `branding.theme` records the
+  school's choice for the settings UI, and the chosen theme becomes
+  `Theme.is_default` because `active_theme` resolves the school default from
+  the themes table, not from settings.
+- **Setup returns a real session.** The first Super Admin chooses their own
+  password (the shared policy applies; no forced change) and the API issues the
+  normal access/refresh pair. The web wizard adopts that session and lands on
+  the dashboard instead of asking for a second sign-in.
+- **The sign-in screen redirects when setup is pending.** It makes one
+  best-effort public status call; if the backend is unreachable the form still
+  renders, and if setup is complete the call is cached for a minute. Direct
+  visits to `/setup` show a "already complete" card with a sign-in link.
+- **Setup is audited as a single instance event.** `setup.complete` records the
+  applied profile, logo id, theme and admin id; `auth.user.created` records the
+  admin, and the reused theme/file services add their own `theme.default` and
+  `file.upload` entries. No password or logo bytes enter the audit chain.
+

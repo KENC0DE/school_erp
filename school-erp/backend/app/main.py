@@ -28,6 +28,7 @@ from core.notifications.router import router as notifications_router
 from core.people.router import router as people_router
 from core.rbac.router import router as rbac_router
 from core.settings.router import router as settings_router
+from core.setup.router import router as setup_router
 from core.themes.router import router as themes_router
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -54,6 +55,7 @@ CORE_ROUTERS = [
     sessions_router,
     twofa_router,
     recovery_router,
+    setup_router,
     rbac_router,
     audit_router,
     modules_router,

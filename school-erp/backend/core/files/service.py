@@ -105,6 +105,8 @@ async def upload_file(
     owner_entity_type: str | None = None,
     owner_entity_id: str | None = None,
     is_private: bool = True,
+    commit: bool = True,
+    thumbnail: bool = True,
 ) -> dict[str, Any]:
     _check_owner(owner_entity_type, owner_entity_id)
     upload: ValidatedUpload = validate_upload(
@@ -153,7 +155,7 @@ async def upload_file(
         actor_id=principal.actor_id,
     )
     job_id: str | None = None
-    if upload.is_image:
+    if upload.is_image and thumbnail:
         job = await create_job(
             session,
             "files.thumbnail",
@@ -161,18 +163,19 @@ async def upload_file(
             created_by=principal.actor_id,
         )
         job_id = str(job.id)
-    await session.commit()
-    await session.refresh(row)
+    if commit:
+        await session.commit()
+        await session.refresh(row)
 
-    # Test runs execute jobs through the service directly; without a broker the
-    # queue would otherwise block or target the production database.
-    if job_id is not None and settings.app_env != "test":
-        try:
-            from core.events.celery_app import files_thumbnail_task
+        # Test runs execute jobs through the service directly; without a broker
+        # the queue would otherwise block or target the production database.
+        if job_id is not None and settings.app_env != "test":
+            try:
+                from core.events.celery_app import files_thumbnail_task
 
-            await asyncio.to_thread(files_thumbnail_task.delay, job_id, str(row.id))
-        except Exception as exc:  # pragma: no cover - broker outages are operational
-            logger.warning("thumbnail enqueue failed: %s", exc)
+                await asyncio.to_thread(files_thumbnail_task.delay, job_id, str(row.id))
+            except Exception as exc:  # pragma: no cover - broker outages are operational
+                logger.warning("thumbnail enqueue failed: %s", exc)
 
     result = _detail(row, storage, settings.storage_signed_url_seconds)
     result["thumbnail_job_id"] = job_id

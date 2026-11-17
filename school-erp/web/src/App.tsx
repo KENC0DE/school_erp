@@ -14,6 +14,7 @@ import { ResetPasswordPage } from "./pages/ResetPassword";
 import { RolesPage } from "./pages/RolesPage";
 import { SamplePage } from "./pages/SamplePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { SetupWizardPage } from "./pages/SetupWizardPage";
 import { ThemeManagerPage } from "./pages/ThemeManagerPage";
 import { TranslationsPage } from "./pages/TranslationsPage";
 import { UsersPage } from "./pages/UsersPage";
@@ -58,6 +59,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/setup" element={<SetupWizardPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/controller-login" element={<ControllerLoginPage />} />
       <Route element={<RequireAuth />}>

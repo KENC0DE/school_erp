@@ -416,7 +416,9 @@ async def update_theme(
     return await theme_detail(session, row.key)
 
 
-async def set_default_theme(session: AsyncSession, principal: Principal, key: str) -> dict[str, Any]:
+async def set_default_theme(
+    session: AsyncSession, principal: Principal, key: str, *, commit: bool = True
+) -> dict[str, Any]:
     row = await _get_by_key(session, key)
     if row is None:
         raise NotFound("No theme by that name", message_key="error.theme.not_found")
@@ -450,7 +452,8 @@ async def set_default_theme(session: AsyncSession, principal: Principal, key: st
         actor=principal,
         via=principal.via,
     )
-    await session.commit()
+    if commit:
+        await session.commit()
     return await theme_detail(session, row.key)
 
 

@@ -13,6 +13,9 @@ class SchoolProfile(BaseModel):
     enabled_languages: list[str] = Field(default_factory=lambda: ["en", "am"])
     timezone: str = Field("Africa/Addis_Ababa", min_length=1, max_length=80)
     calendar: Literal["ethiopian", "gregorian", "both"] = "both"
+    # Set by the first-run wizard (P1-24); kept in settings so branding follows
+    # the school profile instead of a separate table.
+    logo_file_id: str | None = Field(default=None, max_length=64)
 
 
 class AcademicScope(BaseModel):

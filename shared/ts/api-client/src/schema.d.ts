@@ -1336,6 +1336,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete */
+        post: operations["complete_api_v1_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/setup/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_v1_setup_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/capabilities": {
         parameters: {
             query?: never;
@@ -1597,6 +1631,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdminSetup */
+        AdminSetup: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Locale */
+            locale?: ("en" | "am") | null;
+            /** Password */
+            password: string;
+            /** Phone */
+            phone?: string | null;
+        };
         /** Body_upload_api_v1_files_post */
         Body_upload_api_v1_files_post: {
             /** File */
@@ -1925,6 +1975,47 @@ export interface components {
             /** Require Totp */
             require_totp?: boolean | null;
         };
+        /** SchoolSetup */
+        SchoolSetup: {
+            /**
+             * Calendar
+             * @default both
+             * @enum {string}
+             */
+            calendar: "ethiopian" | "gregorian" | "both";
+            /**
+             * Default Language
+             * @default en
+             * @enum {string}
+             */
+            default_language: "en" | "am";
+            /** Enabled Languages */
+            enabled_languages?: ("en" | "am")[];
+            /**
+             * First Level
+             * @default 0
+             */
+            first_level: number;
+            /**
+             * Last Level
+             * @default 12
+             */
+            last_level: number;
+            /** Logo */
+            logo?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Theme
+             * @default default
+             */
+            theme: string;
+            /**
+             * Timezone
+             * @default Africa/Addis_Ababa
+             */
+            timezone: string;
+        };
         /** SendRequest */
         SendRequest: {
             /** Channels */
@@ -1944,6 +2035,11 @@ export interface components {
         SettingUpdate: {
             /** Value */
             value: unknown;
+        };
+        /** SetupRequest */
+        SetupRequest: {
+            admin: components["schemas"]["AdminSetup"];
+            school: components["schemas"]["SchoolSetup"];
         };
         /** SuggestInput */
         SuggestInput: {
@@ -5167,6 +5263,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_api_v1_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_v1_setup_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

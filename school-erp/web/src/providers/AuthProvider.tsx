@@ -9,6 +9,7 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
+  adoptSession: (result: LoginResult) => void;
   controllerLogin: (supportToken: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -53,6 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(result.user);
   }, []);
 
+  // The setup wizard returns a full session so the first Super Admin lands on
+  // the dashboard without a second sign-in round trip.
+  const adoptSession = useCallback((result: LoginResult) => {
+    setTokens(result.tokens.access_token, result.tokens.refresh_token);
+    setToken(result.tokens.access_token);
+    setUser(result.user);
+  }, []);
+
   const controllerLogin = useCallback(async (supportToken: string) => {
     setError(null);
     const result = await api.post<{ access_token: string; token_type: string; expires_in: number }>(
@@ -84,8 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, token, loading, error, login, controllerLogin, logout, refresh }),
-    [user, token, loading, error, login, controllerLogin, logout, refresh],
+    () => ({ user, token, loading, error, login, adoptSession, controllerLogin, logout, refresh }),
+    [user, token, loading, error, login, adoptSession, controllerLogin, logout, refresh],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
