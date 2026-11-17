@@ -206,70 +206,9 @@ async def seed_controller(controller_settings) -> dict:
     return summary
 
 
-# Role key -> (display name, permission codes). Permissions are intersected with
-# the codes declared by core and by the loaded module manifests, so a typo can
-# never silently grant access to something that does not exist.
-ROLE_SPECS: dict[str, tuple[str, list[str]]] = {
-    "super_admin": ("School Super Admin", ["*"]),
-    "director": (
-        "Director",
-        [
-            "users.view",
-            "roles.view",
-            "modules.view",
-            "audit.activity.view",
-            "audit.activity.view_admin_actions",
-            "i18n.view",
-            "themes.view",
-            "jobs.view",
-            "settings.view",
-            "settings.manage",
-            "ai.use",
-            "sample.notes.view",
-            "sample.notes.create",
-        ],
-    ),
-    "academic_head": (
-        "Academic Head",
-        [
-            "users.view",
-            "roles.view",
-            "modules.view",
-            "audit.activity.view",
-            "ai.use",
-            "sample.notes.view",
-            "sample.notes.create",
-        ],
-    ),
-    "registrar": (
-        "Registrar",
-        ["users.view", "users.manage", "audit.activity.view", "ai.use", "sample.notes.view"],
-    ),
-    "teacher": (
-        "Teacher",
-        ["ai.use", "sample.notes.view", "sample.notes.create"],
-    ),
-    "accountant": (
-        "Accountant",
-        ["ai.use", "sample.notes.view"],
-    ),
-    "hr_officer": (
-        "HR Officer",
-        ["users.view", "ai.use", "sample.notes.view"],
-    ),
-    "limited": (
-        "Limited User",
-        ["ai.use", "sample.notes.view"],
-    ),
-    "parent": (
-        "Parent",
-        ["ai.use"],
-    ),
-    "student": (
-        "Student",
-        ["ai.use"],
-    ),
-}
+# Demo-only custom role, deliberately outside the shipped defaults. It proves
+# that a school can add a role with a narrow permission set.
+DEMO_LIMITED_PERMISSIONS = ("ai.use", "sample.notes.view")
 
 DEMO_USERS: list[tuple[str, str, str]] = [
     ("superadmin@demo.school", "Super Admin", "super_admin"),
@@ -296,6 +235,7 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
     from core.modules.licensing import apply_license, ensure_module_rows
     from core.modules.models import InstanceModule
     from core.modules.registry import ModuleRegistry
+    from core.rbac.defaults import ensure_default_roles
     from core.rbac.models import Role, RolePermission, UserRole
     from core.themes.service import ensure_default_theme
     from modules.sample.models import SampleNote
@@ -322,22 +262,33 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
                 school_module.enabled = True
             await session.flush()
 
-            role_rows: dict[str, Role] = {}
-            for key, (name, codes) in ROLE_SPECS.items():
-                role = (await session.execute(select(Role).where(Role.key == key))).scalar_one_or_none()
-                if role is None:
-                    role = Role(key=key, name=name, is_system=True, description=f"Seeded {name} role")
-                    session.add(role)
-                    await session.flush()
-                else:
-                    role.name = name
-                    role.is_system = True
-                role_rows[key] = role
+            # Restore the documented default matrix on every demo reset. Local
+            # edits to *names* still survive a plain boot (bootstrap only
+            # creates missing roles); this reset exists for the demo instance.
+            role_rows = {
+                role.key: role
+                for role in await ensure_default_roles(session, registry, reset_permissions=True)
+            }
 
-                granted = sorted(codes) if "*" in codes else sorted(set(codes) & declared)
-                await session.execute(delete(RolePermission).where(RolePermission.role_id == role.id))
-                for code in granted:
-                    session.add(RolePermission(role_id=role.id, permission=code, scope="all"))
+            limited = (await session.execute(select(Role).where(Role.key == "limited"))).scalar_one_or_none()
+            if limited is None:
+                limited = Role(
+                    key="limited",
+                    name="Limited User",
+                    description="Demo-only role with a deliberately narrow permission set.",
+                    is_system=True,
+                )
+                session.add(limited)
+                await session.flush()
+            else:
+                limited.name = "Limited User"
+                limited.description = "Demo-only role with a deliberately narrow permission set."
+                limited.is_system = True
+                limited.is_active = True
+            await session.execute(delete(RolePermission).where(RolePermission.role_id == limited.id))
+            for code in sorted(set(DEMO_LIMITED_PERMISSIONS) & declared):
+                session.add(RolePermission(role_id=limited.id, permission=code, scope="all"))
+            role_rows["limited"] = limited
             await session.flush()
 
             user_rows: dict[str, User] = {}

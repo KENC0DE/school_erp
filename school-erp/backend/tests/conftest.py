@@ -49,10 +49,28 @@ async def client(app) -> AsyncIterator[httpx.AsyncClient]:
 
 
 async def create_role(app, key: str, permissions: list[tuple[str, str]], *, system: bool = False) -> Role:
+    """Create a role or replace the permissions of an existing one.
+
+    Bootstrap now seeds the shipped defaults (including ``super_admin``), so
+    fixtures must upsert instead of inserting blindly.
+    """
     async with app.state.db.session() as session:
-        role = Role(key=key, name=key.replace("_", " ").title(), is_system=system)
-        session.add(role)
-        await session.flush()
+        role = (await session.execute(select(Role).where(Role.key == key))).scalar_one_or_none()
+        if role is None:
+            role = Role(key=key, name=key.replace("_", " ").title(), is_system=system)
+            session.add(role)
+            await session.flush()
+        else:
+            role.name = key.replace("_", " ").title()
+            role.is_system = system
+            role.is_active = True
+            for row in (
+                (await session.execute(select(RolePermission).where(RolePermission.role_id == role.id)))
+                .scalars()
+                .all()
+            ):
+                await session.delete(row)
+            await session.flush()
         for permission, scope in permissions:
             session.add(RolePermission(role_id=role.id, permission=permission, scope=scope))
         await session.commit()

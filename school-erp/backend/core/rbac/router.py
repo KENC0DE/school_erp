@@ -32,7 +32,7 @@ from core.rbac.service import (
     roles_for_user,
 )
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/rbac", tags=["rbac"])
@@ -272,12 +272,10 @@ async def set_role_permissions(
     _assert_grantable(principal, added)
 
     before = _role_out(role, sorted(current))
-    for row in (
-        (await session.execute(select(RolePermission).where(RolePermission.role_id == role.id)))
-        .scalars()
-        .all()
-    ):
-        await session.delete(row)
+    # A bulk DELETE is emitted immediately; deleting the ORM rows one by one
+    # lets SQLAlchemy insert the replacement pairs first, which violates the
+    # (role_id, permission, scope) unique constraint when a pair is unchanged.
+    await session.execute(delete(RolePermission).where(RolePermission.role_id == role.id))
     for permission, scope in sorted(set(new_pairs)):
         session.add(RolePermission(role_id=role.id, permission=permission, scope=scope))
     await record(

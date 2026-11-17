@@ -335,3 +335,28 @@ and recorded here (date, decision, reason).
   collects the real `require()` guards, and evaluates each guard for every seeded
   role through the same dependency code the request would use. It also fails if a
   route declares a permission that no manifest defines.
+
+## 2026-11-17 — P1-06 shipped default roles
+
+- **Twelve roles are shipped as ordinary editable roles.** Bootstrap creates
+  Super Admin, Director, Academic Head, Department Head, Registrar, Teacher,
+  Homeroom Teacher, Accountant, HR Officer, Librarian, Parent and Student when
+  they are missing. They are marked `is_system` for display, but the RBAC API
+  can rename, re-permission, deactivate or reactivate any of them: “default”
+  means a starting point, not a protected definition.
+- **Bootstrap never overwrites local edits.** `ensure_default_roles()` only adds
+  missing roles and their permissions. An existing role keeps its name,
+  description, active flag, 2FA flag and permission set across restarts.
+  Unknown permission codes are intersected with the manifests currently
+  installed; the wildcard `*` is kept as-is. Later module installs therefore do
+  not silently widen an existing role — a school reviews and adds those
+  permissions explicitly, so an upgrade cannot expand access behind its back.
+- **The demo seed is the explicit reset path.** `scripts/seed.py` calls the
+  same helper with `reset_permissions=True`, which restores names and the
+  documented permission matrix. `limited` remains a demo-only custom role.
+- **Seeded roles do not force 2FA.** A fresh instance has no TOTP secret yet, so
+  forcing it would lock the only owner out. The Super Admin enables
+  `require_totp` per role after the first login.
+- **Replacing a role's permissions is atomic and uniqueness-safe.** The API
+  bulk-deletes the old pairs before inserting the new set, so unchanged pairs
+  cannot collide with `uq_role_perm_scope`.
