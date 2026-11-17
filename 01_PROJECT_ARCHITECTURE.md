@@ -84,6 +84,8 @@ The Platform Owner can **open any instance as that school's Super Admin** throug
 | API | REST + OpenAPI, versioned `/api/v1`; typed clients generated from OpenAPI | One contract for web, mobile and controller. |
 | Realtime | SSE/WebSocket only for AI streaming and notifications | Keep everything else plain HTTP. |
 | Background work | Celery + Redis (worker and beat) | Bulk PDFs, notifications, recalculations, audit shipping, backups. |
+| Repository | **One repo, three zones** (`school-erp/`, `owner/`, `shared/`) with enforced import boundaries | One place for the AI to work, and a mechanical split later if needed (§4.4). |
+| Mobile app | **One app for all schools** with a school picker and a controller-hosted school directory | Easier to publish and maintain than one app per school (§8.9). |
 | Source of truth for logic | **Service layer + action registry** | REST handlers, AI tools and automation all call the same services. |
 
 ### 4.3 Technology stack
@@ -106,44 +108,49 @@ The Platform Owner can **open any instance as that school's Super Admin** throug
 | Quality | ruff, mypy or pyright, pytest + pytest-asyncio + httpx, factory_boy, Vitest, Testing Library, Playwright (web e2e), Maestro (optional mobile e2e), GitHub Actions |
 | Monorepo | pnpm workspaces for JS, `uv` workspace for Python |
 
-### 4.4 Repository layout
+### 4.4 Repository layout and boundaries
+
+**One repository, three zones.** AI-driven builds are most reliable when a change can be made in one place, so everything lives in one repo. The zones keep a clean seam, so the repo can be split later without rework.
 
 ```
 erp-platform/
-├─ backend/                      # School ERP API
-│  ├─ app/                       # app factory, settings, wiring
-│  ├─ core/                      # shared kernel (see §5)
-│  │   ├─ auth/ rbac/ audit/ config/ db/ events/ jobs/ i18n/ themes/
-│  │   ├─ files/ notify/ names/ calendar/ money/ actions/ licensing/ ai/
-│  ├─ modules/<key>/             # one package per module (see §4.5)
-│  ├─ alembic/                   # migrations env (branch per module)
-│  └─ tests/
-├─ controller/
-│  ├─ api/                       # Control Plane API
-│  └─ web/                       # Control Plane UI
-├─ libs/shared_py/               # protocol schemas, license signing/verifying, payments adapter interface, money
-├─ apps/
-│  ├─ web/                       # School web app
-│  └─ mobile/                    # React Native (Expo) app
-├─ packages/
-│  ├─ api-client/                # generated from OpenAPI
-│  ├─ tokens/                    # design tokens + theme schema + validators
-│  ├─ i18n/                      # i18next setup, runtime loader
-│  ├─ calendar/                  # Ethiopian ↔ Gregorian (shared by web, mobile)
-│  ├─ money/                     # santim helpers, ETB formatting
-│  ├─ module-sdk/                # frontend module manifest types + registry
-│  ├─ ui/                        # web components built on shadcn/ui
-│  └─ ui-native/                 # mobile components
-├─ deploy/
-│  ├─ compose/                   # dev, instance, controller compose files
-│  ├─ caddy/  backups/  provisioning/
-├─ scripts/                      # dev.sh, dev.ps1, seed, e2e
-└─ docs/                         # architecture, PROGRESS.md, DECISIONS.md, QUESTIONS.md, runbooks
+├─ school-erp/                    # ZONE 1: what is deployed to every school
+│  ├─ backend/                    # School ERP API (FastAPI)
+│  │   ├─ app/                    # app factory, settings, wiring
+│  │   ├─ core/                   # shared kernel: auth rbac audit config db events jobs
+│  │   │                          #   i18n themes files notify names calendar money actions licensing ai
+│  │   ├─ modules/<key>/          # one package per module (see §4.5)
+│  │   ├─ alembic/                # migrations env (branch per module)
+│  │   └─ tests/
+│  └─ web/                        # School web app (React): the desktop experience
+├─ owner/                         # ZONE 2: what only the owner runs and publishes
+│  ├─ controller-api/             # Control Plane API (FastAPI)
+│  ├─ controller-web/             # Control Plane UI (React)
+│  └─ mobile/                     # THE single Expo app for ALL schools (see §8.9)
+│      └─ src/{modules/<key>/, ui/, schools/, sync/}   # module screens, native UI kit, school picker, outbox
+├─ shared/                        # ZONE 3: contracts and common code only
+│  ├─ py/                         # protocol schemas, license sign/verify, payments adapter interface, money
+│  └─ ts/                         # api-client (generated), tokens, i18n runtime loader,
+│                                 #   calendar, money, module-sdk, ui-web (shadcn-based components)
+├─ deploy/                        # compose, caddy, backups, provisioning
+├─ scripts/                       # dev.sh, dev.ps1, seed, e2e
+└─ docs/                          # specs, PROGRESS.md, DECISIONS.md, QUESTIONS.md, runbooks
 ```
+
+**Boundary rules (enforced automatically in CI and pre-commit):**
+1. `school-erp/` never imports anything from `owner/`.
+2. `owner/` may import from `shared/`. It talks to school servers **only through the HTTP API**, using the generated `api-client`. It never imports `school-erp` code.
+3. `shared/` imports nothing from the other zones and contains only contracts and pure utilities.
+4. A feature that reaches mobile spans two zones (`school-erp/backend` and `owner/mobile`). That is an accepted cost: it is still one repo and one change.
+5. Enforcement: Python `import-linter` contracts, TypeScript restricted-import rules (ESLint or dependency-cruiser), and a test with a deliberately violating fixture that must fail.
+
+**Why the mobile app sits in `owner/`:** the owner holds the app-store accounts, the signing keys and the app's trust anchor (the controller's public key), so the app is built and published by the owner, not per school. It still shares most code with the school web app through `shared/`.
+
+**Splitting later:** because of the rules above, a split is mechanical: `shared/` becomes versioned private packages, the school API's OpenAPI schema becomes a published contract artifact, and each side gets its own CI. A rehearsal task (P15-07) documents the procedure. Do not split until there is a real reason (outside developers who should not see the controller, or selling the school ERP separately).
 
 ### 4.5 Module system
 
-A module is a folder `backend/modules/<key>/` with a manifest, plus a matching frontend module in `apps/web` and `apps/mobile` (registered through `packages/module-sdk`).
+A module is a folder `school-erp/backend/modules/<key>/` with a manifest, plus matching frontend modules in `school-erp/web` and `owner/mobile/src/modules/<key>/` (registered through `shared/ts/module-sdk`).
 
 ```
 modules/<key>/
@@ -213,6 +220,7 @@ Disabled-module API calls return `403 MODULE_DISABLED`. Toggles are applied imme
 - Login by email or phone plus password. Argon2id. Lockout and rate limiting on failed attempts.
 - Access token (≈15 minutes) plus rotating refresh token. Web: httpOnly secure cookies with CSRF protection. Mobile: tokens in `expo-secure-store`.
 - Optional TOTP 2FA, enforceable per role by the Super Admin.
+- Mobile keeps **one session per school** (§8.9), stored separately in secure storage.
 - Session list with remote revoke. Password reset via email or SMS code.
 - **Controller sessions** are a separate actor type (section 8.6).
 
@@ -268,7 +276,7 @@ Default decision: actions performed by the Super Admin themselves are hidden fro
 ### 5.7 Ethiopian calendar and dates
 
 - **Storage:** dates are always stored as Gregorian ISO dates. The Ethiopian calendar is a **display and input layer only**.
-- `packages/calendar` (TypeScript) and `core/calendar` (Python) both implement EC ↔ GC conversion (13 months: 12 of 30 days, plus Pagume with 5 or 6 days) and formatting in Amharic and English month names. Implement the algorithm directly with unit tests rather than trusting a random dependency. **Verify the test vectors against two independent authoritative sources** (including the new-year dates around leap years).
+- `shared/ts/calendar` (TypeScript) and `core/calendar` (Python) both implement EC ↔ GC conversion (13 months: 12 of 30 days, plus Pagume with 5 or 6 days) and formatting in Amharic and English month names. Implement the algorithm directly with unit tests rather than trusting a random dependency. **Verify the test vectors against two independent authoritative sources** (including the new-year dates around leap years).
 - A school setting chooses `ethiopian`, `gregorian` or `both` for display. A shared date-picker component supports both. Documents and reports can print either or both.
 - Academic years, terms and deadlines are stored in GC and displayed in the chosen calendar.
 
@@ -293,7 +301,7 @@ Ethiopian naming: **given name, father's name, grandfather's name.** There is no
 
 ### 5.9 Money
 
-- Currency is **ETB only**. Amounts are `BIGINT` santim. Library `packages/money` and `libs/shared_py/money.py` provide parse, format (e.g. `ETB 1,250.00` or Amharic label `ብር`), add, and allocate (rounding-safe splitting).
+- Currency is **ETB only**. Amounts are `BIGINT` santim. Library `shared/ts/money` and `shared/py/money.py` provide parse, format (e.g. `ETB 1,250.00` or Amharic label `ብር`), add, and allocate (rounding-safe splitting).
 - Tax settings (VAT, withholding) are **configuration**, never constants. Nothing about Ethiopian tax or pension rates is hard-coded. They must be validated by the school's accountant.
 
 ### 5.10 Configuration system
@@ -313,7 +321,7 @@ Layered key-value settings with a typed schema per module: `default (code) < cen
 - Defaults shipped: **Light** and **Dark**.
 - **Theme Manager:** import by pasting CSS variables, uploading JSON, or pasting a shadcn registry URL. Validation on import: both modes present, required tokens present (including chart and sidebar tokens), and an automatic **WCAG contrast check** on key pairs. A failing theme is rejected or warned, and a broken theme always falls back to the default.
 - Scope: the CP can set a school's default theme and brand. School admins choose which themes are available. Each user chooses theme and light/dark mode.
-- **Canonical form is JSON in `packages/tokens`.** The build generates CSS variables for web and a typed theme object for React Native from the same source.
+- **Canonical form is JSON in `shared/ts/tokens`.** The build generates CSS variables for web and a typed theme object for React Native from the same source.
 
 ### 5.12 Files
 
@@ -360,7 +368,7 @@ async def register_student(ctx: ActionContext, data: RegisterStudent) -> Student
 ## 8. Control Plane and the instance link
 
 ### 8.1 What the Control Plane does
-School registry and provisioning, plans and licensing, module toggles per school, version rollout, monitoring, audit vault and oversight, support sessions, backups visibility, and **the owner's own revenue in ETB** (subscriptions, invoices to schools, payments, MRR/ARR).
+School registry and provisioning, the **school directory** for the mobile app, the **push relay**, plans and licensing, module toggles per school, version rollout, monitoring, audit vault and oversight, support sessions, backups visibility, and **the owner's own revenue in ETB** (subscriptions, invoices to schools, payments, MRR/ARR).
 
 ### 8.2 Enrollment
 The CP creates an instance record and a one-time **enrollment token**. On first start the instance generates its own Ed25519 keypair and calls `POST /enroll` with the token and its public key. The CP stores the public key. The instance stores the CP's public key.
@@ -382,6 +390,34 @@ Phase one: scripted provisioning (`deploy/provisioning`): create the compose pro
 
 ### 8.8 Instance size profiles
 `small`, `standard`, `large` presets set worker concurrency, DB resources and cache sizes. A 300-student school and a 3,000-student school differ only by profile. Heavy jobs (term-end report cards) always run in the background queue.
+
+### 8.9 School directory and the single mobile app
+
+One mobile app (iOS and Android, built from `owner/mobile`) serves **every** school. Web users simply open their school's URL.
+
+- **Choosing a school:** the user enters a **school code** or scans a **QR code** (`erpapp://school/<code>`). Searching by school name is optional, **off by default** (it would expose your customer list) and can be enabled per school.
+- **Resolve:** the app calls the controller `GET /directory/resolve?code=...`. The controller returns a **signed record**: `{instance_id, name, api_base_url, logo_url, status, min_app_version, kid, signature}`. The signing key is identified by `kid`, so keys can be rotated and the app can hold a set of trusted keys.
+- **Trust:** the app embeds the controller's public key set and **verifies the signature**. It only ever connects to servers that came from a verified record. HTTPS is required (local-network addresses are allowed only in development builds). Unknown or revoked codes return a generic error, and resolving is rate-limited to prevent enumeration.
+- **Then the app talks directly to the school's server.** The controller only does the lookup. It never sees passwords, school data, or user activity beyond "this code was resolved."
+- **Branding:** after resolving, the app fetches the theme from the school's own `GET /themes/active` and applies the school's logo and theme tokens.
+- **Several schools on one phone** (a parent with children at two schools, a teacher at two): each school has its own account. Tokens, cached data and the offline outbox are **namespaced per school**. Removing a school wipes its local data. Optional biometric/app lock.
+- **Directory outage:** existing users keep working from their stored, previously verified school profile.
+- **White-label (later, not built):** a build-time `APP_VARIANT` hook (name, icon, fixed school code) is kept possible so a large school could someday get its own branded app.
+
+### 8.10 Version compatibility
+
+Schools upgrade at different times, so one app will meet servers on different versions.
+
+- **Policy:** within `/api/v1`, changes are **additive only**. Breaking changes require `/api/v2`, served alongside the old version for a defined period. Deprecations stay for at least two releases.
+- **Handshake:** `GET /api/v1/system/info` (public) returns `api_version`, `app_version` and `min_client_version`. After login, `GET /api/v1/system/capabilities` lists the features this server supports. The app hides what the server lacks and shows a gentle "school is on an older version" state.
+- **Forced update:** if the app is older than `min_client_version` (set globally or per school in the CP), it shows an update screen.
+- **CI guard:** an OpenAPI schema snapshot per release with an automatic breaking-change check.
+
+### 8.11 Push notifications through the controller
+
+- The mobile app registers its device token with the controller for a (school, user pseudonym) pair. School instances send push requests to the controller (`POST /push/send`, signed), and the controller delivers through the push provider (Expo push or FCM/APNs). **Push credentials live only in the controller**, so schools hold none.
+- **Payloads are minimal** (for example "New message", "Results published") with a deep link. No marks, names or amounts travel through push. Delivery is best-effort with retry, and the in-app notification center remains the source of truth.
+- A school can only push to devices registered under that school. Invalid tokens are cleaned up automatically. Every push is logged in the CP.
 
 ---
 ## 9. Domain modules
@@ -486,7 +522,7 @@ Spreadsheet-style grid on web, one-hand fast entry on mobile, Excel paste and up
 - **Fee structures** per level and year: items (tuition, registration, transport, activities…), schedule (monthly, term, yearly, custom installments), due dates, late-fee rules.
 - **Discounts and scholarships** (sibling, staff child, merit, custom), approval for discounts.
 - **Invoices**, **payments**, **allocations** (a payment can cover several invoices), **credits**, **receipts** (numbered, PDF through Document Studio), refunds, arrears and automated reminders, accountant reports (collections, outstanding, by level, by method) all in ETB.
-- **Payment adapter interface** (`libs/shared_py/payments.py`): `create_checkout(invoice) → redirect/instructions`, `verify(reference) → status`, `handle_webhook(request) → event`, optional `refund`. Providers implemented behind it:
+- **Payment adapter interface** (`shared/py/payments.py`): `create_checkout(invoice) → redirect/instructions`, `verify(reference) → status`, `handle_webhook(request) → event`, optional `refund`. Providers implemented behind it:
   - **`manual_bank`** (parent submits bank reference and optional slip image, accountant verifies and reconciles) and **`cash`** first.
   - **Gateway adapters**, activated only when credentials are supplied (until then they are disabled stubs with sandbox-ready code): **Chapa, ArifPay, SantimPay**, direct **telebirr** and **CBE Birr** where merchant APIs are available, and EthSwitch's national gateway later.
   - Rules for every adapter: signed-webhook verification, idempotent processing, amount and currency re-verification with the provider, status polling fallback, raw payload logging (encrypted credentials), and the ability to run more than one provider at once.
@@ -548,7 +584,7 @@ Naming: plural snake_case tables. All business tables include `id, created_at, u
 | Communication | `announcements, message_threads, messages` |
 | Automation | `automation_rules, automation_runs` |
 
-**Controller DB:** `cp_users, cp_roles, schools (instances), plans, plan_modules, licenses, enrollments, heartbeats, vault_audit_entries, vault_chain_heads, alerts, support_sessions, subscriptions, school_invoices, school_payments, versions, rollouts`.
+**Controller DB:** `cp_users, cp_roles, schools (instances), plans, plan_modules, licenses, enrollments, heartbeats, vault_audit_entries, vault_chain_heads, alerts, support_sessions, school_codes, directory_keys, push_devices, push_log, subscriptions, school_invoices, school_payments, versions, rollouts`.
 
 **Database safeguards:** foreign keys everywhere, check constraints for money ≥ 0 and score ranges, partial indexes excluding soft-deleted rows, `pg_trgm` indexes for name search, unique business keys (student number, invoice number, document number) scoped appropriately, and a DB role for the app without UPDATE/DELETE on `audit_log`.
 
@@ -564,9 +600,9 @@ Naming: plural snake_case tables. All business tables include `id, created_at, u
 - Tables: server-side pagination, sorting, filtering and saved views. Virtualization for long lists.
 
 ### 11.2 Apps
-- **`apps/web`:** the school app (staff, teachers, parents, students) and the desktop experience. Responsive PWA behavior.
-- **`controller/web`:** the CP UI (separate app, separate deployment).
-- **`apps/mobile`:** Expo app for teachers, staff, parents and students. Same API client, same tokens, same i18n runtime loader.
+- **`school-erp/web`:** the school app (staff, teachers, parents, students) and the desktop experience. Responsive, PWA behavior. Each school's web address is its own instance.
+- **`owner/controller-web`:** the CP UI (separate app, separate deployment).
+- **`owner/mobile`:** **one Expo app for all schools** (see §8.9) for teachers, staff, parents and students. It has a school picker, an account switcher and the module screens, and uses the same generated API client, tokens and i18n runtime loader as the web app.
 
 ### 11.3 Mark-entry experience (critical UX)
 
@@ -584,6 +620,7 @@ Naming: plural snake_case tables. All business tables include `id, created_at, u
 ### 11.4 Mobile offline strategy
 - Persisted query cache for read data. A **mutation outbox** (SQLite) for offline-capable actions: attendance, mark entry, announcements read, simple messages. Each queued mutation has an idempotency key and a base `row_version`.
 - Sync worker with retry and backoff, visible sync status, conflict UI. Anything not safe to queue offline (payments, role changes, deletions) is online-only.
+- The cache and outbox are **namespaced per school** (§8.9), so queued actions can never be sent to the wrong school's server.
 
 ---
 
@@ -644,8 +681,8 @@ Naming: plural snake_case tables. All business tables include `id, created_at, u
 | 8 | Communication and portals |
 | 9 | AI layer (assistant, providers, voice, translation and AI features) |
 | 10 | Automation engine |
-| 11 | Control Plane completion (licensing, provisioning, monitoring, audit vault, billing in ETB) |
-| 12 | Mobile completion and offline hardening |
+| 11 | Control Plane completion (licensing, provisioning, monitoring, audit vault, billing in ETB, school directory, push relay) |
+| 12 | The single multi-school mobile app: completion, offline hardening, version handshake, store release |
 | 13 | Add-on modules (optional) |
 | 14 | Hardening and production readiness |
 | 15 | Final dev launcher, seed data, documentation, release |
@@ -665,6 +702,10 @@ The dev launcher and demo accounts exist from phase 0 and grow each phase, so th
 6. School-visible audit = Tier A (business activity). Technical logs and the immutable vault are controller-only.
 7. English default, Amharic in phase one. Afan Oromo and Tigrinya added later as translation data.
 8. Payments behind an adapter interface. Manual bank and cash first. Gateways enabled once credentials exist.
+9. **One repo, three zones** (`school-erp/`, `owner/`, `shared/`) with enforced boundaries. Splitting later is a documented, mechanical step.
+10. **One mobile app for all schools**, using a signed school directory hosted by the controller, with per-school isolated storage.
+11. API stays backward compatible within `/api/v1` (additive only), because schools run different versions.
+12. Push notifications go through the controller with minimal payloads.
 
 **To verify during the build (do not assume)**
 - Ethiopian calendar conversion test vectors (two independent sources).
@@ -679,3 +720,4 @@ The dev launcher and demo accounts exist from phase 0 and grow each phase, so th
 - Whether school Super Admin actions appear in the school's activity history (default: no).
 - Whether schools are notified when a controller support session happens (default: yes, configurable per school).
 - Whether Afan Oromo and Tigrinya are priority after launch.
+- Whether a large school may later get its own branded app (the build keeps a variant hook, but the feature is not built).

@@ -25,6 +25,8 @@
 11. **Keep files small** (aim under ~400 lines) and functions focused. Prefer clear names over comments.
 12. **Commit per task** with the message `P{phase}-{nn}: short description`. Never commit secrets. Keep `.env.example` current.
 13. **Seed data and the dev launcher are updated at the end of every phase** (task `Pn-SEED`), so the owner can test what exists.
+14. **Respect the zone boundaries** (ARCH §4.4): `school-erp/` never imports `owner/`; `owner/` uses only `shared/` and the school HTTP API; `shared/` imports neither. The boundary check in CI must always pass.
+15. **Keep the school API backward compatible** within `/api/v1` (additive only, ARCH §8.10), because one mobile app talks to schools running different versions.
 
 ### 0.3 Definition of Done (every task)
 - [ ] Code implemented and matches ARCH.
@@ -38,7 +40,7 @@
 ./scripts/dev.sh seed      # (re)load demo data and demo accounts
 ./scripts/dev.sh reset     # wipe local data, rebuild, reseed
 ./scripts/dev.sh test      # run all automated tests
-./scripts/dev.sh mobile    # start Expo for Expo Go on a phone
+./scripts/dev.sh mobile    # start Expo for Expo Go on a phone (points the app at your computer's LAN address)
 ./scripts/dev.sh logs|down
 ```
 Windows: `scripts/dev.ps1` with the same subcommands.
@@ -46,11 +48,16 @@ Windows: `scripts/dev.ps1` with the same subcommands.
 ### 0.5 Local ports (dev)
 API 8000 · Controller API 8100 · School web 5173 · Controller web 5174 · Postgres 5432 · Redis 6379 · MinIO 9000/9001 · Mailpit 8025 · Expo 8081.
 
+### 0.6 Repository zones (see ARCH §4.4)
+`school-erp/` (backend + web, deployed per school) · `owner/` (controller-api, controller-web, and the **single mobile app for all schools**) · `shared/` (py + ts contracts and utilities) · plus `deploy/`, `scripts/`, `docs/`.
+
 ---
 
 ## 1. Demo accounts for testing (dev only)
 
 Created by `./scripts/dev.sh seed`. **The seed script must refuse to run when `APP_ENV=production`.** All demo accounts use the dev password `DevPass#2026`. Never use these anywhere real.
+
+**Mobile app:** on the school picker enter the school code `DEMO` (a second demo school, `DEMO2`, appears from Phase 11), then log in with any school account below.
 
 **Controller (http://localhost:5174)**
 
@@ -86,12 +93,14 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 **Cites:** ARCH §4, §5, §6, §8.
 
 ### Repository and infrastructure
-- [ ] **P0-01** Create the monorepo per ARCH §4.4 (pnpm workspaces + `uv` workspace). Add `.gitignore`, `.editorconfig`, pre-commit (ruff, prettier, eslint), `.env.example`, LICENSE placeholder. **Verify:** `pnpm install` and `uv sync` succeed.
+- [ ] **P0-01** Create the single repo with its three zones per ARCH §4.4 (`school-erp/`, `owner/`, `shared/`; pnpm workspaces + `uv` workspace). Add `.gitignore`, `.editorconfig`, pre-commit (ruff, prettier, eslint), `.env.example`, LICENSE placeholder. **Verify:** `pnpm install` and `uv sync` succeed.
+- [ ] **P0-01b** **Enforce the zone boundaries** (ARCH §4.4): Python `import-linter` contracts and TypeScript restricted-import rules (ESLint or dependency-cruiser), wired into CI and pre-commit. **Verify:** deliberately violating fixtures (`school-erp` importing `owner`, `owner` importing `school-erp` code, `shared` importing either) make the check fail.
 - [ ] **P0-02** Create `docs/PROGRESS.md` (copy of all task IDs from this guide as a checklist), `docs/DECISIONS.md`, `docs/QUESTIONS.md`, and copy both specification documents into `docs/`.
 - [ ] **P0-03** `deploy/compose/dev.yml`: Postgres (two databases: `erp_demo`, `controller`), Redis, MinIO, Mailpit. **Verify:** all containers healthy.
 
 ### Backend skeleton (school instance)
 - [ ] **P0-04** FastAPI app factory, `pydantic-settings`, `/health` and `/ready`, structured logging, request-id middleware, standard error format (ARCH §5.1). **Verify:** pytest hits `/health`.
+- [ ] **P0-04b** Version info (ARCH §8.10): public `GET /api/v1/system/info` returning `api_version`, `app_version`, `min_client_version`; authenticated `GET /api/v1/system/capabilities` listing features derived from enabled modules. **Verify:** tests for both, and that disabling a module changes capabilities.
 - [ ] **P0-05** Async SQLAlchemy + Alembic (`core` branch), base model mixins (id, timestamps, soft delete, `row_version`, created/updated by). **Verify:** migration applies to empty DB.
 - [ ] **P0-06** **Module registry:** `ModuleManifest`, loader scanning `modules/*/manifest.py`, dependency validation, router mounting, `GET /api/v1/system/modules`. Add a throwaway `sample` module. **Verify:** test lists `sample`; a cyclic-dependency fixture is rejected.
 - [ ] **P0-07** Auth skeleton: `users`, Argon2id, login, short-lived access + refresh token rotation, `GET /me`. **Verify:** login test, bad-password test.
@@ -101,24 +110,25 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 - [ ] **P0-11** Events and jobs: outbox-based event bus, Celery worker + beat, one ping task, `jobs` table. **Verify:** worker processes a task and updates a job row.
 - [ ] **P0-12** **Action registry skeleton:** `@action` decorator, registry, `GET /api/v1/ai/tools` filtered by the user's permissions and enabled modules. **Verify:** two users see different tool lists.
 - [ ] **P0-13** i18n skeleton: `translation_entries`, layer merge (default < central < school), `GET /api/v1/i18n/{locale}/{ns}` with ETag, seed `en` and `am` sample strings. **Verify:** a school-layer override beats the default.
-- [ ] **P0-14** Themes skeleton: `packages/tokens` (token schema, default Light and Dark, validator), `GET /api/v1/themes/active`. **Verify:** validator rejects a theme missing the dark variant.
+- [ ] **P0-14** Themes skeleton: `shared/ts/tokens` (token schema, default Light and Dark, validator), `GET /api/v1/themes/active`. **Verify:** validator rejects a theme missing the dark variant.
 
 ### Control plane skeleton
-- [ ] **P0-15** `controller/api`: FastAPI app with its own DB, owner login, `schools` table, Ed25519 signing keypair, `POST /enroll`, signed license issuing (EdDSA JWT), `POST /heartbeat`, `POST /audit/ingest`. **Verify:** unit tests for license sign/verify (`libs/shared_py`), including expiry and a tampered token.
+- [ ] **P0-15** `owner/controller-api`: FastAPI app with its own DB, owner login, `schools` table, Ed25519 signing keypair, `POST /enroll`, signed license issuing (EdDSA JWT), `POST /heartbeat`, `POST /audit/ingest`. **Verify:** unit tests for license sign/verify (`shared/py`), including expiry and a tampered token.
 - [ ] **P0-16** **Instance ↔ controller link:** instance enrolls with a one-time token, stores the license, verifies it offline, applies the module list, runs a heartbeat task, ships `audit_outbox` batches to the controller. **Verify:** integration test with both apps: toggle a module in the controller, see it change in the instance after a heartbeat; an audit entry created in the instance appears in the controller vault with a valid chain.
+- [ ] **P0-16b** **School directory skeleton** (ARCH §8.9): unique, non-guessable `school_code` per school; controller `GET /directory/resolve?code=` returns a **signed** record `{instance_id, name, api_base_url, logo_url, status, min_app_version, kid, signature}`; rate-limited; unknown codes get a generic error; QR payload `erpapp://school/<code>`. Seed school code `DEMO` for the local demo instance. **Verify:** unit tests for signing and verification, key rotation by `kid`, rate limiting, and `suspended` status being returned.
 - [ ] **P0-17** **Controller session skeleton** (ARCH §8.6): controller issues a short-lived signed support token with a reason; instance accepts it at `POST /auth/controller-session`, creating an actor `controller` with the Super Admin permission set. **Verify:** actions in such a session are audited with `via=controller`; an expired or tampered token is rejected.
 
 ### Frontends
 - [ ] **P0-18** Shared packages: `api-client` generated from OpenAPI (script `pnpm gen:api`), `tokens` → CSS variables and RN theme object, `i18n` runtime loader (loads from the API with caching), `module-sdk` (frontend manifest types and registry), stubs for `calendar` and `money`. **Verify:** generation script runs in CI and fails on a diff.
-- [ ] **P0-19** **`apps/web`:** Vite + React + TS + Tailwind v4 + shadcn/ui init, router, login, authenticated shell with sidebar from `/me/navigation`, theme provider from tokens (light/dark switch), i18n loaded from the API with `en`/`am` switch, a dashboard showing one translated string, and the `sample` module page. **Verify:** Vitest render test; manual check that disabling `sample` removes its menu item.
-- [ ] **P0-20** **`controller/web`:** login, schools list, school detail with module toggles, "Open as school admin" (asks for a reason), a basic vault audit list. **Verify:** component tests plus the e2e in P0-26.
-- [ ] **P0-21** **`apps/mobile`:** Expo app with Expo Router, login, tokens in `expo-secure-store`, shell showing the same navigation, `en`/`am` switch from the API, theme from tokens, runs in Expo Go. **Verify:** Jest test; app starts via `./scripts/dev.sh mobile`.
+- [ ] **P0-19** **`school-erp/web`:** Vite + React + TS + Tailwind v4 + shadcn/ui init, router, login, authenticated shell with sidebar from `/me/navigation`, theme provider from tokens (light/dark switch), i18n loaded from the API with `en`/`am` switch, a dashboard showing one translated string, and the `sample` module page. **Verify:** Vitest render test; manual check that disabling `sample` removes its menu item.
+- [ ] **P0-20** **`owner/controller-web`:** login, schools list, school detail with module toggles, "Open as school admin" (asks for a reason), a basic vault audit list. **Verify:** component tests plus the e2e in P0-26.
+- [ ] **P0-21** **`owner/mobile`, the ONE app for all schools:** Expo app with Expo Router. The first screen is the **school picker**: enter a school code or scan a QR code, call the controller's `GET /directory/resolve`, **verify the signed response** against the embedded controller public key, store the school profile (id, name, api_base_url, logo, versions), then log in against **that school's server** with tokens in `expo-secure-store` **namespaced per school**. After login: a shell with the same navigation as web, an `en`/`am` switch, the school's theme from tokens, running in Expo Go. **Verify:** Jest tests: a tampered directory response is rejected; two stored school profiles keep separate tokens and caches; the app refuses a server address that is not in a verified profile. Manual: `./scripts/dev.sh mobile`, enter `DEMO`, log in.
 - [ ] **P0-22** **AI wiring stub:** `POST /api/v1/ai/chat` that echoes and lists the tools the user may use (no LLM yet), plus a chat panel on web. **Verify:** panel shows different tools for two different users.
 
 ### Document and delivery spike
 - [ ] **P0-23** **PDF spike (decides the renderer):** render an HTML page containing Amharic (Ge'ez) text, Latin text, an embedded font and a QR code to PDF with Chromium/Playwright and with WeasyPrint. Compare shaping, embedding and speed. Choose one, record the decision in `docs/DECISIONS.md`, and expose `POST /api/v1/sample/pdf`. **Verify:** automated check that the PDF contains the embedded Ethiopic font, plus a manual visual check by opening the file.
 - [ ] **P0-24** CI (GitHub Actions or equivalent): ruff, type check, pytest, Vitest, builds for web, controller web and mobile, API client generation diff check, i18n key check.
-- [ ] **P0-25** **Dev launcher:** `scripts/dev.sh` and `scripts/dev.ps1` with `up`, `seed`, `reset`, `test`, `mobile`, `logs`, `down`. `seed` creates the controller owner, one enrolled demo instance and the demo accounts from section 1 (those relevant so far). It refuses to run in production. **Verify:** from a clean clone, `./scripts/dev.sh up && ./scripts/dev.sh seed` yields working logins at the ports listed in 0.5.
+- [ ] **P0-25** **Dev launcher:** `scripts/dev.sh` and `scripts/dev.ps1` with `up`, `seed`, `reset`, `test`, `mobile`, `logs`, `down`. `seed` creates the controller owner, one enrolled demo instance (school code `DEMO`) and the demo accounts from section 1 (those relevant so far). It refuses to run in production. **Verify:** from a clean clone, `./scripts/dev.sh up && ./scripts/dev.sh seed` yields working logins at the ports listed in 0.5.
 - [ ] **P0-26** **Smoke e2e (Playwright):** controller login → disable the `sample` module for the demo school → school login shows the menu without it → re-enable → "Open as school admin" → perform a sample change → controller vault shows it labeled `via=controller`. Keep this test forever.
 
 ### ✅ CHECKPOINT P0
@@ -166,9 +176,10 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 - [ ] **P1-20** i18n tooling: lint rule banning hard-coded UI strings, CI check for missing `en` keys, report for missing `am` keys, Ethiopic font bundled for web and mobile.
 - [ ] **P1-21** **Theme Manager** (ARCH §5.11): import by CSS paste, JSON upload and registry URL; validation (both modes, chart and sidebar tokens, contrast checks); preview; per-school available themes; per-user choice; mobile theme object generated from the same tokens. **Verify:** a theme with an unreadable color pair is rejected with a clear reason; a broken theme falls back to default.
 - [ ] **P1-22** Files service: S3 storage, signed URLs, validation, thumbnails job, `files` table, upload component.
-- [ ] **P1-23** Notification service: in-app, email (SMTP), push (Expo) and SMS adapter interface; templates with variables; delivery logs; user notification center UI.
+- [ ] **P1-23** Notification service: in-app, email (SMTP), push (sent through the controller push relay, ARCH §8.11; a logging stub until P11-12) and SMS adapter interface; templates with variables; delivery logs; user notification center UI.
 - [ ] **P1-24** Instance setup wizard: school profile, logo, calendar display, default language, grade scope placeholder, theme, first Super Admin.
 - [ ] **P1-25** Jobs UI: list of background jobs with progress, retry, errors (user-safe).
+- [ ] **P1-26** **API compatibility guard** (ARCH §8.10): snapshot the OpenAPI schema per release and fail CI on breaking changes within `/api/v1` (removed or renamed fields or endpoints, narrowed types, new required request fields). Policy: additive only; deprecations stay for at least two releases. **Verify:** a deliberately breaking change fails the check.
 - [ ] **P1-SEED** Update seed: all roles, accounts from §1 (roles assigned), a custom limited role, sample translation overrides, themes, sample audit history.
 
 ### ✅ CHECKPOINT P1
@@ -309,7 +320,7 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 
 **Cites:** ARCH §9.7, §5.9. All money in santim.
 
-- [ ] **P7-01** `libs/shared_py/payments.py`: provider interface (`create_checkout`, `verify`, `handle_webhook`, optional `refund`), event model, status enum, signature-verification helpers, and a **sandbox test double** used in tests.
+- [ ] **P7-01** `shared/py/payments.py`: provider interface (`create_checkout`, `verify`, `handle_webhook`, optional `refund`), event model, status enum, signature-verification helpers, and a **sandbox test double** used in tests.
 - [ ] **P7-02** Fee models: items, structures per level/year, schedules (monthly/term/yearly/custom), discounts and scholarships (with approval), late-fee rules.
 - [ ] **P7-03** Invoice generation (single, bulk by section/level), numbering, lines, status machine, credits.
 - [ ] **P7-04** Payments, allocations (one payment → several invoices), receipts (numbered; receipt template via Document Studio), refunds. **Verify:** property tests: allocations sum to payment, invoice balances never negative, rounding remainders handled.
@@ -337,7 +348,7 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 - [ ] **P8-03** Notification templates UI, channel preferences per user, delivery logs, SMS and push adapters wired (SMS provider remains a stub until chosen).
 - [ ] **P8-04** Parent portal (web + mobile): children switcher, published marks and report cards, attendance, timetable, fees and payment, announcements, issued documents.
 - [ ] **P8-05** Student portal with the appropriate subset.
-- [ ] **P8-06** Push notifications on mobile via Expo notifications, deep links into the right screen.
+- [ ] **P8-06** Push notifications on mobile through the controller push relay (ARCH §8.11) with minimal payloads, and deep links into the right screen.
 - [ ] **P8-SEED** Seed: announcements, message threads, parent1 with two children.
 
 ### ✅ CHECKPOINT P8
@@ -400,10 +411,12 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 - [ ] **P11-06** Audit vault oversight: full search, chain verification, suspicious-activity alerts (already started in P1-12), export.
 - [ ] **P11-07** **Support sessions** hardened: reason required, optional read-only mode, expiry, list of past sessions, per-school notification policy.
 - [ ] **P11-08** Version management: register releases, staged rollout (pilot school first), per-school upgrade status, upgrade runbook script (backup → pull → migrate → health check → rollback by restore).
-- [ ] **P11-09** **Your business revenue in ETB:** school invoices (subscription fees), payments (manual first, gateway adapters reusing `libs/shared_py/payments.py`), MRR/ARR, per-school revenue, overdue subscriptions, reports for monthly/yearly in ETB.
+- [ ] **P11-09** **Your business revenue in ETB:** school invoices (subscription fees), payments (manual first, gateway adapters reusing `shared/py/payments.py`), MRR/ARR, per-school revenue, overdue subscriptions, reports for monthly/yearly in ETB.
 - [ ] **P11-10** Central push of translations (central layer), themes, and Document Studio templates to selected or all schools.
 - [ ] **P11-11** Backups visibility and restore tooling documented and tested (see Phase 14).
-- [ ] **P11-SEED** Seed: two plans, two enrolled demo instances (one active, one in grace), sample subscription invoices.
+- [ ] **P11-12** **Push relay** (ARCH §8.11): the mobile app registers a device token with the controller for a (school, user pseudonym) pair; instances send signed `POST /push/send` requests; the controller delivers via the push provider (Expo push or FCM/APNs). Minimal payloads (no marks, names or amounts) plus a deep link. Token cleanup, per-school rate limits, delivery log. **Verify:** with a fake push provider, a school cannot push to a device registered under another school; a revoked device receives nothing.
+- [ ] **P11-13** **Directory hardening:** school-code generation, rotation and revocation in the CP UI; QR generation and printing for onboarding; name search off by default (optional per school); `kid`-based key rotation with the app accepting a key set; enumeration protection; suspended-school behavior. **Verify:** brute-forcing codes is throttled; a revoked code stops resolving.
+- [ ] **P11-SEED** Seed: two plans, two enrolled demo instances running side by side (code `DEMO` active, code `DEMO2` in grace), sample subscription invoices.
 
 ### ✅ CHECKPOINT P11
 - [ ] Tests green. Provisioning script tested end to end.
@@ -412,7 +425,7 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 
 ---
 
-## PHASE 12: Mobile completion and offline hardening
+## PHASE 12: The single multi-school mobile app: completion and hardening
 
 **Cites:** ARCH §11.2–11.4.
 
@@ -422,6 +435,10 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 - [ ] **P12-04** Push notifications end to end, deep linking, notification preferences.
 - [ ] **P12-05** Mobile performance and UX pass: list virtualization, image caching, startup time, small-screen layouts, Amharic text overflow, dark mode.
 - [ ] **P12-06** EAS build profiles (development, preview, production), app config, icons, splash, versioning, OTA update channel. Document the release process in `docs/runbooks`.
+- [ ] **P12-07** **Multi-school accounts:** add and remove schools, account switcher, per-school isolated storage for tokens, cache and outbox (removing a school wipes its local data), optional biometric/app lock, remembering the last school. **Verify:** a user with accounts in `DEMO` and `DEMO2` switches between them with no data bleed (test), and a queued offline action can never be sent to the wrong school.
+- [ ] **P12-08** **Version handshake** (ARCH §8.10): on opening a school, read `/system/info`; enforce `min_client_version` with a clear update screen; hide features missing from `/system/capabilities`; show a gentle "school is on an older version" state. **Verify:** compatibility tests against stored API fixtures from the previous release and a simulated newer server.
+- [ ] **P12-09** **Release of the single app:** one EAS project, store listings (the owner supplies Apple Developer and Google Play accounts), app signing, an OTA-update policy (compatible JS updates only), crash reporting, privacy labels. Document in `docs/runbooks/release-mobile.md`.
+- [ ] **P12-10** **White-label hook (do not build the feature):** keep a build-time variant mechanism (`APP_VARIANT` for name, icon, fixed school code) documented in `docs/DECISIONS.md`, so a branded per-school app could be added later without refactoring.
 - [ ] **P12-SEED** Make sure demo data exercises mobile flows.
 
 ### ✅ CHECKPOINT P12
@@ -486,9 +503,11 @@ Build only those the owner requests. Each must be a **self-contained module** (m
 - [ ] **P15-04** Full regression: `./scripts/dev.sh reset && ./scripts/dev.sh test && ./scripts/dev.sh smoke` all green from a clean clone.
 - [ ] **P15-05** Version tags, changelog, release notes, EAS production build instructions, first-school onboarding checklist (provision → enroll → setup wizard → choose scope/curriculum/term system → set mark structure and grade rules → create roles → import students → train staff).
 - [ ] **P15-06** Final review of `docs/DECISIONS.md` and `docs/QUESTIONS.md`: produce a summary for the owner of every open item (payment credentials, SMS provider, legal review, translations to review, curriculum starter data to verify).
+- [ ] **P15-07** **Optional: repo split rehearsal** (only if the owner asks to split). Write `docs/runbooks/split-repo.md` and verify it in a scratch copy: `school-erp/` + `shared/` become one repo, `owner/` + `shared/` another; `shared/` is published as versioned private packages (a Python wheel and an npm package, or tagged git dependencies); the OpenAPI schema is published as a release artifact that `owner/` consumes; each repo has its own CI. **Verify:** both scratch repos build and pass their tests (the boundary checks already being green proves there is no hidden coupling). Do **not** perform the real split unless instructed.
 
 ### ✅ FINAL CHECKPOINT
 - [ ] `./scripts/dev.sh up && ./scripts/dev.sh seed` gives a fully working demo with all accounts in section 1.
+- [ ] Zone boundary checks and the API compatibility guard are green.
 - [ ] Every ARCH requirement is either implemented and tested, or listed in `docs/DECISIONS.md` with a reason.
 - [ ] Production deployment procedure verified. Tag `v1.0.0`.
 
@@ -509,7 +528,7 @@ Build only those the owner requests. Each must be a **self-contained module** (m
 1. `./scripts/dev.sh up` then `./scripts/dev.sh seed`.
 2. Controller at http://localhost:5174: sign in as `owner@controller.local`.
 3. School at http://localhost:5173: sign in as the role being tested (section 1).
-4. Mobile: `./scripts/dev.sh mobile`, scan the QR code with Expo Go.
+4. Mobile: `./scripts/dev.sh mobile`, scan the QR code with Expo Go, then enter the school code `DEMO` and log in.
 5. Report anything that fails. Reset any time with `./scripts/dev.sh reset`.
 
 ## Appendix C: If you get stuck
