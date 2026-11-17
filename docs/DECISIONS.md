@@ -244,3 +244,30 @@ and recorded here (date, decision, reason).
   index is `ix_sample_notes_live`. PostgreSQL and SQLite both support this.
 - The sample note delete/restore endpoints keep using `sample.notes.create` as
   their permission until P1-05.
+
+## 2026-11-17 — P1-03 typed layered settings
+
+- **Three layers, one table.** Values resolve `code` (Pydantic defaults) <
+  `central` (controller policy) < `instance` (the school). `settings` stores one
+  row per `(layer, module, key)`; clearing an instance value soft-deletes the
+  row so the effective value falls back to central or code. There is still one
+  physical database locally; the `central` layer is written through the service
+  only (the controller sync will call it in a later phase), while the HTTP API
+  writes `instance`.
+- **Modules own their schema.** `ModuleManifest.settings_schema` points at a
+  Pydantic model; `field_specs` flattens it to dotted keys and derives the form
+  metadata (`type`, `enum`, `minimum`, `maximum`, `max_length`, `secret`,
+  `label_key`, `default`). The web Settings page is rendered entirely from that
+  metadata, so a new module setting needs no bespoke React page.
+- **Validation is whole-model.** A single PUT validates the candidate against
+  the complete model (not just the one field), so cross-field/default
+  constraints hold; failures return `422 VALIDATION_ERROR` with
+  `message_key=error.invalid_setting` and the pydantic locations.
+- **Every change is audited.** `PUT /settings/{module}/{key}` writes
+  `settings.update` and `DELETE` writes `settings.clear`, both with
+  `before/after = {value, source}`. The audit entry uses the module/key as the
+  entity id (`core.school_profile.name`).
+- Settings labels live under `settings.<module>.<key>` in the owning module's
+  i18n bundle; the `core` bundle also carries the page chrome and enum labels.
+- `settings.view` gates the page/navigation, `settings.manage` gates writes; the
+  seeded director gets both, the `limited` test role gets neither.

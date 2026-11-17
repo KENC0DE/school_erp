@@ -8,6 +8,7 @@ import { DashboardPage } from "./pages/Dashboard";
 import { LoginPage } from "./pages/Login";
 import { NotFoundPage } from "./pages/NotFound";
 import { SamplePage } from "./pages/SamplePage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
 import { I18nProvider, useI18n } from "./providers/I18nProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
@@ -52,6 +53,7 @@ export function AppRoutes() {
         <Route element={<Shell />}>
           <Route index element={<DashboardPage />} />
           <Route path="sample" element={<SamplePage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

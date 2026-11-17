@@ -15,6 +15,7 @@ from core.modules.gating import module_gate
 from core.modules.registry import ModuleRegistry
 from core.modules.router import router as modules_router
 from core.rbac.router import router as rbac_router
+from core.settings.router import router as settings_router
 from core.themes.router import router as themes_router
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -42,6 +43,7 @@ CORE_ROUTERS = [
     modules_router,
     i18n_router,
     themes_router,
+    settings_router,
     ai_router,
     jobs_router,
 ]

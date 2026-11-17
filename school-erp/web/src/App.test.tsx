@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -27,6 +27,16 @@ const messages: Record<string, string> = {
   "ai.title": "Assistant",
   "sample.title": "Sample module",
   "sample.nav": "Sample module",
+  "settings.title": "Settings",
+  "settings.intro": "Layered settings",
+  "settings.module.core": "School",
+  "settings.core.school_profile.name": "School name",
+  "settings.save": "Save",
+  "settings.reset": "Reset to default",
+  "settings.source.code": "Code default",
+  "settings.source.central": "Central",
+  "settings.source.instance": "School",
+  "nav.settings": "Settings",
 };
 
 function json(body: unknown): Response {
@@ -102,5 +112,79 @@ describe("school web shell", () => {
       "href",
       "/sample",
     );
+  });
+
+  it("renders generated settings and saves a value", async () => {
+    localStorage.setItem("erp.access_token", "test-access-token");
+    const field = {
+      module: "core",
+      key: "school_profile.name",
+      type: "string",
+      default: "Demo Academy",
+      label_key: "settings.core.school_profile.name",
+      enum: null,
+      minimum: null,
+      maximum: null,
+      max_length: 200,
+      secret: false,
+      value: "Demo Academy",
+      source: "code",
+    };
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+      if (url.endsWith("/api/v1/auth/me")) {
+        return json({
+          id: "1",
+          email: "superadmin@demo.school",
+          display_name: "Test User",
+          locale: "en",
+          roles: ["Super Admin"],
+          permissions: ["settings.view", "settings.manage"],
+          is_controller: false,
+        });
+      }
+      if (url.endsWith("/api/v1/auth/me/navigation")) {
+        return json({
+          items: [
+            { key: "dashboard", label_key: "nav.dashboard", path: "/", module: "core" },
+            { key: "settings", label_key: "nav.settings", path: "/settings", module: "core" },
+          ],
+          modules: [],
+          locale: "en",
+          languages: ["en", "am"],
+        });
+      }
+      if (url.endsWith("/api/v1/settings") && method === "GET") {
+        return json({
+          items: [{ module: "core", label_key: "settings.module.core", fields: [field] }],
+          next_cursor: null,
+        });
+      }
+      if (url.endsWith("/api/v1/settings/core/school_profile.name") && method === "PUT") {
+        return json({ ...field, value: "Renamed", source: "instance" });
+      }
+      throw new Error(`Unexpected request: ${method} ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderAt("/settings");
+
+    const input = await screen.findByLabelText("School name");
+    expect(input).toHaveValue("Demo Academy");
+    expect(screen.getByText("Code default")).toBeInTheDocument();
+
+    fireEvent.change(input, { target: { value: "Renamed" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      const call = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          String(url).endsWith("/api/v1/settings/core/school_profile.name") &&
+          init?.method === "PUT",
+      );
+      expect(call).toBeTruthy();
+      expect(JSON.parse(String(call?.[1]?.body))).toEqual({ value: "Renamed" });
+    });
   });
 });

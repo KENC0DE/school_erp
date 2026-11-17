@@ -226,6 +226,16 @@ async def navigation(
             "module": "core",
         }
     ]
+    if principal.can("settings.view"):
+        items.append(
+            {
+                "key": "settings",
+                "label_key": "nav.settings",
+                "path": "/settings",
+                "icon": "settings",
+                "module": "core",
+            }
+        )
     for manifest in registry.all():
         state = states.get(manifest.key)
         if not state or not state["available"]:

@@ -222,6 +222,7 @@ ROLE_SPECS: dict[str, tuple[str, list[str]]] = {
             "i18n.view",
             "themes.view",
             "jobs.view",
+            "settings.view",
             "settings.manage",
             "ai.use",
             "sample.notes.view",

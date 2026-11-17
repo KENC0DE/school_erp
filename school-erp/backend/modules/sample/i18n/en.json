@@ -10,5 +10,8 @@
   "perm.view": "View sample notes",
   "perm.create": "Create sample notes",
   "action.list": "List sample notes",
-  "action.create": "Create a sample note"
+  "action.create": "Create a sample note",
+  "settings.sample.default_author": "Default author",
+  "settings.sample.allow_empty_notes": "Allow empty notes",
+  "settings.sample.page_size": "Notes per page"
 }

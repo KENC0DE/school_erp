@@ -16,6 +16,7 @@ CORE_PERMISSIONS = [
     Perm("i18n.manage", "core.perm.i18n.manage"),
     Perm("themes.view", "core.perm.themes.view"),
     Perm("themes.manage", "core.perm.themes.manage"),
+    Perm("settings.view", "core.perm.settings.view"),
     Perm("settings.manage", "core.perm.settings.manage"),
     Perm("jobs.view", "core.perm.jobs.view"),
     Perm("ai.use", "core.perm.ai.use"),

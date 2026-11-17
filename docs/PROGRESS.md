@@ -70,7 +70,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 
 - [x] P1-01 — API conventions
 - [x] P1-02 — Soft-delete base
-- [ ] P1-03 — Settings system
+- [x] P1-03 — Settings system
 - [ ] P1-04 — Auth hardening
 - [ ] P1-05 — Full RBAC
 - [ ] P1-06 — Default roles seeded and editable (Super Admin, Director, Academic Head, Department Head, Registrar,…

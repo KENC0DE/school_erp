@@ -10,5 +10,8 @@
   "perm.view": "የናሙና ማስታወሻዎችን ይመልከቱ",
   "perm.create": "የናሙና ማስታወሻዎችን ይፍጠሩ",
   "action.list": "የናሙና ማስታወሻዎችን ይዘርዝሩ",
-  "action.create": "የናሙና ማስታወሻ ይፍጠሩ"
+  "action.create": "የናሙና ማስታወሻ ይፍጠሩ",
+  "settings.sample.default_author": "ነባሪ ጸሐፊ",
+  "settings.sample.allow_empty_notes": "ባዶ ማስታወሻዎችን ፍቀድ",
+  "settings.sample.page_size": "በአንድ ገጽ ማስታወሻዎች"
 }

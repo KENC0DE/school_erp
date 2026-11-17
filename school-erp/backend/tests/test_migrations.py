@@ -36,9 +36,16 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
     finally:
         connection.close()
 
-    assert {"users", "audit_log", "instance_modules", "sample_notes", "idempotency_keys"} <= tables
+    assert {
+        "users",
+        "audit_log",
+        "instance_modules",
+        "sample_notes",
+        "idempotency_keys",
+        "settings",
+    } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0004_soft_delete"
+    assert version == "0005_settings"
 
     assert live_index is not None
     assert "WHERE deleted_at IS NULL" in live_index[0]
