@@ -574,3 +574,24 @@ and recorded here (date, decision, reason).
   `deleted_at`/`deleted_by` from migration `0011_i18n_soft_delete`) because
   every business table follows the shared soft-delete/row-version rules and
   reset is a soft delete.
+
+## 2026-11-17 — P1-19 "Suggest with AI" hook
+
+- **The editor invokes the action registry, never a model directly.** The
+  endpoint `POST /api/v1/i18n/editor/suggest` looks up
+  `i18n.suggest_translation` (permission `i18n.manage`, risk `write`) and calls
+  its registered handler, so the AI tool list, permissions and previews cannot
+  drift from the editor button.
+- **No provider means a clear state, not a fake translation.** The endpoint
+  returns HTTP 200 with `configured: false`, `status: "not_configured"` and
+  `message_key: "ai.not_configured"` when there is no API key, the provider is
+  the `fake` echo, or no suggester has been registered. Phase 9 registers the
+  real suggester through `register_translation_suggester`.
+- **Suggestions are drafts and never overwrite human work.** A generated value
+  is stored on the `school` layer with `source="ai"` and
+  `status="needs_review"`. If a live school override already exists, it is left
+  untouched and the response returns `written: false` plus the draft so the
+  editor can compare them. Every written draft is audited as `i18n.suggest`.
+- **English is not a target.** Suggestions are rejected for `locale=en` because
+  English is the source column; the editor only offers the button on target
+  locales.

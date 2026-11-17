@@ -109,6 +109,7 @@ function EntryEditor({
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState(entry.value);
   const [status, setStatus] = useState(entry.status === "missing" ? "approved" : entry.status);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
 
   useEffect(() => {
     setDraft(entry.value);
@@ -129,6 +130,34 @@ function EntryEditor({
         { value: draft, status },
       ),
     onSuccess: done,
+  });
+
+  const suggest = useMutation({
+    mutationFn: () =>
+      api.post<{
+        configured: boolean;
+        status: string;
+        message_key?: string;
+        draft?: string;
+        written?: boolean;
+      }>("/api/v1/i18n/editor/suggest", {
+        namespace: entry.namespace,
+        key: entry.key,
+        locale,
+      }),
+    onSuccess: async (result) => {
+      if (!result.configured) {
+        setAiNotice("translations.ai_not_configured");
+        return;
+      }
+      if (result.draft) {
+        setDraft(result.draft);
+        setStatus("needs_review");
+      }
+      setAiNotice(result.written ? "translations.ai_written" : "translations.ai_existing");
+      if (result.written) await done();
+    },
+    onError: () => setAiNotice("common.error"),
   });
 
   const reset = useMutation({
@@ -166,6 +195,18 @@ function EntryEditor({
         </select>
         <Button
           type="button"
+          variant="secondary"
+          data-testid={`translation-suggest-${testId}`}
+          disabled={!canManage || busy || suggest.isPending}
+          onClick={() => {
+            setAiNotice(null);
+            suggest.mutate();
+          }}
+        >
+          {suggest.isPending ? t("translations.suggesting") : t("translations.suggest")}
+        </Button>
+        <Button
+          type="button"
           data-testid={`translation-save-${testId}`}
           disabled={!canManage || busy || draft.trim() === ""}
           onClick={() => save.mutate()}
@@ -186,6 +227,11 @@ function EntryEditor({
       </div>
       {save.isSuccess || reset.isSuccess ? (
         <p className="text-xs text-muted-foreground">{t("translations.saved")}</p>
+      ) : null}
+      {aiNotice ? (
+        <p className="text-xs text-muted-foreground" data-testid={`translation-ai-notice-${testId}`}>
+          {t(aiNotice)}
+        </p>
       ) : null}
       {error ? (
         <p role="alert" className="text-xs text-destructive">

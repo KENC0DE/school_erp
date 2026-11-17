@@ -592,3 +592,111 @@ __all__ = [
 # Keep uuid7 importable for tests that build rows directly.
 def new_entry_id() -> uuid.UUID:
     return uuid7()
+
+
+async def suggest_entry(
+    session: AsyncSession,
+    principal: Principal,
+    namespace: str,
+    key: str,
+    locale: str,
+    *,
+    suggester: Any,
+    via: str | None = None,
+) -> dict[str, Any]:
+    """Ask a provider for a draft and store it as ``needs_review``.
+
+    An existing live school override is never overwritten: the suggestion is
+    returned so an editor can compare it, but the human translation wins until
+    someone saves a change explicitly.
+    """
+    if locale == "en":
+        raise ValidationFailed(
+            "English is the source language, not a translation target",
+            message_key="error.i18n.suggest_source",
+        )
+    source_row = await _effective_en(session, namespace, key)
+    if source_row is None:
+        raise NotFound(
+            "No translation key by that name",
+            message_key="error.i18n.unknown_key",
+            details={"namespace": namespace, "key": key},
+        )
+    draft = str(await suggester(source_row.value, namespace, key, locale)).strip()
+    if not draft:
+        raise ValidationFailed(
+            "The AI provider returned an empty suggestion",
+            message_key="error.ai.suggest_failed",
+        )
+    _validate_value(draft)
+    row = (
+        await session.execute(
+            select(TranslationEntry)
+            .where(
+                TranslationEntry.namespace == namespace,
+                TranslationEntry.key == key,
+                TranslationEntry.locale == locale,
+                TranslationEntry.layer == EDITABLE_LAYER,
+            )
+            .execution_options(include_deleted=True)
+        )
+    ).scalar_one_or_none()
+    if row is not None and row.deleted_at is None and row.value.strip():
+        return {
+            "namespace": namespace,
+            "key": key,
+            "locale": locale,
+            "source": source_row.value,
+            "draft": draft,
+            "status": "needs_review",
+            "written": False,
+            "current": row.value,
+        }
+
+    before = _raw_view(row if row is not None and row.deleted_at is None else None)
+    if row is None:
+        row = TranslationEntry(
+            namespace=namespace,
+            key=key,
+            locale=locale,
+            value=draft,
+            status="needs_review",
+            source="ai",
+            layer=EDITABLE_LAYER,
+        )
+        session.add(row)
+    else:
+        if row.deleted_at is not None:
+            mark_restored(row, actor=principal)
+        row.value = draft
+        row.status = "needs_review"
+        row.source = "ai"
+    row.updated_by = actor_uuid(principal)
+    await session.flush()
+    await session.refresh(row)
+    await record(
+        session,
+        action="i18n.suggest",
+        module="core",
+        entity_type="translation_entry",
+        entity_id=f"{namespace}:{key}:{locale}",
+        before=before,
+        after=_raw_view(row),
+        actor=principal,
+        via=via,
+    )
+    view = _entry_view(namespace, key, source_row, row)
+    await session.commit()
+    return {
+        "namespace": namespace,
+        "key": key,
+        "locale": locale,
+        "source": source_row.value,
+        "draft": draft,
+        "status": "needs_review",
+        "written": True,
+        "current": view["value"],
+    }
+
+
+__all__ += ["suggest_entry"]

@@ -369,5 +369,14 @@
   "error.i18n.export_format": "CSV ወይም JSON ይምረጡ",
   "settings.languages.title": "ቋንቋዎች",
   "settings.languages.hint": "ሰዎች የሚያዩትን ጽሑፍ ያስተካክሉ፣ የትምህርት ቤቱን ቃላት ይለውጡ እና ትርጉሞችን ያውጡ።",
-  "settings.languages.link": "የትርጉም አርታኢውን ክፈት"
+  "settings.languages.link": "የትርጉም አርታኢውን ክፈት",
+  "translations.suggest": "በAI ጠቁም",
+  "translations.suggesting": "ረዳቱን በመጠየቅ ላይ…",
+  "translations.ai_not_configured": "AI እስካሁን አልተዘጋጀም። ጥቆማዎችን ለማንቃት በደረጃ 9 አቅራቢ ያክሉ።",
+  "translations.ai_written": "የAI ረቂቅ ተቀምጦ ክለሳ ይፈልጋል ተብሎ ምልክት ተደርጓል።",
+  "translations.ai_existing": "የAI ረቂቅ ዝግጁ ነው፣ ነገር ግን ነባሩ የትምህርት ቤት ማሻሻያ አልተለወጠም።",
+  "translations.ai_draft": "የAI ረቂቅ",
+  "error.ai.not_configured": "AI እስካሁን አልተዘጋጀም",
+  "error.ai.suggest_failed": "የAI አቅራቢው ባዶ ጥቆማ መለሰ",
+  "error.i18n.suggest_source": "እንግሊዝኛ የምንጭ ቋንቋ ነው፣ የትርጉም ግብ አይደለም"
 }

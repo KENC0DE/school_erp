@@ -6,9 +6,12 @@ Registered before the public ``/i18n/{locale}/{namespace}`` bundle route so
 
 from __future__ import annotations
 
+from app.logging import request_id_var
+from core.actions.registry import ActionContext, registry
 from core.auth.deps import require
 from core.auth.principal import Principal
 from core.db.deps import get_session
+from core.i18n.actions import SuggestInput, translation_suggester
 from core.i18n.editor import (
     all_namespaces,
     export_entries,
@@ -18,7 +21,7 @@ from core.i18n.editor import (
     set_entry,
     stats,
 )
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -114,6 +117,42 @@ async def reset_translation(
     return await reset_entry(
         session, principal, namespace, key, locale, via=principal.via
     )
+
+
+@router.post("/suggest", dependencies=[Depends(require("i18n.manage"))])
+async def suggest_translation(
+    payload: SuggestInput,
+    request: Request,
+    principal: Principal = Depends(require("i18n.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    settings = request.app.state.settings
+    configured = (
+        bool(settings.ai_api_key)
+        and settings.ai_provider != "fake"
+        and translation_suggester() is not None
+    )
+    if not configured:
+        return {
+            "configured": False,
+            "status": "not_configured",
+            "message_key": "ai.not_configured",
+        }
+    action = registry.get("i18n.suggest_translation")
+    if action is None:  # pragma: no cover - actions.py always registers it
+        return {
+            "configured": False,
+            "status": "not_configured",
+            "message_key": "ai.not_configured",
+        }
+    context = ActionContext(
+        principal=principal,
+        session=session,
+        via=principal.via,
+        request_id=request_id_var.get(),
+    )
+    result = await action.handler(context, payload.model_dump())
+    return {"configured": True, **result}
 
 
 @router.post("/import", dependencies=[Depends(require("i18n.manage"))])

@@ -58,6 +58,11 @@ const messages: Record<string, string> = {
   "translations.in_context_hint": "Click any label to edit its translation.",
   "translations.table_mode": "Back to the table",
   "translations.choose_key": "Choose a label to edit",
+  "translations.suggest": "Suggest with AI",
+  "translations.suggesting": "Asking the assistant…",
+  "translations.ai_not_configured": "AI is not configured yet.",
+  "translations.ai_written": "AI draft saved and marked needs review.",
+  "translations.ai_existing": "AI draft is ready, but an existing school override was left unchanged.",
 };
 
 interface Row {
@@ -74,6 +79,7 @@ interface Row {
 let store: Row[] = [];
 let requests: { method: string; url: string; body: unknown }[] = [];
 let mePermissions: string[] = ["*"];
+let suggestMode: "off" | "on" = "off";
 
 function resetStore() {
   store = [
@@ -110,6 +116,7 @@ function resetStore() {
   ];
   requests = [];
   mePermissions = ["*"];
+  suggestMode = "off";
 }
 
 function json(body: unknown, status = 200) {
@@ -200,6 +207,39 @@ async function stubFetch(input: RequestInfo | URL, init?: RequestInit) {
     row.status = row.key === "nav.dashboard" ? "approved" : "missing";
     row.layer = "default";
     return json(row);
+  }
+  if (url.pathname === "/api/v1/i18n/editor/suggest" && method === "POST") {
+    if (suggestMode === "off") {
+      return json({
+        configured: false,
+        status: "not_configured",
+        message_key: "ai.not_configured",
+      });
+    }
+    const row = store.find(
+      (item) => item.namespace === body.namespace && item.key === body.key,
+    );
+    if (!row) return json({ error: { code: "NOT_FOUND" } }, 404);
+    if (row.layer === "school") {
+      return json({
+        configured: true,
+        status: "needs_review",
+        draft: "የAI ረቂቅ",
+        written: false,
+        current: row.value,
+      });
+    }
+    row.value = "የAI ረቂቅ";
+    row.status = "needs_review";
+    row.layer = "school";
+    row.source_kind = "ai";
+    return json({
+      configured: true,
+      status: "needs_review",
+      draft: "የAI ረቂቅ",
+      written: true,
+      current: row.value,
+    });
   }
   if (url.pathname === "/api/v1/i18n/editor/import") {
     return json({ imported: 2, unchanged: 1 });
@@ -327,6 +367,44 @@ describe("TranslationsPage", () => {
     });
     expect(screen.getByTestId("translations-export-json")).toBeInTheDocument();
     expect(screen.getByTestId("translations-export-csv")).toBeInTheDocument();
+  });
+
+  it("asks the action registry for an AI draft and explains the unconfigured state", async () => {
+    renderAt("/settings/languages");
+    const row = await screen.findByTestId("translation-row-core-nav.dashboard");
+
+    fireEvent.click(within(row).getByTestId("translation-suggest-nav.dashboard"));
+    await waitFor(() =>
+      expect(screen.getByTestId("translation-ai-notice-nav.dashboard")).toHaveTextContent(
+        "AI is not configured yet.",
+      ),
+    );
+    expect(within(row).getByTestId("translation-input-nav.dashboard")).toHaveValue("ዳሽቦርድ");
+    expect(store[0].value).toBe("ዳሽቦርድ");
+  });
+
+  it("shows an AI draft as needs review without auto-approving it", async () => {
+    suggestMode = "on";
+    renderAt("/settings/languages");
+    const row = await screen.findByTestId("translation-row-core-nav.dashboard");
+
+    fireEvent.click(within(row).getByTestId("translation-suggest-nav.dashboard"));
+    await waitFor(() =>
+      expect(screen.getByTestId("translation-ai-notice-nav.dashboard")).toHaveTextContent(
+        "AI draft saved and marked needs review.",
+      ),
+    );
+    expect(store[0].status).toBe("needs_review");
+    expect(store[0].source_kind).toBe("ai");
+    await waitFor(() =>
+      expect(within(row).getByTestId("translation-input-nav.dashboard")).toHaveValue("የAI ረቂቅ"),
+    );
+    expect(within(row).getByTestId("translation-status-select-nav.dashboard")).toHaveValue(
+      "needs_review",
+    );
+    expect(within(row).getByTestId("translation-status-nav.dashboard")).toHaveTextContent(
+      "Needs review",
+    );
   });
 
   it("explains when the user cannot view translations", async () => {

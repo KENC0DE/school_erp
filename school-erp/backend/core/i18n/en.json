@@ -369,5 +369,14 @@
   "error.i18n.export_format": "Choose CSV or JSON",
   "settings.languages.title": "Languages",
   "settings.languages.hint": "Edit the labels people see, override the school terminology and export translations.",
-  "settings.languages.link": "Open the translation editor"
+  "settings.languages.link": "Open the translation editor",
+  "translations.suggest": "Suggest with AI",
+  "translations.suggesting": "Asking the assistant…",
+  "translations.ai_not_configured": "AI is not configured yet. Add a provider in Phase 9 to enable suggestions.",
+  "translations.ai_written": "AI draft saved and marked needs review.",
+  "translations.ai_existing": "AI draft is ready, but an existing school override was left unchanged.",
+  "translations.ai_draft": "AI draft",
+  "error.ai.not_configured": "AI is not configured yet",
+  "error.ai.suggest_failed": "The AI provider returned an empty suggestion",
+  "error.i18n.suggest_source": "English is the source language, not a translation target"
 }
