@@ -716,3 +716,46 @@ and recorded here (date, decision, reason).
   did not include file permissions. Schools (and the P1-SEED limited role) can
   grant `files.view`, `files.upload` and `files.manage`; the Super Admin holds
   them through `*`.
+
+## 2026-11-18 — P1-23 Notification service
+
+- **One `notifications` row per recipient.** A template is shared, but the
+  in-app centre is personal: each row stores the rendered title/body, the
+  template key, the variables and the chosen channels. The message is rendered
+  in the recipient's locale when it is sent, so switching language later does
+  not rewrite history (and an Amharic notification stays Amharic).
+- **Templates hold translation keys, never literal text.** `title_key` and
+  `body_key` point into a namespace (default `core`); variables use
+  `{{name}}` placeholders. This keeps the i18n rule intact: an edited Amharic
+  label changes future notifications without a redeploy. The API rejects
+  literal strings that do not look like keys. Three templates ship from
+  bootstrap (`account.welcome`, `academics.results_published`,
+  `finance.invoice_overdue`); system templates can be edited but not deleted,
+  and all templates are soft-deleted.
+- **In-app is immediate; external channels are queued.** Creating a
+  notification writes an in-app row (status `sent`) plus one `delivery_logs`
+  row per channel. Email, SMS, push and Telegram start `queued` and a
+  `notifications.delivery` job delivers them; missing email/phone marks that
+  channel `skipped` with a reason instead of failing the whole message. Test
+  runs call `deliver_notification` directly so no broker or Mailpit is needed.
+- **Push is a minimal logging stub until P11-12.** `app.state.push` implements
+  the same interface the signed controller relay will use. It records only the
+  title, the deep link and the notification id; body text, marks, names and
+  amounts never enter a push payload. `build_push_adapter` is the single switch
+  point for the real relay.
+- **Delivery logs keep the address, the API masks it.** Operators need the
+  real email/phone/device id to diagnose failures; the delivery-log endpoint
+  returns `f***@domain` and `***1234`. Attempt counts and the last error are
+  visible, which is what the jobs UI needs for retry.
+- **Sending and reading are audited; message bodies are not.** `notification.send`
+  records the template, recipient id and channels only, and marking read /
+  read-all records a count. The audit chain therefore never becomes a copy of
+  private message content.
+- **`notifications.*` is declared but not granted by default.** As with
+  `files.*`, the P1-06 matrix is asserted exactly and unchanged. Every signed-in
+  user can read and mark their own inbox (session-scoped, IDOR-safe: another
+  user's id returns 404); template and delivery management requires
+  `notifications.view`/`notifications.manage`.
+- **The notification centre is web-only for now.** Mobile notification UI is
+  part of the Phase 12 mobile parity sweep; the API and rendered rows are
+  already platform-neutral.

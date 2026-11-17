@@ -103,6 +103,34 @@ def files_thumbnail_task(job_id: str, file_id: str) -> dict:
     return {"job_id": job_id, "ok": True}
 
 
+@celery_app.task(name="erp.notifications_delivery")
+def notifications_delivery_task(job_id: str, notification_id: str) -> dict:
+    asyncio.run(_mark_job(job_id, "running"))
+
+    async def work(session):
+        from core.notifications.adapters import build_adapters, build_push_adapter
+        from core.notifications.service import deliver_notification
+
+        settings = get_settings()
+        mailer, sms = build_adapters(settings)
+        return await deliver_notification(
+            session,
+            notification_id,
+            mailer=mailer,
+            sms=sms,
+            push=build_push_adapter(settings),
+        )
+
+    try:
+        result = asyncio.run(_run_in_session(work))
+    except Exception as exc:  # pragma: no cover - adapter failures are logged per channel
+        logger.warning("notification delivery failed: %s", exc)
+        asyncio.run(_mark_job(job_id, "failed", error="The notification could not be delivered"))
+        return {"job_id": job_id, "ok": False}
+    asyncio.run(_mark_job(job_id, "succeeded", result=result))
+    return {"job_id": job_id, "ok": True}
+
+
 @celery_app.task(name="erp.heartbeat")
 def heartbeat_task() -> dict:
     from core.controller_link.service import heartbeat

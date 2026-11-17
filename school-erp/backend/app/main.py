@@ -23,7 +23,8 @@ from core.jobs.router import router as jobs_router
 from core.modules.gating import module_gate
 from core.modules.registry import ModuleRegistry
 from core.modules.router import router as modules_router
-from core.notifications.adapters import build_adapters
+from core.notifications.adapters import build_adapters, build_push_adapter
+from core.notifications.router import router as notifications_router
 from core.people.router import router as people_router
 from core.rbac.router import router as rbac_router
 from core.settings.router import router as settings_router
@@ -62,6 +63,7 @@ CORE_ROUTERS = [
     i18n_router,
     themes_router,
     files_router,
+    notifications_router,
     settings_router,
     ai_router,
     jobs_router,
@@ -99,6 +101,7 @@ def create_app(settings: Settings | None = None, registry: ModuleRegistry | None
     app.state.db = Database(settings.database_url)
     app.state.storage = build_storage(settings)
     app.state.mailer, app.state.sms = build_adapters(settings)
+    app.state.push = build_push_adapter(settings)
 
     # Innermost: it buffers the request body once and records the completed JSON
     # response. CORS and request-id stay outermost so replays still get both.

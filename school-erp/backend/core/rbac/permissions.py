@@ -27,5 +27,7 @@ CORE_PERMISSIONS = [
     Perm("files.view", "core.perm.files.view"),
     Perm("files.upload", "core.perm.files.upload"),
     Perm("files.manage", "core.perm.files.manage"),
+    Perm("notifications.view", "core.perm.notifications.view"),
+    Perm("notifications.manage", "core.perm.notifications.manage"),
     Perm("ai.use", "core.perm.ai.use"),
 ]

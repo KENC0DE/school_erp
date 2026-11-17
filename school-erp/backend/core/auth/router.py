@@ -112,6 +112,15 @@ async def navigation(
             "module": "core",
         }
     ]
+    items.append(
+        {
+            "key": "notifications",
+            "label_key": "nav.notifications",
+            "path": "/notifications",
+            "icon": "bell",
+            "module": "core",
+        }
+    )
     if principal.can("users.view") or principal.can("users.manage"):
         items.append(
             {

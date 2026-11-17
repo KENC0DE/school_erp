@@ -31,6 +31,34 @@ class SMSAdapter(Protocol):
     async def send(self, *, to: str, body: str) -> None: ...
 
 
+class PushAdapter(Protocol):
+    async def send(self, *, user_id: str, title: str, body: str, data: dict) -> None: ...
+
+
+@dataclass
+class PushMessage:
+    user_id: str
+    title: str
+    body: str
+    data: dict = field(default_factory=dict)
+
+
+@dataclass
+class LoggingPushAdapter:
+    """Stand-in for the controller push relay until P11-12.
+
+    Payloads stay minimal (title and deep link only) so the same interface can
+    be pointed at the signed controller endpoint without changing callers.
+    """
+
+    outbox: list[PushMessage] = field(default_factory=list)
+
+    async def send(self, *, user_id: str, title: str, body: str, data: dict) -> None:
+        payload = {"link": data.get("link"), "notification_id": data.get("notification_id")}
+        self.outbox.append(PushMessage(user_id=user_id, title=title, body="", data=payload))
+        logger.info("push to %s: %s", user_id, title)
+
+
 @dataclass
 class LoggingEmailAdapter:
     """Dev/test adapter: keeps messages in memory and logs them."""
@@ -82,12 +110,25 @@ def build_adapters(settings: Settings) -> tuple[EmailAdapter, SMSAdapter]:
     return email, LoggingSMSAdapter()
 
 
+def build_push_adapter(settings: Settings) -> PushAdapter:  # noqa: ARG001
+    """Return the push transport.
+
+    Until the controller relay lands in P11-12 every instance uses the logging
+    stub; push credentials will stay in the controller, never here.
+    """
+    return LoggingPushAdapter()
+
+
 __all__ = [
     "EmailAdapter",
     "LoggingEmailAdapter",
+    "LoggingPushAdapter",
     "LoggingSMSAdapter",
     "OutboxMessage",
+    "PushAdapter",
+    "PushMessage",
     "SMSAdapter",
     "SMTPEmailAdapter",
     "build_adapters",
+    "build_push_adapter",
 ]

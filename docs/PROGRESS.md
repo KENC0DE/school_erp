@@ -90,7 +90,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-20 — i18n tooling
 - [x] P1-21 — Theme Manager
 - [x] P1-22 — Files service
-- [ ] P1-23 — Notification service
+- [x] P1-23 — Notification service
 - [ ] P1-24 — Instance setup wizard
 - [ ] P1-25 — Jobs UI
 - [ ] P1-26 — API compatibility guard

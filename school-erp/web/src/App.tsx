@@ -9,6 +9,7 @@ import { DashboardPage } from "./pages/Dashboard";
 import { LoginPage } from "./pages/Login";
 import { ModulesPage } from "./pages/ModulesPage";
 import { NotFoundPage } from "./pages/NotFound";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { ResetPasswordPage } from "./pages/ResetPassword";
 import { RolesPage } from "./pages/RolesPage";
 import { SamplePage } from "./pages/SamplePage";
@@ -62,6 +63,7 @@ export function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
           <Route index element={<DashboardPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="sample" element={<SamplePage />} />

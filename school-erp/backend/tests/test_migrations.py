@@ -40,6 +40,9 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         }
         outbox_columns = {row[1] for row in connection.execute("PRAGMA table_info(audit_outbox)")}
         file_columns = {row[1] for row in connection.execute("PRAGMA table_info(files)")}
+        notification_columns = {row[1] for row in connection.execute("PRAGMA table_info(notifications)")}
+        template_columns = {row[1] for row in connection.execute("PRAGMA table_info(notification_templates)")}
+        delivery_columns = {row[1] for row in connection.execute("PRAGMA table_info(delivery_logs)")}
     finally:
         connection.close()
 
@@ -55,9 +58,12 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "custom_field_defs",
         "themes",
         "files",
+        "notification_templates",
+        "notifications",
+        "delivery_logs",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0013_files"
+    assert version == "0014_notifications"
 
     assert {
         "failed_login_count",
@@ -87,3 +93,37 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "thumbnail_key",
         "uploaded_by",
     } <= file_columns
+
+    assert {
+        "user_id",
+        "template_key",
+        "category",
+        "title",
+        "body",
+        "params",
+        "link",
+        "channels",
+        "read_at",
+    } <= notification_columns
+    assert {
+        "key",
+        "name",
+        "namespace",
+        "title_key",
+        "body_key",
+        "default_channels",
+        "is_active",
+        "is_system",
+    } <= template_columns
+    assert {
+        "notification_id",
+        "user_id",
+        "template_key",
+        "channel",
+        "recipient",
+        "status",
+        "attempts",
+        "error",
+        "provider",
+        "sent_at",
+    } <= delivery_columns

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from core.i18n.service import load_defaults
 from core.modules.licensing import ensure_module_rows
+from core.notifications.service import ensure_default_templates
 from core.rbac.defaults import ensure_default_roles
 from core.themes.service import ensure_default_theme
 
@@ -15,4 +16,5 @@ async def bootstrap(app: FastAPI) -> None:
         await load_defaults(session, app.state.registry)
         await ensure_default_roles(session, app.state.registry)
         await ensure_default_theme(session)
+        await ensure_default_templates(session)
         await session.commit()
