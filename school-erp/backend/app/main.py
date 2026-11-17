@@ -4,6 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from core.ai.router import router as ai_router
+from core.api.idempotency import IdempotencyMiddleware
 from core.audit.router import router as audit_router
 from core.auth.router import router as auth_router
 from core.bootstrap import bootstrap
@@ -72,6 +73,14 @@ def create_app(settings: Settings | None = None, registry: ModuleRegistry | None
     app.state.registry = registry
     app.state.db = Database(settings.database_url)
 
+    # Innermost: it buffers the request body once and records the completed JSON
+    # response. CORS and request-id stay outermost so replays still get both.
+    app.add_middleware(
+        IdempotencyMiddleware,
+        database=app.state.db,
+        ttl_seconds=settings.idempotency_ttl_seconds,
+        enabled=settings.idempotency_enabled,
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,

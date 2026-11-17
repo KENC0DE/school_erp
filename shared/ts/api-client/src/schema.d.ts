@@ -362,6 +362,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sample/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Note */
+        patch: operations["patch_note_api_v1_sample_notes__note_id__patch"];
+        trace?: never;
+    };
     "/api/v1/sample/pdf": {
         parameters: {
             query?: never;
@@ -582,6 +599,8 @@ export interface components {
             items: components["schemas"]["NoteOut"][];
             /** Next Cursor */
             next_cursor?: string | null;
+            /** Total */
+            total?: number | null;
         };
         /** NoteOut */
         NoteOut: {
@@ -593,6 +612,21 @@ export interface components {
             created_at?: string | null;
             /** Id */
             id: string;
+            /**
+             * Row Version
+             * @default 1
+             */
+            row_version: number;
+        };
+        /** NoteUpdate */
+        NoteUpdate: {
+            /** Content */
+            content: string;
+            /**
+             * Row Version
+             * @description The row_version the client last read
+             */
+            row_version: number;
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -1202,7 +1236,14 @@ export interface operations {
     };
     get_notes_api_v1_sample_notes_get: {
         parameters: {
-            query?: never;
+            query?: {
+                q?: string | null;
+                author?: string | null;
+                limit?: number;
+                cursor?: string | null;
+                sort?: string | null;
+                order?: "asc" | "desc";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1218,6 +1259,15 @@ export interface operations {
                     "application/json": components["schemas"]["NoteList"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     post_note_api_v1_sample_notes_post: {
@@ -1230,6 +1280,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["NoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_note_api_v1_sample_notes__note_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteUpdate"];
             };
         };
         responses: {

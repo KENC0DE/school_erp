@@ -200,3 +200,29 @@ and recorded here (date, decision, reason).
   `DIRECTORY_PRIVATE_KEY`/`DIRECTORY_KID` whose public half is embedded in the
   mobile app, so the P0-21 manual Expo Go flow works on a clean clone. A database
   seeded before this change keeps its generated key; `reset` once to adopt it.
+
+## 2026-11-17 — P1-01 API conventions
+
+- **Pagination is keyset.** The shared envelope is `{items, next_cursor, total?}`
+  with `limit` (1–200, default 25), `cursor`, `sort` and `order`. Cursors are
+  base64url JSON containing the last row's sort value and primary key, so pages
+  stay stable when rows are inserted. A cursor reused with a different sort is
+  rejected with `INVALID_CURSOR`.
+- **Filters are explicit.** Each router declares the allowed filters with a
+  `FilterSpec`; unknown names are `INVALID_FILTER`. `contains` escapes `%` and
+  `_`, so a search for `100%` matches the literal text.
+- **Idempotency lives in the school database.** `Idempotency-Key` is optional;
+  when present, the first completed JSON response is stored for 24 hours under
+  `sha256(key)` scoped to `METHOD path`. The fingerprint covers the body,
+  query string and `Authorization` header, so the same key with a different
+  payload returns `409 IDEMPOTENCY_KEY_REUSED`, and a concurrent replay returns
+  `409 IDEMPOTENCY_IN_PROGRESS`. Non-JSON and 5xx responses are not stored.
+  Payment webhook keys must still be verified (signature/amount) before they
+  reach a handler; idempotency only prevents duplicate side effects.
+- **Optimistic concurrency is opt-in per update.** `apply_row_version` checks the
+  client's `row_version` (body field or `If-Match`), applies the allowed fields
+  and increments only when something changed. A mismatch is `409 CONFLICT` with
+  `details = {expected, current, state}` instead of a silent overwrite.
+- The sample note `PATCH` reuses `sample.notes.create` as its permission until
+  P1-05 introduces the full permission matrix; its purpose is to prove the
+  convention end to end.

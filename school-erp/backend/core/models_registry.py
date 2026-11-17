@@ -1,6 +1,7 @@
 """Import hub: every core model module is registered here."""
 
 from core.actions.models import ActionProposal  # noqa: F401
+from core.api.models import IdempotencyRecord  # noqa: F401
 from core.audit.models import AuditLog, AuditOutbox  # noqa: F401
 from core.auth.models import RefreshToken, User  # noqa: F401
 from core.events.models import DomainEvent, Job  # noqa: F401

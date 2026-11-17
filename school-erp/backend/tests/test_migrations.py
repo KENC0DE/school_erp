@@ -33,6 +33,6 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
     finally:
         connection.close()
 
-    assert {"users", "audit_log", "instance_modules", "sample_notes"} <= tables
+    assert {"users", "audit_log", "instance_modules", "sample_notes", "idempotency_keys"} <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0002_sample"
+    assert version == "0003_api"

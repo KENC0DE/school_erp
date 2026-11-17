@@ -11,6 +11,7 @@ class AppError(Exception):
 
     status_code = 400
     code = "BAD_REQUEST"
+    default_message_key: str | None = None
 
     def __init__(
         self,
@@ -22,7 +23,7 @@ class AppError(Exception):
         code: str | None = None,
     ) -> None:
         self.message = message or self.code.replace("_", " ").title()
-        self.message_key = message_key or f"error.{self.code.lower()}"
+        self.message_key = message_key or self.default_message_key or f"error.{self.code.lower()}"
         self.details = details
         if status_code is not None:
             self.status_code = status_code
@@ -56,9 +57,43 @@ class Conflict(AppError):
     code = "CONFLICT"
 
 
+class VersionConflict(Conflict):
+    """A stale ``row_version`` was sent; ``details`` carries the current state."""
+
+    default_message_key = "error.version_conflict"
+
+
+class IdempotencyKeyReused(Conflict):
+    """The same Idempotency-Key was sent with a different request body."""
+
+    code = "IDEMPOTENCY_KEY_REUSED"
+
+
+class IdempotencyInProgress(Conflict):
+    """Another request with the same Idempotency-Key is still running."""
+
+    code = "IDEMPOTENCY_IN_PROGRESS"
+
+
 class ValidationFailed(AppError):
     status_code = 422
     code = "VALIDATION_ERROR"
+
+
+class InvalidCursor(ValidationFailed):
+    code = "INVALID_CURSOR"
+
+
+class InvalidSort(ValidationFailed):
+    code = "INVALID_SORT"
+
+
+class InvalidFilter(ValidationFailed):
+    code = "INVALID_FILTER"
+
+
+class VersionRequired(ValidationFailed):
+    code = "VERSION_REQUIRED"
 
 
 class RateLimited(AppError):

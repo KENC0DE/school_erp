@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     heartbeat_seconds: int = 60
     audit_ship_batch: int = 100
 
+    idempotency_enabled: bool = True
+    idempotency_ttl_seconds: int = 86_400
+
     ai_provider: str = "fake"
     ai_model: str = "fake-echo"
     ai_api_key: str = ""
