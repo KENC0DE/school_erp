@@ -454,3 +454,33 @@ async def test_permission_matrix_covers_every_route_and_seeded_role(app, seeded)
     # The matrix really has both outcomes for a narrow role.
     assert not principals["limited"].can("users.view")
     assert principals["auditor"].can("roles.view")
+
+
+async def test_wildcard_permission_is_only_grantable_by_a_wildcard_holder(
+    client, app, seeded, superadmin_headers
+) -> None:
+    roles = await client.get(f"{RBAC}/roles", headers=superadmin_headers)
+    super_admin = next(item for item in roles.json()["items"] if item["key"] == "super_admin")
+    kept = await client.put(
+        f"{RBAC}/roles/{super_admin['id']}/permissions",
+        headers=superadmin_headers,
+        json={"permissions": [{"permission": "*", "scope": "all"}]},
+    )
+    assert kept.status_code == 200, kept.text
+    assert kept.json()["permissions"] == [{"permission": "*", "scope": "all"}]
+
+    await create_role(app, "role_admin3", [("roles.view", "all"), ("roles.manage", "all")])
+    await create_user(app, "roleadmin3@demo.school", roles=["role_admin3"])
+    headers = await login(client, "roleadmin3@demo.school")
+    own = next(
+        item
+        for item in (await client.get(f"{RBAC}/roles", headers=headers)).json()["items"]
+        if item["key"] == "role_admin3"
+    )
+    denied = await client.put(
+        f"{RBAC}/roles/{own['id']}/permissions",
+        headers=headers,
+        json={"permissions": [{"permission": "*", "scope": "all"}]},
+    )
+    assert denied.status_code == 403, denied.text
+    assert denied.json()["error"]["code"] == "CANNOT_GRANT"

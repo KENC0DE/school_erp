@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     cors_origins: str = "http://localhost:5173,http://localhost:8081"
     public_base_url: str = "http://localhost:8000"
+    web_base_url: str = "http://localhost:5173"
 
     storage_driver: str = "local"
     storage_dir: str = "./data/storage"

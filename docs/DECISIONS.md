@@ -360,3 +360,31 @@ and recorded here (date, decision, reason).
 - **Replacing a role's permissions is atomic and uniqueness-safe.** The API
   bulk-deletes the old pairs before inserting the new set, so unchanged pairs
   cannot collide with `uq_role_perm_scope`.
+
+## 2026-11-17 — P1-07 roles and users UI
+
+- **Inviting a user creates the account and emails a single-use password
+  link.** The account starts with `must_change_password=true` and a random
+  password that is never revealed; the link uses the same hashed
+  `PasswordResetToken` flow as forgot-password. In development the response also
+  returns the link so the log-only mail adapter does not block testing. The
+  invitation is audited as `auth.user.invited`. Reset and invitation links point
+  at the new `web_base_url` (the SPA `/reset-password` screen), not the API
+  origin; the same screen serves forgot-password.
+- **Inviting with roles needs `roles.manage` and remains bounded by delegation.**
+  A `users.manage` holder can invite a person without roles, but assigning
+  starting roles requires `roles.manage` and every role permission must satisfy
+  “cannot grant what you do not hold”.
+- **Deactivation is a soft flag and revokes every session.** `is_active=false`
+  immediately rejects existing access tokens and future logins; refresh families
+  are revoked. Users cannot deactivate their own account. Reactivation does not
+  restore old sessions.
+- **The permission matrix is the role editor.** It groups permissions by module,
+  renders each scope the manifest accepts, and preserves the `*` wildcard as an
+  explicit “full access” switch. Only a wildcard holder can add `*`; preserving
+  an existing wildcard grant does not require one.
+- **Menus are derived from the same permission set and refreshed after edits.**
+  Navigation adds Users for `users.view|users.manage`, Roles for
+  `roles.view|roles.manage`, and Settings for `settings.view`. Role, assignment
+  and deactivation mutations invalidate the navigation query and re-read `/me`,
+  so the current session’s menu changes without a reload.

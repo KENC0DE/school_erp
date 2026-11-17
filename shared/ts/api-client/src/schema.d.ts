@@ -338,11 +338,32 @@ export interface paths {
         /** List Users */
         get: operations["list_users_api_v1_auth_users_get"];
         put?: never;
-        post?: never;
+        /**
+         * Invite User
+         * @description Create an account and email a single-use password link.
+         */
+        post: operations["invite_user_api_v1_auth_users_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update User */
+        patch: operations["update_user_api_v1_auth_users__user_id__patch"];
         trace?: never;
     };
     "/api/v1/auth/web/login": {
@@ -1119,6 +1140,25 @@ export interface components {
              */
             token_type: string;
         };
+        /** UserCreate */
+        UserCreate: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /**
+             * Locale
+             * @default en
+             */
+            locale: string;
+            /** Phone */
+            phone?: string | null;
+            /** Role Ids */
+            role_ids?: string[];
+        };
         /** UserOut */
         UserOut: {
             /** Display Name */
@@ -1148,6 +1188,17 @@ export interface components {
              * @default false
              */
             totp_enabled: boolean;
+        };
+        /** UserUpdate */
+        UserUpdate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Locale */
+            locale?: string | null;
+            /** Phone */
+            phone?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1788,6 +1839,78 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    invite_user_api_v1_auth_users_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_api_v1_auth_users__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

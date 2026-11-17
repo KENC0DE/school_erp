@@ -2,7 +2,29 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    display_name: str = Field(min_length=1, max_length=200)
+    phone: str | None = Field(default=None, max_length=32)
+    locale: str = Field(default="en", max_length=8)
+    role_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("role_ids")
+    @classmethod
+    def no_duplicate_roles(cls, value: list[str]) -> list[str]:
+        if len(set(value)) != len(value):
+            raise ValueError("Duplicate roles")
+        return value
+
+
+class UserUpdate(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=200)
+    phone: str | None = Field(default=None, max_length=32)
+    locale: str | None = Field(default=None, max_length=8)
+    is_active: bool | None = None
 
 
 class LoginRequest(BaseModel):
@@ -86,6 +108,8 @@ __all__ = [
     "TOTPDisableRequest",
     "TOTPEnrollResponse",
     "TokenPair",
+    "UserCreate",
     "UserOut",
+    "UserUpdate",
     "WebSessionResponse",
 ]

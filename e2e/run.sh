@@ -59,6 +59,7 @@ else
   export CONTROLLER_API_BASE_URL="http://localhost:8100"
   export CONTROLLER_PUBLIC_BASE_URL="http://localhost:8100"
   export PUBLIC_BASE_URL="http://localhost:8000"
+  export WEB_BASE_URL="http://localhost:5173"
   export CORS_ORIGINS="http://localhost:5173,http://localhost:5174"
   export STORAGE_DRIVER=local
   export STORAGE_DIR="$DATA_DIR/storage"

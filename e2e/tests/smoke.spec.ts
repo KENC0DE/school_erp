@@ -112,3 +112,29 @@ test("controller drives module gating, support session and the audit vault", asy
   await schoolContext.close();
   await controllerContext.close();
 });
+
+test("removing a role permission hides that module from the menu", async ({ browser }) => {
+  const adminContext = await browser.newContext();
+  const admin = await adminContext.newPage();
+  await admin.goto(SCHOOL_WEB);
+  await login(admin, SCHOOL_ADMIN, OWNER_PASSWORD);
+
+  await admin.getByRole("link", { name: "Roles", exact: true }).click();
+  await expect(admin.getByTestId("roles-page")).toBeVisible();
+  await admin.getByTestId("role-row-limited").click();
+  const sampleView = admin.getByTestId("permission-sample.notes.view-all");
+  await expect(sampleView).toBeChecked();
+  await sampleView.uncheck();
+  await admin.getByTestId("roles-save").click();
+  await expect(admin.getByText("Role saved", { exact: true })).toBeVisible();
+
+  const limitedContext = await browser.newContext();
+  const limited = await limitedContext.newPage();
+  await limited.goto(SCHOOL_WEB);
+  await login(limited, "limited@demo.school", OWNER_PASSWORD);
+  await expect(limited.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(limited.getByRole("link", { name: "Sample module" })).toHaveCount(0);
+
+  await limitedContext.close();
+  await adminContext.close();
+});

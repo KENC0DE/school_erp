@@ -37,6 +37,15 @@ const messages: Record<string, string> = {
   "settings.source.central": "Central",
   "settings.source.instance": "School",
   "nav.settings": "Settings",
+  "auth.reset_password": "Choose a new password",
+  "auth.reset_password_hint": "Use the single-use link from your invitation or reset email.",
+  "auth.new_password": "New password",
+  "auth.confirm_password": "Confirm password",
+  "auth.passwords_mismatch": "The two passwords do not match",
+  "auth.reset_password_submit": "Set password",
+  "auth.reset_password_success": "Your password has been changed. You can sign in now.",
+  "auth.back_to_sign_in": "Back to sign in",
+  "error.invalid_reset_token": "This reset link is invalid or has expired",
 };
 
 function json(body: unknown): Response {
@@ -112,6 +121,40 @@ describe("school web shell", () => {
       "href",
       "/sample",
     );
+  });
+
+  it("sets a new password from the emailed link", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/reset-password") && init?.method === "POST") {
+        return json({ ok: true });
+      }
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderAt("/reset-password?token=single-use-token");
+
+    fireEvent.change(await screen.findByLabelText("New password"), {
+      target: { value: "AnotherPass#2026" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "AnotherPass#2026" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Set password" }));
+
+    await waitFor(() => {
+      const call = fetchMock.mock.calls.find(
+        ([url, init]) => String(url).endsWith("/api/v1/auth/reset-password") && init?.method === "POST",
+      );
+      expect(JSON.parse(String(call?.[1]?.body))).toEqual({
+        token: "single-use-token",
+        new_password: "AnotherPass#2026",
+      });
+    });
+    expect(
+      await screen.findByText("Your password has been changed. You can sign in now."),
+    ).toBeInTheDocument();
   });
 
   it("renders generated settings and saves a value", async () => {

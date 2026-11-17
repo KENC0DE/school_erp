@@ -28,6 +28,38 @@ def _hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+async def send_reset_link(
+    session: AsyncSession,
+    settings: Settings,
+    user: User,
+    request: Request,
+    *,
+    subject: str,
+    intro: str,
+) -> str:
+    """Create a single-use email link and send it. Returns the link (tests)."""
+    raw = secrets.token_urlsafe(32)
+    expires_at = datetime.now(UTC) + timedelta(minutes=settings.password_reset_minutes)
+    session.add(
+        PasswordResetToken(
+            user_id=user.id,
+            token_hash=_hash(raw),
+            expires_at=expires_at,
+            requested_ip=request.client.host if request.client else None,
+            channel="email",
+        )
+    )
+    link = f"{settings.web_base_url}/reset-password?token={raw}"
+    body = (
+        f"Hello {user.display_name},\n\n"
+        f"{intro}\n\n{link}\n\n"
+        f"This link expires in {settings.password_reset_minutes} minutes. "
+        "If you were not expecting it, you can ignore this message."
+    )
+    await request.app.state.mailer.send(to=user.email, subject=subject, body=body)
+    return link
+
+
 @router.post("/forgot-password", dependencies=[Depends(public_access)])
 async def forgot_password(
     payload: ForgotPasswordRequest,
@@ -70,7 +102,7 @@ async def forgot_password(
                 channel="sms",
             )
         )
-    link = f"{settings.public_base_url}/reset-password?token={raw}"
+    link = f"{settings.web_base_url}/reset-password?token={raw}"
     body = (
         f"Hello {user.display_name},\n\n"
         f"Use this link to choose a new password. It expires in "

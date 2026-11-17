@@ -11,6 +11,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   controllerLogin: (supportToken: string) => Promise<void>;
   logout: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -66,6 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me);
   }, []);
 
+  const refresh = useCallback(async () => {
+    const me = await api.get<SessionUser>("/api/v1/auth/me");
+    setUser(me);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.post("/api/v1/auth/logout");
@@ -78,8 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, token, loading, error, login, controllerLogin, logout }),
-    [user, token, loading, error, login, controllerLogin, logout],
+    () => ({ user, token, loading, error, login, controllerLogin, logout, refresh }),
+    [user, token, loading, error, login, controllerLogin, logout, refresh],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

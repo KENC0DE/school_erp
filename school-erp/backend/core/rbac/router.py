@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from app.errors import Conflict, Forbidden, NotFound, ValidationFailed
+from app.errors import Conflict, NotFound, ValidationFailed
 from core.audit.service import record
 from core.auth.deps import require
 from core.auth.models import User
@@ -26,8 +26,8 @@ from core.rbac.schemas import (
     RoleUpdate,
 )
 from core.rbac.service import (
+    assert_can_grant,
     effective_permissions,
-    holds,
     role_permission_pairs,
     roles_for_user,
 )
@@ -51,6 +51,17 @@ def _request_meta(request: Request) -> dict[str, Any]:
 
 def _validate_pairs(declared: dict[str, set[str]], pairs: list[tuple[str, str]]) -> None:
     for permission, scope in pairs:
+        if permission == "*":
+            # Only a wildcard holder can reach this point (assert_can_grant),
+            # and the wildcard always means every scope.
+            if scope != "all":
+                raise ValidationFailed(
+                    f"Scope '{scope}' is not accepted by {permission}",
+                    code="INVALID_SCOPE",
+                    message_key="error.invalid_scope",
+                    details={"permission": permission, "scope": scope},
+                )
+            continue
         if permission not in declared:
             raise ValidationFailed(
                 f"Unknown permission: {permission}",
@@ -63,17 +74,6 @@ def _validate_pairs(declared: dict[str, set[str]], pairs: list[tuple[str, str]])
                 f"Scope '{scope}' is not accepted by {permission}",
                 code="INVALID_SCOPE",
                 message_key="error.invalid_scope",
-                details={"permission": permission, "scope": scope},
-            )
-
-
-def _assert_grantable(principal: Principal, pairs: list[tuple[str, str]]) -> None:
-    for permission, scope in pairs:
-        if not holds(principal, permission, scope):
-            raise Forbidden(
-                f"You cannot grant {permission} ({scope}) because you do not hold it",
-                message_key="error.cannot_grant",
-                code="CANNOT_GRANT",
                 details={"permission": permission, "scope": scope},
             )
 
@@ -166,7 +166,7 @@ async def create_role(
     pairs = [(grant.permission, grant.scope) for grant in payload.permissions]
     declared = _declared(request)
     _validate_pairs(declared, pairs)
-    _assert_grantable(principal, pairs)
+    assert_can_grant(principal, pairs)
 
     role = Role(
         key=payload.key,
@@ -269,7 +269,7 @@ async def set_role_permissions(
 
     current = set(await role_permission_pairs(session, role.id))
     added = sorted(set(new_pairs) - current)
-    _assert_grantable(principal, added)
+    assert_can_grant(principal, added)
 
     before = _role_out(role, sorted(current))
     # A bulk DELETE is emitted immediately; deleting the ORM rows one by one
@@ -377,7 +377,7 @@ async def assign_role(
     if not role.is_active:
         raise Conflict("That role is deactivated", message_key="error.role_inactive")
     pairs = await _role_pairs_for_roles(session, [role.id])
-    _assert_grantable(principal, pairs)
+    assert_can_grant(principal, pairs)
 
     existing = (
         await session.execute(
@@ -487,7 +487,7 @@ async def upsert_override(
         )
     if payload.effect != "deny":
         _validate_pairs(declared, [(payload.permission, scope)])
-    _assert_grantable(principal, [(payload.permission, scope)])
+    assert_can_grant(principal, [(payload.permission, scope)])
 
     expires_at = payload.expires_at
     if expires_at is not None:
@@ -568,7 +568,7 @@ async def delete_override(
     row = await session.get(UserPermissionOverride, override_id)
     if row is None or row.user_id != user.id:
         raise NotFound("That override does not exist", message_key="error.override_not_found")
-    _assert_grantable(principal, [(row.permission, row.scope)])
+    assert_can_grant(principal, [(row.permission, row.scope)])
     before = {
         "permission": row.permission,
         "scope": row.scope,

@@ -74,7 +74,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-04 — Auth hardening (lockout, rate limits, password reset by email + SMS stub, session list/revoke, cookie+CSRF, TOTP 2FA per role)
 - [x] P1-05 — Full RBAC (scopes, multiple roles, direct grants/denies, delegation with expiry, "cannot grant what you don't hold") and the route × role matrix test
 - [x] P1-06 — Default roles seeded and editable (Super Admin, Director, Academic Head, Department Head, Registrar,…
-- [ ] P1-07 — Roles and users UI (web)
+- [x] P1-07 — Roles and users UI (web)
 - [ ] P1-08 — Module management UI for the Super Admin (Settings → Modules)
 - [ ] P1-09 — Audit complete
 - [ ] P1-10 — Activity history UI (school)

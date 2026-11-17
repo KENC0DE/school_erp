@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
+from app.errors import Forbidden
 from core.auth.principal import Principal, _permission_matches
 from core.rbac.models import (
     Role,
@@ -109,7 +110,20 @@ def holds(principal: Principal, permission: str, scope: str) -> bool:
     return any(scope_covers(candidate, scope) for candidate in granted_scopes)
 
 
+def assert_can_grant(principal: Principal, pairs: list[tuple[str, str]]) -> None:
+    """Refuse to mint permissions the caller does not hold themselves."""
+    for permission, scope in pairs:
+        if not holds(principal, permission, scope):
+            raise Forbidden(
+                f"You cannot grant {permission} ({scope}) because you do not hold it",
+                message_key="error.cannot_grant",
+                code="CANNOT_GRANT",
+                details={"permission": permission, "scope": scope},
+            )
+
+
 __all__ = [
+    "assert_can_grant",
     "effective_permissions",
     "holds",
     "role_permission_pairs",
