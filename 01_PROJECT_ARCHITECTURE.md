@@ -171,14 +171,21 @@ modules/<key>/
 
 ```python
 MANIFEST = ModuleManifest(
-    key="assessment", name="Marks & Grading", version="1.0.0",
+    key="assessment",
+    name="Marks & Grading",
+    version="1.0.0",
     depends_on=["academics", "students", "staff"],
     permissions=[Perm("assessment.marks.enter", scopes=["assigned_subjects"]), ...],
-    router=router, actions=ACTIONS, events=EVENTS,
-    i18n_namespaces=["assessment"], document_fields=FIELDS,
+    router=router,
+    actions=ACTIONS,
+    events=EVENTS,
+    i18n_namespaces=["assessment"],
+    document_fields=FIELDS,
     settings_schema=AssessmentSettings,
     nav=[Nav(key="marks", label_key="assessment.nav.marks", perm="assessment.marks.enter", path="/marks")],
-    licensable=True, default_enabled=False, core=False,
+    licensable=True,
+    default_enabled=False,
+    core=False,
 )
 ```
 
@@ -335,10 +342,14 @@ Every operation worth exposing is a registered **Action**:
 
 ```python
 @action(
-    key="students.register", module="students",
-    permission="students.record.create", risk="write",     # read | write | bulk | destructive
-    input=RegisterStudent, output=StudentOut,
-    describe="Register a new student", preview=preview_register_student,
+    key="students.register",
+    module="students",
+    permission="students.record.create",
+    risk="write",  # read | write | bulk | destructive
+    input=RegisterStudent,
+    output=StudentOut,
+    describe="Register a new student",
+    preview=preview_register_student,
 )
 async def register_student(ctx: ActionContext, data: RegisterStudent) -> StudentOut: ...
 ```
