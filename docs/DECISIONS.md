@@ -226,3 +226,21 @@ and recorded here (date, decision, reason).
 - The sample note `PATCH` reuses `sample.notes.create` as its permission until
   P1-05 introduces the full permission matrix; its purpose is to prove the
   convention end to end.
+
+## 2026-11-17 — P1-02 soft delete
+
+- **Filtering is automatic.** Importing `core.db` registers a `do_orm_execute`
+  listener that applies `with_loader_criteria(SoftDeleteMixin, ...)` to every
+  ORM select unless the statement opts out with
+  `execution_options(include_deleted=True)`. Explicit `.where(deleted_at is
+  None)` clauses remain harmless and keep count/subquery queries correct.
+- **Restore is a separate audited action.** `soft_delete` stamps
+  `deleted_at`/`deleted_by`, bumps `row_version` and writes a `*.delete` entry;
+  `restore` clears the stamps, bumps the version and writes a new `*.restore`
+  entry. The original delete entry is never edited, so the hash chain stays
+  valid.
+- **Partial indexes exclude dead rows.** Business tables that list live rows add
+  a dialect-aware partial index (`WHERE deleted_at IS NULL`); the sample note
+  index is `ix_sample_notes_live`. PostgreSQL and SQLite both support this.
+- The sample note delete/restore endpoints keep using `sample.notes.create` as
+  their permission until P1-05.

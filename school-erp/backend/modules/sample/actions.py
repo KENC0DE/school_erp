@@ -4,9 +4,10 @@ import uuid
 
 from app.errors import NotFound, ValidationFailed
 from core.actions.registry import ActionContext, action
-from core.api.concurrency import apply_row_version
+from core.api.concurrency import apply_row_version, ensure_row_version
 from core.api.pagination import FilterSpec, PageParams, apply_filters, paginate
 from core.audit.service import record
+from core.db.soft_delete import get_including_deleted, get_live, restore, soft_delete
 from sqlalchemy import func, select
 
 from modules.sample.models import SampleNote
@@ -115,9 +116,7 @@ async def _update(ctx: ActionContext, payload: dict) -> NoteOut:
     note_id = payload.get("note_id")
     if not note_id:
         raise ValidationFailed("note_id is required", message_key="error.validation")
-    note = await ctx.session.get(SampleNote, uuid.UUID(str(note_id)))
-    if note is None or note.deleted_at is not None:
-        raise NotFound("The note does not exist")
+    note = await get_live(ctx.session, SampleNote, uuid.UUID(str(note_id)))
     before = NoteOut.from_model(note).model_dump(mode="json")
     changes = apply_row_version(
         note,
@@ -156,4 +155,101 @@ async def update_note(ctx: ActionContext, payload: dict) -> NoteOut:
     return await _update(ctx, payload)
 
 
-__all__ = ["create_note", "list_notes", "preview_create", "update_note"]
+@action(
+    key="sample.notes.get",
+    module="sample",
+    permission="sample.notes.view",
+    risk="read",
+    describe="Read one live sample note",
+    output=NoteOut,
+)
+async def get_note(ctx: ActionContext, payload: dict) -> NoteOut:
+    note_id = payload.get("note_id")
+    if not note_id:
+        raise ValidationFailed("note_id is required", message_key="error.validation")
+    note = await get_live(ctx.session, SampleNote, uuid.UUID(str(note_id)))
+    return NoteOut.from_model(note)
+
+
+async def _delete(ctx: ActionContext, payload: dict) -> dict:
+    note_id = payload.get("note_id")
+    if not note_id:
+        raise ValidationFailed("note_id is required", message_key="error.validation")
+    note = await get_live(ctx.session, SampleNote, uuid.UUID(str(note_id)))
+    if payload.get("row_version") is not None:
+        ensure_row_version(
+            note,
+            int(payload["row_version"]),
+            current_state=NoteOut.from_model(note).model_dump(mode="json"),
+        )
+    changed = await soft_delete(
+        ctx.session,
+        note,
+        action="sample.notes.delete",
+        module="sample",
+        actor=ctx.principal,
+        reason=payload.get("reason"),
+        via=ctx.via,
+    )
+    await ctx.session.commit()
+    return {
+        "id": str(note.id),
+        "deleted": True,
+        "changed": changed,
+        "row_version": note.row_version,
+    }
+
+
+@action(
+    key="sample.notes.delete",
+    module="sample",
+    permission="sample.notes.create",
+    risk="destructive",
+    describe="Soft-delete a sample note (restorable, audited)",
+    output=None,
+)
+async def delete_note(ctx: ActionContext, payload: dict) -> dict:
+    return await _delete(ctx, payload)
+
+
+async def _restore(ctx: ActionContext, payload: dict) -> NoteOut:
+    note_id = payload.get("note_id")
+    if not note_id:
+        raise ValidationFailed("note_id is required", message_key="error.validation")
+    note = await get_including_deleted(ctx.session, SampleNote, uuid.UUID(str(note_id)))
+    if note is None:
+        raise NotFound("The note does not exist")
+    await restore(
+        ctx.session,
+        note,
+        action="sample.notes.restore",
+        module="sample",
+        actor=ctx.principal,
+        reason=payload.get("reason"),
+        via=ctx.via,
+    )
+    await ctx.session.commit()
+    return NoteOut.from_model(note)
+
+
+@action(
+    key="sample.notes.restore",
+    module="sample",
+    permission="sample.notes.create",
+    risk="write",
+    describe="Restore a soft-deleted sample note",
+    output=NoteOut,
+)
+async def restore_note(ctx: ActionContext, payload: dict) -> NoteOut:
+    return await _restore(ctx, payload)
+
+
+__all__ = [
+    "create_note",
+    "delete_note",
+    "get_note",
+    "list_notes",
+    "preview_create",
+    "restore_note",
+    "update_note",
+]

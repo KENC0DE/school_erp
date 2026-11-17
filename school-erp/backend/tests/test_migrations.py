@@ -30,9 +30,15 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
             row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'")
         }
         version = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+        live_index = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = 'ix_sample_notes_live'"
+        ).fetchone()
     finally:
         connection.close()
 
     assert {"users", "audit_log", "instance_modules", "sample_notes", "idempotency_keys"} <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0003_api"
+    assert version == "0004_soft_delete"
+
+    assert live_index is not None
+    assert "WHERE deleted_at IS NULL" in live_index[0]

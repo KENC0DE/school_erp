@@ -369,14 +369,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Note Detail */
+        get: operations["get_note_detail_api_v1_sample_notes__note_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Note Route */
+        delete: operations["delete_note_route_api_v1_sample_notes__note_id__delete"];
         options?: never;
         head?: never;
         /** Patch Note */
         patch: operations["patch_note_api_v1_sample_notes__note_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/sample/notes/{note_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Note Route */
+        post: operations["restore_note_route_api_v1_sample_notes__note_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/sample/pdf": {
@@ -1303,6 +1322,73 @@ export interface operations {
             };
         };
     };
+    get_note_detail_api_v1_sample_notes__note_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_note_route_api_v1_sample_notes__note_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     patch_note_api_v1_sample_notes__note_id__patch: {
         parameters: {
             query?: never;
@@ -1317,6 +1403,39 @@ export interface operations {
                 "application/json": components["schemas"]["NoteUpdate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_note_route_api_v1_sample_notes__note_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                note_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

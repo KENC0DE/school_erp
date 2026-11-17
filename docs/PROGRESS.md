@@ -69,7 +69,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 ## Phase 1 — Foundations
 
 - [x] P1-01 — API conventions
-- [ ] P1-02 — Soft-delete base
+- [x] P1-02 — Soft-delete base
 - [ ] P1-03 — Settings system
 - [ ] P1-04 — Auth hardening
 - [ ] P1-05 — Full RBAC
