@@ -13,14 +13,15 @@ from core.auth.sessions import router as sessions_router
 from core.auth.twofa import router as twofa_router
 from core.auth.web import router as web_auth_router
 from core.bootstrap import bootstrap
+from core.custom_fields.router import router as custom_fields_router
 from core.db.session import Database
 from core.i18n.router import router as i18n_router
 from core.jobs.router import router as jobs_router
 from core.modules.gating import module_gate
 from core.modules.registry import ModuleRegistry
 from core.modules.router import router as modules_router
-from core.people.router import router as people_router
 from core.notifications.adapters import build_adapters
+from core.people.router import router as people_router
 from core.rbac.router import router as rbac_router
 from core.settings.router import router as settings_router
 from core.themes.router import router as themes_router
@@ -52,6 +53,7 @@ CORE_ROUTERS = [
     rbac_router,
     audit_router,
     modules_router,
+    custom_fields_router,
     people_router,
     i18n_router,
     themes_router,

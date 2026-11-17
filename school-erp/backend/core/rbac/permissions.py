@@ -4,6 +4,8 @@ from core.modules.manifest import Perm
 
 CORE_PERMISSIONS = [
     Perm("users.view", "core.perm.users.view"),
+    Perm("custom_fields.view", "core.perm.custom_fields.view"),
+    Perm("custom_fields.manage", "core.perm.custom_fields.manage"),
     Perm("people.view", "core.perm.people.view"),
     Perm("people.manage", "core.perm.people.manage"),
     Perm("users.manage", "core.perm.users.manage"),

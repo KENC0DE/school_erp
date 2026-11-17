@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.audit.service import record
 from core.auth.principal import Principal
+from core.custom_fields.service import merge_custom, validate_entity_values
 from core.db.soft_delete import get_live
 from core.people.models import (
     Person,
@@ -152,6 +153,9 @@ async def create_person(
     reason: str | None = None,
 ) -> tuple[Person, list[dict[str, Any]]]:
     person = Person()
+    if data.get("custom") is not None:
+        cleaned = await validate_entity_values(session, "person", data["custom"])
+        data["custom"] = merge_custom(None, cleaned)
     _apply(person, data)
     try:
         validate_name_parts(person)
@@ -189,6 +193,11 @@ async def update_person(
 ) -> Person:
     person = await get_live(session, Person, person_id)
     before = person_view(person)
+    if data.get("custom") is not None:
+        cleaned = await validate_entity_values(
+            session, "person", data["custom"], partial=True
+        )
+        data["custom"] = merge_custom(person.custom, cleaned)
     _apply(person, data)
     try:
         validate_name_parts(person)

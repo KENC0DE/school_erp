@@ -513,3 +513,31 @@ and recorded here (date, decision, reason).
   input order), which is stable and auditable. Negative amounts allocate the
   absolute value and reapply the sign, so shares always sum exactly to the
   input.
+
+## 2026-11-17 — P1-17 custom fields engine
+
+- **Definitions are data, values stay in the entity's `custom` JSON column.**
+  `custom_field_defs` holds the key, i18n label/help keys, type, bounds,
+  options, order and role visibility; no per-field ALTER TABLE is ever needed.
+  Supported entity types are a registry (`person`, `student`, `staff`,
+  `guardian`, `admission_application`) so a typo cannot create a silently
+  orphaned definition.
+- **Validation is server-side and typed.** Text, long text, integer, decimal
+  number, boolean, ISO date, single select and multiselect all validate with
+  i18n error keys and per-field details (`field`, `code`, `message_key`,
+  `params`). Floats are rejected for numeric fields, and decimals are stored as
+  canonical strings, keeping the no-float rule for marks and money. Unknown
+  keys are rejected so typos are not hidden inside JSON.
+- **Partial updates merge.** Person updates validate supplied keys only, clear
+  a key when the value is emptied, and leave untouched keys alone. Required
+  fields are enforced on create, not on every partial edit.
+- **Visibility is role-scoped and not query-overridable.** A definition with no
+  `visible_roles` is public to everyone holding `custom_fields.view`; otherwise
+  only members of those roles (or a wildcard Super Admin) see it. There is no
+  `include_hidden` request flag, so hidden definitions cannot be enumerated.
+- **Labels are translation keys, never stored strings.** Field labels and help
+  text must match `a.b` style keys, so the Translation Editor can translate
+  them like any other UI text and both scripts stay in sync.
+- **Definitions are audited and soft-deleted** (`custom_fields.create/update/
+  delete`, entity type `custom_field_def`). A deleted definition is hidden from
+  forms immediately; existing entity JSON keeps its historical values.
