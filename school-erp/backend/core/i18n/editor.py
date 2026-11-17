@@ -60,9 +60,7 @@ def _entry_view(
         "source_kind": target_row.source if target_row else None,
         "layer": target_row.layer if target_row else None,
         "updated_at": (
-            target_row.updated_at.isoformat()
-            if target_row is not None and target_row.updated_at
-            else None
+            target_row.updated_at.isoformat() if target_row is not None and target_row.updated_at else None
         ),
     }
 
@@ -121,9 +119,7 @@ async def list_entries(
     offset: int = 0,
 ) -> dict[str, Any]:
     if locale not in {"en", "am"}:
-        raise ValidationFailed(
-            "Unknown locale", message_key="error.i18n.locale", details={"locale": locale}
-        )
+        raise ValidationFailed("Unknown locale", message_key="error.i18n.locale", details={"locale": locale})
     if status is not None and status not in STATUSES + ("missing",):
         raise ValidationFailed(
             "Unknown translation status",
@@ -178,9 +174,7 @@ async def stats(
     locale: str,
     namespace: str | None = None,
 ) -> dict[str, Any]:
-    listing = await list_entries(
-        session, locale=locale, namespace=namespace, limit=10**9, offset=0
-    )
+    listing = await list_entries(session, locale=locale, namespace=namespace, limit=10**9, offset=0)
     items = listing["items"]
     return {
         "total": len(items),
@@ -202,9 +196,7 @@ async def _default_keys(session: AsyncSession, namespace: str) -> set[str]:
     return {str(key) for key in rows}
 
 
-async def _effective_en(
-    session: AsyncSession, namespace: str, key: str
-) -> TranslationEntry | None:
+async def _effective_en(session: AsyncSession, namespace: str, key: str) -> TranslationEntry | None:
     rows = list(
         (
             await session.execute(
@@ -244,9 +236,7 @@ async def _default_row(
 def _validate_value(value: str) -> str:
     cleaned = value.strip()
     if not cleaned:
-        raise ValidationFailed(
-            "A translation cannot be empty", message_key="error.i18n.empty"
-        )
+        raise ValidationFailed("A translation cannot be empty", message_key="error.i18n.empty")
     if len(cleaned) > MAX_VALUE_LENGTH:
         raise ValidationFailed(
             "The translation is too long",
@@ -348,9 +338,7 @@ async def set_entry(
         )
     ).scalar_one_or_none()
     before = _raw_view(before_row)
-    row, changed = await _apply_entry(
-        session, principal, namespace, key, locale, value, status, via=via
-    )
+    row, changed = await _apply_entry(session, principal, namespace, key, locale, value, status, via=via)
     if changed:
         await record(
             session,
@@ -445,14 +433,10 @@ def parse_import(content: str, fmt: str) -> dict[str, str]:
         text = content.lstrip("\ufeff")
         reader = csv.DictReader(io.StringIO(text))
         if reader.fieldnames is None or "key" not in reader.fieldnames:
-            raise ValidationFailed(
-                "The CSV needs a key column", message_key="error.i18n.import_csv"
-            )
+            raise ValidationFailed("The CSV needs a key column", message_key="error.i18n.import_csv")
         value_column = "value" if "value" in reader.fieldnames else "translation"
         if value_column not in reader.fieldnames:
-            raise ValidationFailed(
-                "The CSV needs a value column", message_key="error.i18n.import_csv"
-            )
+            raise ValidationFailed("The CSV needs a value column", message_key="error.i18n.import_csv")
         entries = {}
         for row in reader:
             key = (row.get("key") or "").strip()
@@ -466,9 +450,7 @@ def parse_import(content: str, fmt: str) -> dict[str, str]:
             details={"format": fmt},
         )
     if not entries:
-        raise ValidationFailed(
-            "The file contains no translations", message_key="error.i18n.import_empty"
-        )
+        raise ValidationFailed("The file contains no translations", message_key="error.i18n.import_empty")
     if len(entries) > MAX_IMPORT_ENTRIES:
         raise ValidationFailed(
             "Too many translations in one import",
@@ -491,9 +473,7 @@ async def import_entries(
     via: str | None = None,
 ) -> dict[str, Any]:
     if locale not in {"en", "am"}:
-        raise ValidationFailed(
-            "Unknown locale", message_key="error.i18n.locale", details={"locale": locale}
-        )
+        raise ValidationFailed("Unknown locale", message_key="error.i18n.locale", details={"locale": locale})
     entries = parse_import(content, fmt)
     known = await _default_keys(session, namespace)
     unknown = sorted(key for key in entries if key not in known)
@@ -512,9 +492,7 @@ async def import_entries(
 
     changed_keys: list[str] = []
     for key, value in sorted(entries.items()):
-        _, changed = await _apply_entry(
-            session, principal, namespace, key, locale, value, status, via=via
-        )
+        _, changed = await _apply_entry(session, principal, namespace, key, locale, value, status, via=via)
         if changed:
             changed_keys.append(key)
     if changed_keys:
@@ -550,9 +528,7 @@ async def export_entries(
     namespace: str | None = None,
     fmt: str = "json",
 ) -> tuple[str, str, str]:
-    listing = await list_entries(
-        session, locale=locale, namespace=namespace, limit=10**9, offset=0
-    )
+    listing = await list_entries(session, locale=locale, namespace=namespace, limit=10**9, offset=0)
     items = listing["items"]
     stamp = datetime.now(UTC).strftime("%Y%m%d")
     base = f"translations-{locale}-{namespace or 'all'}-{stamp}"
@@ -564,9 +540,7 @@ async def export_entries(
         writer = csv.writer(buffer)
         writer.writerow(["key", "value", "source", "status", "layer"])
         for item in items:
-            writer.writerow(
-                [item["key"], item["value"], item["source"], item["status"], item["layer"] or ""]
-            )
+            writer.writerow([item["key"], item["value"], item["source"], item["status"], item["layer"] or ""])
         return buffer.getvalue(), f"{base}.csv", "text/csv"
     raise ValidationFailed(
         "Export format must be csv or json",

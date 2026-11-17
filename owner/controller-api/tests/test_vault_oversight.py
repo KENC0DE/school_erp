@@ -90,7 +90,12 @@ async def test_vault_search_and_filters(controller):
                 seq=4,
                 prev_hash="h3",
                 hash="h4",
-                entry={"action": "auth.login", "module": "core", "actor_id": "u-2", "ts": "2026-01-02T04:00:00+00:00"},
+                entry={
+                    "action": "auth.login",
+                    "module": "core",
+                    "actor_id": "u-2",
+                    "ts": "2026-01-02T04:00:00+00:00",
+                },
                 chain_ok=False,
             )
         )
@@ -100,14 +105,10 @@ async def test_vault_search_and_filters(controller):
     assert search.status_code == 200
     assert [item["entity_id"] for item in search.json()["items"]] == ["note-3"]
 
-    by_action = await client.get(
-        "/controller/v1/vault", params={"action": "auth.login"}, headers=headers
-    )
+    by_action = await client.get("/controller/v1/vault", params={"action": "auth.login"}, headers=headers)
     assert [item["action"] for item in by_action.json()["items"]] == ["auth.login"]
 
-    broken = await client.get(
-        "/controller/v1/vault", params={"chain_ok": False}, headers=headers
-    )
+    broken = await client.get("/controller/v1/vault", params={"chain_ok": False}, headers=headers)
     assert [item["chain_ok"] for item in broken.json()["items"]] == [False]
 
 
@@ -120,23 +121,17 @@ async def test_chain_status_and_scan_reports_gap_and_chain_break(controller):
         await session.commit()
         school_id = school.id
 
-    status = await client.get(
-        "/controller/v1/vault/status", params={"school_id": school_id}, headers=headers
-    )
+    status = await client.get("/controller/v1/vault/status", params={"school_id": school_id}, headers=headers)
     assert status.status_code == 200
     assert status.json()["last_seq"] == 3
     assert status.json()["broken_entries"] == 0
 
-    scanned = await client.post(
-        "/controller/v1/vault/scan", params={"school_id": school_id}, headers=headers
-    )
+    scanned = await client.post("/controller/v1/vault/scan", params={"school_id": school_id}, headers=headers)
     assert scanned.status_code == 200, scanned.text
     kinds = {item["kind"] for item in scanned.json()["items"]}
     assert "AUDIT_GAP" in kinds
 
-    alerts = await client.get(
-        "/controller/v1/vault/alerts", params={"school_id": school_id}, headers=headers
-    )
+    alerts = await client.get("/controller/v1/vault/alerts", params={"school_id": school_id}, headers=headers)
     messages = " ".join(item["message"] for item in alerts.json()["items"])
     assert "Expected seq 2" in messages
 
@@ -184,9 +179,7 @@ async def test_mass_deletes_and_off_hours_grade_changes_raise_alerts(controller)
         await session.commit()
         school_id = school.id
 
-    scanned = await client.post(
-        "/controller/v1/vault/scan", params={"school_id": school_id}, headers=headers
-    )
+    scanned = await client.post("/controller/v1/vault/scan", params={"school_id": school_id}, headers=headers)
     kinds = {item["kind"] for item in scanned.json()["items"]}
     assert "MASS_DELETE" in kinds
     assert "OFF_HOURS_GRADE_CHANGE" in kinds

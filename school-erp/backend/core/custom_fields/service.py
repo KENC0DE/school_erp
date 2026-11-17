@@ -86,8 +86,7 @@ async def list_entity_types(session: AsyncSession) -> list[dict[str, Any]]:
     ).scalars()
     used = set(rows)
     return [
-        {"entity_type": key, "label_key": label, "fields": key in used}
-        for key, label in ENTITY_TYPES.items()
+        {"entity_type": key, "label_key": label, "fields": key in used} for key, label in ENTITY_TYPES.items()
     ]
 
 

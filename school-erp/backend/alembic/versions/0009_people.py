@@ -55,9 +55,7 @@ def upgrade() -> None:
     op.create_index("ix_persons_search_name", "persons", ["search_name"])
     if op.get_bind().dialect.name == "postgresql":
         op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
-        op.execute(
-            "CREATE INDEX ix_persons_search_trgm ON persons USING gin (search_name gin_trgm_ops)"
-        )
+        op.execute("CREATE INDEX ix_persons_search_trgm ON persons USING gin (search_name gin_trgm_ops)")
 
 
 def downgrade() -> None:

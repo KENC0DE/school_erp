@@ -37,9 +37,7 @@ ENTITY_TYPES: dict[str, str] = {
 
 class CustomFieldDef(BusinessModel):
     __tablename__ = "custom_field_defs"
-    __table_args__ = (
-        UniqueConstraint("entity_type", "key", name="uq_custom_field_defs_entity_key"),
-    )
+    __table_args__ = (UniqueConstraint("entity_type", "key", name="uq_custom_field_defs_entity_key"),)
 
     entity_type: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
     key: Mapped[str] = mapped_column(String(80), nullable=False)

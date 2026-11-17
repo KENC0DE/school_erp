@@ -114,9 +114,7 @@ async def reset_translation(
     principal: Principal = Depends(require("i18n.manage")),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    return await reset_entry(
-        session, principal, namespace, key, locale, via=principal.via
-    )
+    return await reset_entry(session, principal, namespace, key, locale, via=principal.via)
 
 
 @router.post("/suggest", dependencies=[Depends(require("i18n.manage"))])
@@ -128,9 +126,7 @@ async def suggest_translation(
 ) -> dict:
     settings = request.app.state.settings
     configured = (
-        bool(settings.ai_api_key)
-        and settings.ai_provider != "fake"
-        and translation_suggester() is not None
+        bool(settings.ai_api_key) and settings.ai_provider != "fake" and translation_suggester() is not None
     )
     if not configured:
         return {
@@ -181,9 +177,7 @@ async def export_translations(
     format: str = Query(default="json", pattern="^(csv|json)$"),
     session: AsyncSession = Depends(get_session),
 ) -> Response:
-    body, filename, media_type = await export_entries(
-        session, locale=locale, namespace=namespace, fmt=format
-    )
+    body, filename, media_type = await export_entries(session, locale=locale, namespace=namespace, fmt=format)
     return Response(
         content=body,
         media_type=media_type,

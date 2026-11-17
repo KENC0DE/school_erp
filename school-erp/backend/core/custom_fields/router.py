@@ -128,9 +128,7 @@ async def delete_custom_field(
     principal: Principal = Depends(require("custom_fields.manage")),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    await delete_definition(
-        session, principal, field_id, reason=reason, via=principal.via
-    )
+    await delete_definition(session, principal, field_id, reason=reason, via=principal.via)
     return {"id": str(field_id), "deleted": True}
 
 
@@ -141,7 +139,5 @@ async def validate_values(
     principal: Principal = Depends(require("custom_fields.view")),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    cleaned = await validate_entity_values(
-        session, entity_type, payload.values, partial=payload.partial
-    )
+    cleaned = await validate_entity_values(session, entity_type, payload.values, partial=payload.partial)
     return {"values": cleaned, "valid": True}

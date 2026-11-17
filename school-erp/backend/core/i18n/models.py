@@ -13,9 +13,7 @@ from sqlalchemy import String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 
-class TranslationEntry(
-    UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, RowVersionMixin, Base
-):
+class TranslationEntry(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, RowVersionMixin, Base):
     __tablename__ = "translation_entries"
     __table_args__ = (UniqueConstraint("namespace", "key", "locale", "layer", name="uq_translation_key"),)
 

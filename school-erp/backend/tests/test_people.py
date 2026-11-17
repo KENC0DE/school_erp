@@ -60,7 +60,9 @@ async def test_searching_latin_finds_amharic_records_and_vice_versa(client, supe
     assert created.status_code == 200, created.text
     assert created.json()["duplicate_warnings"] == []
 
-    latin = await client.get("/api/v1/people/search", params={"q": "Abebe Kebede"}, headers=superadmin_headers)
+    latin = await client.get(
+        "/api/v1/people/search", params={"q": "Abebe Kebede"}, headers=superadmin_headers
+    )
     assert latin.status_code == 200
     assert [item["given_name_am"] for item in latin.json()["items"]] == ["አበበ"]
 
@@ -110,10 +112,7 @@ async def test_duplicate_detection_exact_and_similar_names_with_same_dob(client,
         headers=superadmin_headers,
     )
 
-    assert any(
-        item["reason"] == "similar_name_and_dob"
-        for item in similar.json()["duplicate_warnings"]
-    )
+    assert any(item["reason"] == "similar_name_and_dob" for item in similar.json()["duplicate_warnings"])
 
     different_dob = await client.post(
         "/api/v1/people", json={**base, "date_of_birth": "2012-01-01"}, headers=superadmin_headers
@@ -122,9 +121,7 @@ async def test_duplicate_detection_exact_and_similar_names_with_same_dob(client,
 
 
 async def test_partial_or_missing_names_are_rejected(client, superadmin_headers):
-    missing = await client.post(
-        "/api/v1/people", json={"given_name_en": "Only"}, headers=superadmin_headers
-    )
+    missing = await client.post("/api/v1/people", json={"given_name_en": "Only"}, headers=superadmin_headers)
     assert missing.status_code == 422
     assert missing.json()["error"]["message_key"] == "error.invalid_name"
 

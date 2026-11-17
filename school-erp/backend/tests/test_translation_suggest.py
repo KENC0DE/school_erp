@@ -31,9 +31,7 @@ async def test_suggestions_report_a_clear_unconfigured_state(client, superadmin_
     assert bundle.json()["messages"]["nav.dashboard"] == "ዳሽቦርድ"
 
 
-async def test_a_configured_suggester_creates_a_needs_review_draft(
-    app, client, superadmin_headers
-):
+async def test_a_configured_suggester_creates_a_needs_review_draft(app, client, superadmin_headers):
     calls: list[tuple[str, str, str, str]] = []
 
     async def fake(source: str, namespace: str, key: str, locale: str) -> str:
@@ -145,6 +143,4 @@ async def test_the_action_is_visible_to_managers_only(client, superadmin_headers
     assert "i18n.suggest_translation" in keys
 
     denied = await client.get("/api/v1/ai/tools", headers=limited_headers)
-    assert "i18n.suggest_translation" not in {
-        tool["key"] for tool in denied.json()["items"]
-    }
+    assert "i18n.suggest_translation" not in {tool["key"] for tool in denied.json()["items"]}

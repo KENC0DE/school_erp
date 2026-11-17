@@ -18,9 +18,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "translation_entries", sa.Column("deleted_at", sa.DateTime(timezone=True))
-    )
+    op.add_column("translation_entries", sa.Column("deleted_at", sa.DateTime(timezone=True)))
     op.add_column("translation_entries", sa.Column("deleted_by", sa.Uuid()))
     op.add_column(
         "translation_entries",

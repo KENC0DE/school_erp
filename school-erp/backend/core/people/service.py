@@ -56,8 +56,14 @@ def _apply(person: Person, data: dict[str, Any]) -> None:
 
 
 def _name_triplet(person: Person) -> tuple[str, ...]:
-    latin = tuple(normalize_name(getattr(person, key)) for key in ("given_name_en", "father_name_en", "grandfather_name_en"))
-    geez = tuple(normalize_name(getattr(person, key)) for key in ("given_name_am", "father_name_am", "grandfather_name_am"))
+    latin = tuple(
+        normalize_name(getattr(person, key))
+        for key in ("given_name_en", "father_name_en", "grandfather_name_en")
+    )
+    geez = tuple(
+        normalize_name(getattr(person, key))
+        for key in ("given_name_am", "father_name_am", "grandfather_name_am")
+    )
     return latin, geez
 
 
@@ -124,9 +130,7 @@ async def duplicate_warnings(
         row_latin_key = " ".join(row_latin).strip()
         geez_key = " ".join(geez).strip()
         row_geez_key = " ".join(row_geez).strip()
-        exact = bool(latin_key and latin_key == row_latin_key) or bool(
-            geez_key and geez_key == row_geez_key
-        )
+        exact = bool(latin_key and latin_key == row_latin_key) or bool(geez_key and geez_key == row_geez_key)
         similar = max(
             _levenshtein_ratio(latin_key, row_latin_key),
             _levenshtein_ratio(geez_key, row_geez_key),
@@ -194,9 +198,7 @@ async def update_person(
     person = await get_live(session, Person, person_id)
     before = person_view(person)
     if data.get("custom") is not None:
-        cleaned = await validate_entity_values(
-            session, "person", data["custom"], partial=True
-        )
+        cleaned = await validate_entity_values(session, "person", data["custom"], partial=True)
         data["custom"] = merge_custom(person.custom, cleaned)
     _apply(person, data)
     try:
@@ -241,19 +243,25 @@ async def search_people(
             or_(Person.search_name.like(f"%{normalized}%"), Person.search_name.like(f"%{normalized_phone}%"))
         )
     rows = (
-        await session.execute(stmt.order_by(Person.given_name_en, Person.given_name_am).limit(limit))
-    ).scalars().all()
+        (await session.execute(stmt.order_by(Person.given_name_en, Person.given_name_am).limit(limit)))
+        .scalars()
+        .all()
+    )
     if not rows and normalized:
         # Fallback for typos and transliteration variants: rank every live person.
         candidates = (
-            await session.execute(select(Person).where(Person.deleted_at.is_(None)).limit(500))
-        ).scalars().all()
+            (await session.execute(select(Person).where(Person.deleted_at.is_(None)).limit(500)))
+            .scalars()
+            .all()
+        )
         ranked = sorted(
             candidates,
             key=lambda person: _levenshtein_ratio(normalized, person.search_name),
             reverse=True,
         )
-        rows = [person for person in ranked if _levenshtein_ratio(normalized, person.search_name) >= 0.55][:limit]
+        rows = [person for person in ranked if _levenshtein_ratio(normalized, person.search_name) >= 0.55][
+            :limit
+        ]
     return [person_view(person, locale) for person in rows]
 
 

@@ -46,9 +46,7 @@ def parse(value: str | int | Decimal) -> int:
 def _to_santim(amount: Decimal) -> int:
     if not amount.is_finite():
         raise MoneyError("Money must be finite")
-    return _check_range(
-        int((amount * SANTIM_PER_BIRR).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    )
+    return _check_range(int((amount * SANTIM_PER_BIRR).quantize(Decimal("1"), rounding=ROUND_HALF_UP)))
 
 
 def format_santim(amount: int, *, locale: str = "en", with_currency: bool = True) -> str:

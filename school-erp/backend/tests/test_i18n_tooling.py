@@ -100,7 +100,7 @@ def test_the_ethiopic_font_ships_with_web_and_mobile():
     assert (mobile_font.parent / "OFL.txt").is_file()
 
     css = (ROOT / "school-erp/web/src/styles.css").read_text(encoding="utf-8")
-    assert '@font-face' in css
+    assert "@font-face" in css
     assert "/fonts/NotoSansEthiopic-Regular.ttf" in css
     layout = (ROOT / "owner/mobile/app/_layout.tsx").read_text(encoding="utf-8")
     assert "useFonts" in layout

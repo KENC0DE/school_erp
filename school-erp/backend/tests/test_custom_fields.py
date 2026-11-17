@@ -28,9 +28,7 @@ async def create_field(client, headers, entity_type="person", **overrides) -> di
     return response.json()
 
 
-async def test_definitions_are_created_updated_listed_and_soft_deleted(
-    client, superadmin_headers
-):
+async def test_definitions_are_created_updated_listed_and_soft_deleted(client, superadmin_headers):
     blood = await create_field(client, superadmin_headers)
     assert blood["entity_type"] == "person"
     assert blood["field_type"] == "select"
@@ -82,9 +80,7 @@ async def test_definitions_are_created_updated_listed_and_soft_deleted(
     )
     actions = {item["action"] for item in activity.json()["items"]}
     assert {"custom_fields.create", "custom_fields.update", "custom_fields.delete"} <= actions
-    delete_entry = next(
-        item for item in activity.json()["items"] if item["action"] == "custom_fields.delete"
-    )
+    delete_entry = next(item for item in activity.json()["items"] if item["action"] == "custom_fields.delete")
     assert delete_entry["reason"] == "wrong field"
     assert delete_entry["revertible"] is False
 
@@ -113,18 +109,14 @@ async def test_definition_payloads_are_validated(client, superadmin_headers):
 
     bad_bounds = await client.post(
         "/api/v1/custom-fields/person",
-        json=definition(
-            key="score", field_type="number", options=None, min_value="10", max_value="2"
-        ),
+        json=definition(key="score", field_type="number", options=None, min_value="10", max_value="2"),
         headers=superadmin_headers,
     )
     assert bad_bounds.status_code == 422
 
     bad_pattern = await client.post(
         "/api/v1/custom-fields/person",
-        json=definition(
-            key="code", field_type="text", options=None, pattern="[unclosed"
-        ),
+        json=definition(key="code", field_type="text", options=None, pattern="[unclosed"),
         headers=superadmin_headers,
     )
     assert bad_pattern.status_code == 422
@@ -147,12 +139,35 @@ async def test_definition_payloads_are_validated(client, superadmin_headers):
 async def test_values_are_validated_by_type(client, superadmin_headers):
     await create_field(client, superadmin_headers)
     for payload in (
-        {"key": "nickname_code", "label_key": "custom.person.code", "field_type": "text", "max_length": 5, "pattern": "^[A-Z]+$"},
-        {"key": "sibling_count", "label_key": "custom.person.siblings", "field_type": "integer", "min_value": 0, "max_value": 30},
-        {"key": "height", "label_key": "custom.person.height", "field_type": "number", "min_value": "0.5", "max_value": "3"},
+        {
+            "key": "nickname_code",
+            "label_key": "custom.person.code",
+            "field_type": "text",
+            "max_length": 5,
+            "pattern": "^[A-Z]+$",
+        },
+        {
+            "key": "sibling_count",
+            "label_key": "custom.person.siblings",
+            "field_type": "integer",
+            "min_value": 0,
+            "max_value": 30,
+        },
+        {
+            "key": "height",
+            "label_key": "custom.person.height",
+            "field_type": "number",
+            "min_value": "0.5",
+            "max_value": "3",
+        },
         {"key": "is_boarding", "label_key": "custom.person.boarding", "field_type": "boolean"},
         {"key": "arrival_date", "label_key": "custom.person.arrival", "field_type": "date"},
-        {"key": "clubs", "label_key": "custom.person.clubs", "field_type": "multiselect", "options": ["chess", "music", "sport"]},
+        {
+            "key": "clubs",
+            "label_key": "custom.person.clubs",
+            "field_type": "multiselect",
+            "options": ["chess", "music", "sport"],
+        },
     ):
         await create_field(client, superadmin_headers, **payload)
 
@@ -237,9 +252,7 @@ async def test_required_and_bounds(client, superadmin_headers):
         json={"values": {"shoe_size": 10}},
         headers=superadmin_headers,
     )
-    assert below.json()["error"]["details"]["errors"][0]["message_key"] == (
-        "error.custom_field.min"
-    )
+    assert below.json()["error"]["details"]["errors"][0]["message_key"] == ("error.custom_field.min")
 
     partial = await client.post(
         "/api/v1/custom-fields/person/validate",
@@ -271,9 +284,7 @@ async def test_field_visibility_follows_roles(app, client, superadmin_headers):
     await create_user(app, "clerk@demo.school", display_name="Records Clerk", roles=["records_clerk"])
     clerk = await login(client, "clerk@demo.school")
 
-    clerk_list = await client.get(
-        "/api/v1/custom-fields", params={"entity_type": "person"}, headers=clerk
-    )
+    clerk_list = await client.get("/api/v1/custom-fields", params={"entity_type": "person"}, headers=clerk)
     assert [item["key"] for item in clerk_list.json()["items"]] == ["public_note"]
 
     admin_list = await client.get(

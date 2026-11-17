@@ -27,19 +27,13 @@ async def test_editor_lists_english_source_and_target_with_filters(client, super
     assert dashboard["status"] == "approved"
     assert dashboard["source_kind"] == "human"
 
-    search = await entries(
-        client, superadmin_headers, locale="am", namespace="core", q="dashboard"
-    )
+    search = await entries(client, superadmin_headers, locale="am", namespace="core", q="dashboard")
     assert "nav.dashboard" in [item["key"] for item in search["items"]]
 
-    missing = await entries(
-        client, superadmin_headers, locale="am", namespace="core", status="missing"
-    )
+    missing = await entries(client, superadmin_headers, locale="am", namespace="core", status="missing")
     assert all(item["value"] == "" and item["status"] == "missing" for item in missing["items"])
 
-    school = await entries(
-        client, superadmin_headers, locale="am", namespace="core", layer="school"
-    )
+    school = await entries(client, superadmin_headers, locale="am", namespace="core", layer="school")
     assert school["items"] == []
 
     stats = await client.get(
@@ -74,9 +68,7 @@ async def test_edit_changes_the_live_bundle_without_redeploy(client, superadmin_
     assert after_bundle.json()["messages"]["nav.dashboard"] == "ዋና ገጽ"
     assert after_bundle.headers["etag"] != old_etag
 
-    overrides = await entries(
-        client, superadmin_headers, locale="am", namespace="core", layer="school"
-    )
+    overrides = await entries(client, superadmin_headers, locale="am", namespace="core", layer="school")
     assert [item["key"] for item in overrides["items"]] == ["nav.dashboard"]
 
     activity = await client.get(
@@ -129,9 +121,7 @@ async def test_edit_changes_the_live_bundle_without_redeploy(client, superadmin_
     assert missing_override.status_code == 404
 
 
-async def test_school_layer_wins_over_central_and_reset_keeps_central(
-    app, client, superadmin_headers
-):
+async def test_school_layer_wins_over_central_and_reset_keeps_central(app, client, superadmin_headers):
     async with app.state.db.session() as session:
         await session.execute(
             text(
@@ -160,9 +150,7 @@ async def test_school_layer_wins_over_central_and_reset_keeps_central(
     assert reset.status_code == 200
     assert reset.json()["value"] == "የመቆጣጠሪያ ገጽ"
 
-    central_only = await entries(
-        client, superadmin_headers, locale="am", namespace="core", layer="central"
-    )
+    central_only = await entries(client, superadmin_headers, locale="am", namespace="core", layer="central")
     assert [item["key"] for item in central_only["items"]] == ["nav.dashboard"]
 
     # Editing the key again restores the soft-deleted override row.
@@ -194,7 +182,7 @@ async def test_import_and_export_round_trip(client, superadmin_headers):
     bundle = await client.get("/api/v1/i18n/am/core")
     assert bundle.json()["messages"]["common.cancel"] == "ተወው"
 
-    csv_content = "key,value\napp.name,\"የእኛ, ትምህርት ቤት\"\n"
+    csv_content = 'key,value\napp.name,"የእኛ, ትምህርት ቤት"\n'
     csv_import = await client.post(
         "/api/v1/i18n/editor/import",
         json={
@@ -210,9 +198,7 @@ async def test_import_and_export_round_trip(client, superadmin_headers):
     bundle = await client.get("/api/v1/i18n/am/core")
     assert bundle.json()["messages"]["app.name"] == "የእኛ, ትምህርት ቤት"
 
-    review = await entries(
-        client, superadmin_headers, locale="am", namespace="core", status="needs_review"
-    )
+    review = await entries(client, superadmin_headers, locale="am", namespace="core", status="needs_review")
     assert [item["key"] for item in review["items"]] == ["app.name"]
 
     activity = await client.get(
@@ -301,18 +287,14 @@ async def test_import_validation_is_atomic(client, superadmin_headers):
 
 
 async def test_editor_permissions(app, client, limited_headers):
-    denied = await client.get(
-        "/api/v1/i18n/editor/entries", params={"locale": "am"}, headers=limited_headers
-    )
+    denied = await client.get("/api/v1/i18n/editor/entries", params={"locale": "am"}, headers=limited_headers)
     assert denied.status_code == 403
 
     await create_role(app, "translator", [("i18n.view", "all")])
     await create_user(app, "translator@demo.school", display_name="Translator", roles=["translator"])
     translator = await login(client, "translator@demo.school")
 
-    readable = await client.get(
-        "/api/v1/i18n/editor/entries", params={"locale": "am"}, headers=translator
-    )
+    readable = await client.get("/api/v1/i18n/editor/entries", params={"locale": "am"}, headers=translator)
     assert readable.status_code == 200
 
     write_denied = await client.put(
