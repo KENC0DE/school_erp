@@ -266,5 +266,12 @@
   "name.father.am": "የአባት ስም",
   "name.grandfather.am": "የአያት ስም",
   "name.hint": "Fill in both scripts when you can; official documents usually use the Amharic name.",
-  "name.no_last_name": "Ethiopian names have no last name: given name, father’s name, grandfather’s name."
+  "name.no_last_name": "Ethiopian names have no last name: given name, father’s name, grandfather’s name.",
+  "calendar.date": "Date",
+  "calendar.display": "Show dates in",
+  "calendar.ethiopian": "Ethiopian",
+  "calendar.gregorian": "Gregorian",
+  "calendar.both": "Both",
+  "calendar.empty": "Choose a date",
+  "calendar.ethiopianValue": "Ethiopian: {{year}}-{{month}}-{{day}}"
 }

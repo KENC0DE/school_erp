@@ -266,5 +266,12 @@
   "name.father.am": "የአባት ስም",
   "name.grandfather.am": "የአያት ስም",
   "name.hint": "በተቻለ መጠን ሁለቱንም ፊደላት ይሙሉ፤ ሕጋዊ ሰነዶች ብዙውን ጊዜ የአማርኛውን ስም ይጠቀማሉ።",
-  "name.no_last_name": "የኢትዮጵያ ስሞች የአያት ስም አይደሉም፤ ስም፣ የአባት ስም እና የአያት ስም ናቸው።"
+  "name.no_last_name": "የኢትዮጵያ ስሞች የአያት ስም አይደሉም፤ ስም፣ የአባት ስም እና የአያት ስም ናቸው።",
+  "calendar.date": "ቀን",
+  "calendar.display": "ቀኖችን በዚህ ያሳዩ",
+  "calendar.ethiopian": "ኢትዮጵያ",
+  "calendar.gregorian": "ግሪጎሪያን",
+  "calendar.both": "ሁለቱም",
+  "calendar.empty": "ቀን ይምረጡ",
+  "calendar.ethiopianValue": "ኢትዮጵያ፦ {{year}}-{{month}}-{{day}}"
 }
