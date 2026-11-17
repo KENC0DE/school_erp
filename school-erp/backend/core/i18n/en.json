@@ -248,5 +248,8 @@
   "auth.passwords_mismatch": "The two passwords do not match",
   "auth.reset_password_submit": "Set password",
   "auth.reset_password_success": "Your password has been changed. You can sign in now.",
-  "auth.back_to_sign_in": "Back to sign in"
+  "auth.back_to_sign_in": "Back to sign in",
+  "core.perm.audit.rollback": "Roll back changes",
+  "activity.revert": "Roll back",
+  "activity.restore": "Restore"
 }

@@ -248,5 +248,8 @@
   "auth.passwords_mismatch": "ሁለቱ የይለፍ ቃላት አይመሳሰሉም",
   "auth.reset_password_submit": "የይለፍ ቃል አስቀምጥ",
   "auth.reset_password_success": "የይለፍ ቃልዎ ተቀይሯል። አሁን መግባት ይችላሉ።",
-  "auth.back_to_sign_in": "ወደ መግቢያ ተመለስ"
+  "auth.back_to_sign_in": "ወደ መግቢያ ተመለስ",
+  "core.perm.audit.rollback": "ለውጦችን ይመልሱ",
+  "activity.revert": "ወደኋላ መልስ",
+  "activity.restore": "እነበረበት መልስ"
 }

@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from core.audit.models import AuditLog
 from core.audit.service import record
 from sqlalchemy import select
+
 from tests.conftest import create_role, create_user, login, unique_email
 
 

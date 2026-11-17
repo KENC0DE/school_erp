@@ -12,6 +12,7 @@ CORE_PERMISSIONS = [
     Perm("audit.activity.view", "core.perm.audit.activity.view"),
     Perm("audit.activity.view_admin_actions", "core.perm.audit.activity.view_admin_actions"),
     Perm("audit.verify", "core.perm.audit.verify"),
+    Perm("audit.rollback", "core.perm.audit.rollback"),
     Perm("i18n.view", "core.perm.i18n.view"),
     Perm("i18n.manage", "core.perm.i18n.manage"),
     Perm("themes.view", "core.perm.themes.view"),

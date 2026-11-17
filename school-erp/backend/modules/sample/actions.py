@@ -190,6 +190,7 @@ async def _delete(ctx: ActionContext, payload: dict) -> dict:
         actor=ctx.principal,
         reason=payload.get("reason"),
         via=ctx.via,
+        entity_type="sample_note",
     )
     await ctx.session.commit()
     return {
@@ -227,6 +228,7 @@ async def _restore(ctx: ActionContext, payload: dict) -> NoteOut:
         actor=ctx.principal,
         reason=payload.get("reason"),
         via=ctx.via,
+        entity_type="sample_note",
     )
     await ctx.session.commit()
     return NoteOut.from_model(note)

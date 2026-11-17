@@ -8,6 +8,7 @@ from typing import Any
 
 from app.errors import Forbidden, NotFound
 from core.audit.models import AuditLog
+from core.audit.revert import revert_entry
 from core.audit.service import record_read, verify_chain
 from core.audit.visibility import (
     ACTIVITY_PERMISSION,
@@ -24,10 +25,15 @@ from core.auth.deps import require
 from core.auth.principal import Principal
 from core.db.deps import get_session
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/audit", tags=["audit"])
+
+
+class RevertRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
 
 
 def _request_meta(request: Request) -> dict[str, str | None]:
@@ -177,6 +183,26 @@ async def activity_entry(
     )
     await session.commit()
     return serialize_entry(row, names)
+
+
+@router.post("/activity/{seq}/revert", dependencies=[Depends(require("audit.rollback"))])
+async def revert_activity_entry(
+    seq: int,
+    payload: RevertRequest,
+    principal: Principal = Depends(require("audit.rollback")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    return await revert_entry(session, principal, seq, reason=payload.reason)
+
+
+@router.post("/activity/{seq}/restore", dependencies=[Depends(require("audit.rollback"))])
+async def restore_activity_entry(
+    seq: int,
+    payload: RevertRequest,
+    principal: Principal = Depends(require("audit.rollback")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    return await revert_entry(session, principal, seq, reason=payload.reason, restore=True)
 
 
 @router.get("/verify", dependencies=[Depends(require("audit.verify"))])

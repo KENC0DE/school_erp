@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 
 import { Badge } from "../components/ui/Badge";
@@ -26,6 +26,7 @@ interface ActivityEntry {
   after: Record<string, unknown> | null;
   reason: string | null;
   reverts_id: number | null;
+  revertible?: boolean;
 }
 
 interface ActivityList {
@@ -146,7 +147,32 @@ function ChangesTable({ entry }: { entry: ActivityEntry }) {
 
 function EntryCard({ entry }: { entry: ActivityEntry }) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const [showChanges, setShowChanges] = useState(false);
+  const [reverting, setReverting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const isRestore = entry.action.endsWith(".delete");
+
+  const submitRevert = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const action = isRestore ? "restore" : "revert";
+      await api.post<Record<string, unknown>>(
+        `/api/v1/audit/activity/${entry.seq}/${action}`,
+        { reason },
+      );
+      setReverting(false);
+      setReason("");
+      await queryClient.invalidateQueries({ queryKey: ["activity"] });
+    } catch {
+      setError(t("common.error"));
+    } finally {
+      setBusy(false);
+    }
+  };
   const actor = actorLabel(t, entry);
   const module = moduleLabel(t, entry.module);
   const hasValues = diffFields(entry).length > 0;
@@ -192,6 +218,44 @@ function EntryCard({ entry }: { entry: ActivityEntry }) {
       ) : (
         <p className="mt-2 text-xs text-muted-foreground">{t("activity.no_changes")}</p>
       )}
+
+      {entry.revertible ? (
+        <div className="mt-3 border-t border-border pt-3">
+          {!reverting ? (
+            <Button
+              variant="outline"
+              data-testid={`activity-revert-${entry.seq}`}
+              onClick={() => setReverting(true)}
+            >
+              {isRestore ? t("activity.restore") : t("activity.revert")}
+            </Button>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-sm">
+                <span className="text-muted-foreground">{t("activity.reason")}</span>
+                <Input
+                  data-testid={`activity-reason-${entry.seq}`}
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                />
+              </label>
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
+              <div className="flex gap-2">
+                <Button
+                  data-testid={`activity-confirm-${entry.seq}`}
+                  disabled={busy || !reason.trim()}
+                  onClick={() => void submitRevert()}
+                >
+                  {isRestore ? t("activity.restore") : t("activity.revert")}
+                </Button>
+                <Button variant="ghost" onClick={() => setReverting(false)}>
+                  {t("common.cancel")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

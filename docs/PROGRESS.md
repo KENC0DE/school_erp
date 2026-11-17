@@ -78,7 +78,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-08 — Module management UI for the Super Admin (Settings → Modules)
 - [x] P1-09 — Audit complete
 - [x] P1-10 — Activity history UI (school)
-- [ ] P1-11 — Rollback/restore
+- [x] P1-11 — Rollback/restore
 - [ ] P1-12 — Controller audit vault UI
 - [ ] P1-13 — Person and name model
 - [ ] P1-14 — Name form component (web and mobile) with both script fields, a hint to fill both, and no "last name"…

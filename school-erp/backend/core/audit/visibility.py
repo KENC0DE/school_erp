@@ -124,7 +124,15 @@ def serialize_entry(row: AuditLog, names: dict[str, str]) -> dict[str, Any]:
         "after": row.after,
         "reason": row.reason,
         "reverts_id": row.reverts_id,
+        "revertible": _revertible(row.entity_type, row.action),
     }
+
+
+def _revertible(entity_type: str | None, action: str) -> bool:
+    # Imported lazily: revert.py imports visibility helpers.
+    from core.audit.revert import is_revertible
+
+    return is_revertible(entity_type, action)
 
 
 def as_utc(value: datetime) -> datetime:

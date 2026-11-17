@@ -86,6 +86,7 @@ async def soft_delete(
     actor: Principal | None = None,
     reason: str | None = None,
     via: str | None = None,
+    entity_type: str | None = None,
 ) -> bool:
     """Soft-delete ``entity`` and audit it. Returns False if already deleted."""
     if not isinstance(entity, SoftDeleteMixin) and not hasattr(entity, "deleted_at"):
@@ -97,7 +98,7 @@ async def soft_delete(
         session,
         action=action,
         module=module,
-        entity_type=getattr(entity, "__tablename__", type(entity).__name__),
+        entity_type=entity_type or getattr(entity, "__tablename__", type(entity).__name__),
         entity_id=str(entity.id),
         before=before,
         after=_state(entity),
@@ -117,6 +118,7 @@ async def restore(
     actor: Principal | None = None,
     reason: str | None = None,
     via: str | None = None,
+    entity_type: str | None = None,
 ) -> bool:
     """Restore ``entity`` and audit it. Returns False if already live."""
     if not hasattr(entity, "deleted_at"):
@@ -128,7 +130,7 @@ async def restore(
         session,
         action=action,
         module=module,
-        entity_type=getattr(entity, "__tablename__", type(entity).__name__),
+        entity_type=entity_type or getattr(entity, "__tablename__", type(entity).__name__),
         entity_id=str(entity.id),
         before=before,
         after=_state(entity),
