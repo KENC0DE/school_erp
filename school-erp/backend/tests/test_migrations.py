@@ -54,7 +54,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "custom_field_defs",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0011_i18n_soft_delete"
+    assert version == "0012_theme_manager"
 
     assert {
         "failed_login_count",
@@ -62,6 +62,8 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "totp_secret",
         "totp_enabled",
         "totp_recovery_hashes",
+        "theme_key",
+        "theme_mode",
     } <= user_columns
     assert {"require_totp", "is_active"} <= role_columns
     assert {"reason", "granted_by"} <= override_columns

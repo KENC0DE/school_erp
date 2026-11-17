@@ -82,6 +82,8 @@ async def me(
         "email": principal.email,
         "display_name": principal.display_name,
         "locale": principal.locale,
+        "theme_key": user.theme_key if user else None,
+        "theme_mode": user.theme_mode if user else "light",
         "roles": principal.roles,
         "permissions": sorted(principal.permissions),
         "scopes": {key: sorted(value) for key, value in sorted(principal.scopes.items())},
@@ -167,6 +169,16 @@ async def navigation(
                 "label_key": "nav.languages",
                 "path": "/settings/languages",
                 "icon": "languages",
+                "module": "core",
+            }
+        )
+    if principal.can("themes.view") or principal.can("themes.manage"):
+        items.append(
+            {
+                "key": "themes",
+                "label_key": "nav.themes",
+                "path": "/settings/themes",
+                "icon": "palette",
                 "module": "core",
             }
         )

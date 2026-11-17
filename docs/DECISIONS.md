@@ -617,3 +617,54 @@ and recorded here (date, decision, reason).
   `font-display: swap`; mobile loads it with `expo-font`'s `useFonts` and uses
   it in the shared text primitives, so Ge'ez glyphs do not depend on the
   device's installed fonts.
+
+## 2026-11-17 — P1-21 Theme Manager
+
+- **The stored token map is the single source of truth.** `themes.tokens`
+  holds `{light, dark}` exactly as the author wrote it. Web CSS variables and
+  the mobile React Native object are both generated from that map
+  (`core/themes/tokens.py`), so a theme cannot drift between platforms. The
+  builtin default is a real row (`key=default`) and also a hard-coded fallback
+  for the case where the database is empty or the row is corrupt.
+- **Import accepts the shapes schools already have.** CSS paste reads
+  `:root`/`html`/`body` as light and `.dark` as dark, plus `@theme` shared
+  values; JSON accepts a flat `{light, dark}`, `{tokens: {light, dark}}`,
+  shadcn/tweakcn `{cssVars: {theme, light, dark}}`, a registry item, or a
+  registry index whose first theme item is used. Flat single-mode JSON is
+  rejected rather than guessed. Colour names are normalised (`--color-*` and
+  `--*` are the same token).
+- **Validation is strict and explains itself.** Both modes, every colour,
+  chart and sidebar token, a CSS length for `radius`, resolvable colours (no
+  dangling `var()`) and eleven WCAG 2.2 AA text/background pairs at 4.5:1 are
+  required. Failures return `422` with `message_key: error.theme.invalid` and
+  a list of complete-sentence issues (mode, tokens and measured ratio included)
+  so the UI does not need to translate backend internals. Unreadable pairs are
+  rejected by the shipped defaults themselves: light `muted-foreground` is
+  `oklch(0.53 0 0)` and dark `destructive` is `oklch(0.577 0.245 27.325)`.
+- **Preview never writes.** `POST /themes/preview` parses and validates in
+  memory, returns the tokens, CSS, mobile objects, the full contrast report and
+  the builtin fallback when invalid. `POST /themes/import` repeats validation
+  before the first write, so a client that skips preview still cannot store an
+  unusable theme.
+- **A broken stored theme is never served.** Reading the active theme validates
+  the stored tokens; if they fail, the response is the builtin default with
+  `fallback: true` and the issues in `reason`. The same applies to a user's
+  chosen theme. This is the "broken theme falls back to default" contract.
+- **School availability and the school default are separate flags.**
+  `is_active` means "users at this school may choose it"; `is_default` is the
+  school-wide fallback. Hiding a theme keeps it installed. The current default
+  cannot be hidden and the builtin default cannot be hidden or deleted; delete
+  is a soft delete. The first default is created by bootstrap.
+- **Per-user choice is authenticated but not privileged.** Every signed-in
+  user may set `theme_key`/`theme_mode` through `PUT /themes/preference`; the
+  choice is validated against the school's available themes and audited as
+  `user.theme_preference`. `GET /themes/available` requires only a session.
+  Managing themes requires `themes.view`/`themes.manage`.
+- **Clients resolve the theme on every load.** Web applies generated CSS custom
+  properties and re-applies the shipped defaults first so removed tokens cannot
+  linger; mobile sends its session token (when present) so the backend returns
+  the user's own theme, caches the validated definition per school, and falls
+  back to `DEFAULT_THEME` when the stored theme is broken.
+- **The committed OpenAPI client was regenerated.** `shared/ts/api-client/src/schema.d.ts`
+  now includes the P1-18 editor routes (previously missed) and the P1-21 theme
+  routes. The change is additive within `/api/v1`.

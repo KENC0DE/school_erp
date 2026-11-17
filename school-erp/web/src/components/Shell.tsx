@@ -6,6 +6,7 @@ import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { ChatPanel } from "./ChatPanel";
+import { ThemePicker } from "./ThemePicker";
 import { Button } from "./ui/Button";
 
 export function Shell() {
@@ -72,6 +73,7 @@ export function Shell() {
                 </option>
               ))}
             </select>
+            <ThemePicker />
             <Button variant="outline" onClick={toggle} aria-label={t("common.theme")}>
               {mode === "dark" ? t("common.theme.light") : t("common.theme.dark")}
             </Button>

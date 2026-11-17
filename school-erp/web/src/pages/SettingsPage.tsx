@@ -220,6 +220,10 @@ export function SettingsPage() {
     permissions.includes("*") ||
     permissions.includes("i18n.view") ||
     permissions.includes("i18n.manage");
+  const canViewThemes =
+    permissions.includes("*") ||
+    permissions.includes("themes.view") ||
+    permissions.includes("themes.manage");
 
   const settings = useQuery({
     queryKey: ["settings"],
@@ -270,6 +274,23 @@ export function SettingsPage() {
               className="text-sm font-medium text-primary hover:underline"
             >
               {t("settings.languages.link")}
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {canViewThemes ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.themes.title")}</CardTitle>
+            <CardDescription>{t("settings.themes.hint")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link
+              to="/settings/themes"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {t("settings.themes.link")}
             </Link>
           </CardContent>
         </Card>

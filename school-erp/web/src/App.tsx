@@ -13,6 +13,7 @@ import { ResetPasswordPage } from "./pages/ResetPassword";
 import { RolesPage } from "./pages/RolesPage";
 import { SamplePage } from "./pages/SamplePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { ThemeManagerPage } from "./pages/ThemeManagerPage";
 import { TranslationsPage } from "./pages/TranslationsPage";
 import { UsersPage } from "./pages/UsersPage";
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
@@ -43,11 +44,11 @@ export function AppProviders({
 }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <I18nProvider initialMessages={initialMessages}>
-          <AuthProvider>{children}</AuthProvider>
-        </I18nProvider>
-      </ThemeProvider>
+      <I18nProvider initialMessages={initialMessages}>
+        <AuthProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </AuthProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }
@@ -68,6 +69,7 @@ export function AppRoutes() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
           <Route path="settings/languages" element={<TranslationsPage />} />
+          <Route path="settings/themes" element={<ThemeManagerPage />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

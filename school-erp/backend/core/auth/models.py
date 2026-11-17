@@ -18,6 +18,9 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     locale: Mapped[str] = mapped_column(String(8), default="en")
+    # Per-user theme choice (P1-21). Null means "use the school default".
+    theme_key: Mapped[str | None] = mapped_column(String(60))
+    theme_mode: Mapped[str] = mapped_column(String(10), default="light", nullable=False)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Lockout (P1-04)

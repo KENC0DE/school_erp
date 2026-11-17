@@ -88,7 +88,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P1-18 — Translation Editor
 - [x] P1-19 — "Suggest with AI" hook in the editor (calls the action registry
 - [x] P1-20 — i18n tooling
-- [ ] P1-21 — Theme Manager
+- [x] P1-21 — Theme Manager
 - [ ] P1-22 — Files service
 - [ ] P1-23 — Notification service
 - [ ] P1-24 — Instance setup wizard

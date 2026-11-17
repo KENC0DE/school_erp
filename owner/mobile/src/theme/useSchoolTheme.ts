@@ -10,16 +10,22 @@ export type ThemeMode = "light" | "dark";
 export interface SchoolTheme {
   theme: ThemeDefinition;
   rn: ReturnType<typeof nativeThemeFrom>;
-  source: "default" | "school";
+  source: "default" | "school" | "user";
 }
 
+const SHIPPED: ThemeDefinition = DEFAULT_THEME;
+
 /**
- * Loads the school's active theme, validates both variants and always exposes a
- * React Native theme object. Any failure falls back to DEFAULT_THEME.
+ * Loads the active theme for this device.
+ *
+ * The school default is public so the login screen can be branded before a
+ * session exists. Once signed in the access token is sent too, which makes the
+ * backend resolve the user's own theme choice (P1-21). A failure at any point
+ * keeps the cached or shipped default so the app never renders unstyled.
  */
 export function useSchoolTheme(profile: VerifiedProfile | null, mode: ThemeMode): SchoolTheme {
-  const [theme, setTheme] = useState<ThemeDefinition>(DEFAULT_THEME);
-  const [source, setSource] = useState<"default" | "school">("default");
+  const [theme, setTheme] = useState<ThemeDefinition>(SHIPPED);
+  const [source, setSource] = useState<SchoolTheme["source"]>("default");
 
   useEffect(() => {
     if (!profile) return;
@@ -34,11 +40,12 @@ export function useSchoolTheme(profile: VerifiedProfile | null, mode: ThemeMode)
       }
       try {
         const baseUrl = await getVerifiedBaseUrl(profile!.instanceId);
-        const response = await fetch(`${baseUrl}/api/v1/themes/active`, {
-          headers: { Accept: "application/json" },
-        });
+        const token = await store.getAccessToken();
+        const headers: Record<string, string> = { Accept: "application/json" };
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const response = await fetch(`${baseUrl}/api/v1/themes/active`, { headers });
         if (!response.ok) return;
-        const data = (await response.json()) as Partial<ThemeDefinition>;
+        const data = (await response.json()) as Partial<ThemeDefinition> & { source?: string };
         const candidate: ThemeDefinition = {
           key: typeof data.key === "string" ? data.key : "school",
           name: typeof data.name === "string" ? data.name : "School",
@@ -46,14 +53,14 @@ export function useSchoolTheme(profile: VerifiedProfile | null, mode: ThemeMode)
         };
         if (validateTheme(candidate).length > 0) {
           if (!cancelled) {
-            setTheme(DEFAULT_THEME);
+            setTheme(SHIPPED);
             setSource("default");
           }
           return;
         }
         if (!cancelled) {
           setTheme(candidate);
-          setSource("school");
+          setSource(data.source === "user" ? "user" : "school");
         }
         await store.setCache("theme", candidate);
       } catch {
