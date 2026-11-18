@@ -128,13 +128,20 @@ def create_app(settings: Settings | None = None, registry: ModuleRegistry | None
 
     @app.exception_handler(RequestValidationError)
     async def validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+        # Pydantic puts the original exception in ``ctx`` for model validators;
+        # it is not JSON-serializable, so the public envelope keeps only the
+        # location, message and offending input.
+        details = [
+            {key: value for key, value in error.items() if key not in {"ctx", "url"}}
+            for error in exc.errors()
+        ]
         return JSONResponse(
             status_code=422,
             content=error_body(
                 code="VALIDATION_ERROR",
                 message_key="error.validation",
                 message="The request is invalid",
-                details=exc.errors(),
+                details=details,
                 request_id=getattr(request.state, "request_id", ""),
             ),
         )

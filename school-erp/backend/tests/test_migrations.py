@@ -74,6 +74,11 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         admission_sequence_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(admission_number_sequences)")
         }
+        staff_columns = {row[1] for row in connection.execute("PRAGMA table_info(staff_profiles)")}
+        staff_contract_columns = {row[1] for row in connection.execute("PRAGMA table_info(staff_contracts)")}
+        staff_qualification_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(staff_qualifications)")
+        }
     finally:
         connection.close()
 
@@ -112,9 +117,15 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "admission_applications",
         "admission_guardians",
         "admission_number_sequences",
+        "staff_departments",
+        "staff_positions",
+        "staff_profiles",
+        "staff_contracts",
+        "staff_qualifications",
+        "staff_number_sequences",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0021_admissions"
+    assert version == "0022_staff"
 
     assert {
         "failed_login_count",
@@ -146,6 +157,31 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
     } <= curriculum_columns
     assert {"profile_id", "level_id", "subject_id", "credit"} <= curriculum_subject_columns
     assert {"scope", "value", "created_at", "updated_at"} <= sequence_columns
+    assert {
+        "person_id",
+        "staff_number",
+        "user_id",
+        "status",
+        "department_id",
+        "position_id",
+        "hire_date",
+        "end_date",
+        "notes",
+        "custom",
+    } <= staff_columns
+    assert {"staff_id", "type", "status", "start_date", "end_date", "salary_santim"} <= (
+        staff_contract_columns
+    )
+    assert {
+        "staff_id",
+        "kind",
+        "title",
+        "institution",
+        "field_of_study",
+        "start_date",
+        "end_date",
+        "result",
+    } <= staff_qualification_columns
     assert {
         "application_number",
         "person_id",

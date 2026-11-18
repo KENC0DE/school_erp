@@ -1526,3 +1526,41 @@ and recorded here (date, decision, reason).
 - **The demo year is opened with its first semester.** The seed only opens the
   year when no year is current and only opens term 1 when no term is open, so
   re-running never disturbs a year an operator has since closed or advanced.
+
+## 2026-11-18 — P3-01 staff module
+
+- **Staff numbers use their own global sequence.** `STF-{year}-{seq:04d}` is
+  rendered by `modules/staff/numbering.py` and reserved with one dialect
+  upsert, so two simultaneous registrations cannot receive the same number.
+  This is deliberately separate from the configurable student numbering: a
+  staff number is not a school policy knob in phase one, and an explicit
+  number is always accepted so imported records keep their identifiers.
+- **Departments and positions are deactivated, not deleted.** They carry an
+  `is_active` flag and appear only with `include_inactive=true` once retired.
+  A position cannot be assigned while inactive, and an inactive department
+  cannot receive positions. Staff profiles, contracts and qualifications use
+  the standard soft-delete/restore path because their history must remain
+  auditable.
+- **A staff profile has one primary department and one primary position.**
+  The position may carry a department; when both are supplied they must match,
+  and when only the position is supplied its department is copied onto the
+  profile. Additional roles and teaching assignments arrive with P3-02.
+- **Salary is `salary_santim` and contract data is permission-gated.**
+  Contract and salary fields require `staff.contracts.view` /
+  `staff.contracts.manage`. A caller with only `staff.view` receives the staff
+  record with an empty contract list and `contracts_restricted=true`, while
+  the contract endpoints themselves return 403.
+- **User accounts are linked, not embedded.** A nullable unique `user_id` on
+  the staff profile ties it to an existing account; link and unlink are audited
+  actions. Uniqueness is enforced among live staff profiles, so deleting a
+  staff record frees the account for a corrected replacement.
+- **A repeated person submission is rejected before a new person exists.**
+  `create_person` always inserts a person, so staff create first prepares the
+  candidate and looks for a live person with the same exact name triplet and
+  date of birth (or the same email/phone) that already owns a staff profile.
+  That returns `staff.error.person_exists` instead of creating an orphan
+  person on every duplicate submission.
+- **Departments, positions and qualifications use ordinary row versions.**
+  Every mutation takes `row_version` and writes an audit entry through the
+  shared `record` helper, matching the rest of the API rather than inventing a
+  staff-specific concurrency model.
