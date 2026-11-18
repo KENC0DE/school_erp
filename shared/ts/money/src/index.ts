@@ -109,9 +109,11 @@ export function allocate(amount: number, weights: number[]): number[] {
   let remainder = absolute - shares.reduce((sum, share) => sum + share, 0);
   const order = weights
     .map((_, index) => index)
-    .sort((left, right) => weights[right] - weights[left] || left - right);
+    .sort((left, right) => weights[right]! - weights[left]! || left - right);
   for (let index = 0; remainder > 0; index += 1, remainder -= 1) {
-    shares[order[index % order.length]] += 1;
+    const target = order[index % order.length];
+    if (target === undefined) throw new MoneyError("Allocation order is empty");
+    shares[target] = (shares[target] ?? 0) + 1;
   }
   return shares.map((share) => sign * share);
 }

@@ -13,14 +13,16 @@
     "lint": "eslint app src tests"
   },
   "dependencies": {
+    "@erp/calendar": "workspace:*",
     "@erp/i18n": "workspace:*",
+    "@erp/money": "workspace:*",
     "@erp/tokens": "workspace:*",
     "@noble/ed25519": "1.7.3",
     "@noble/hashes": "1.8.0",
     "expo": "58.0.26",
     "expo-camera": "58.0.14",
-    "expo-font": "58.0.12",
     "expo-constants": "58.0.16",
+    "expo-font": "58.0.12",
     "expo-linking": "58.0.17",
     "expo-router": "58.0.32",
     "expo-secure-store": "58.0.3",

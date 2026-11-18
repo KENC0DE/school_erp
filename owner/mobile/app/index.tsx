@@ -10,7 +10,7 @@ import { DirectoryError } from "../src/directory/verify";
 import { translateUi, type UiKey } from "../src/i18n/ui-messages";
 import { storeVerifiedProfile } from "../src/storage/schoolStorage";
 import { defaultNativeTheme } from "../src/theme/nativeTheme";
-import { Button, Card, Field, SafeScreen, Title } from "../src/ui/primitives";
+import { Button, Card, Field, SafeScreen, Title, font, radius, space, text, weight } from "../src/ui";
 
 interface SuspendedSchool {
   name: string;
@@ -140,13 +140,19 @@ export default function SchoolPickerScreen() {
   return (
     <SafeScreen colors={colors}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.eyebrow, { color: colors.primary }]}>{ui("picker.eyebrow")}</Text>
-        <Title colors={colors}>{ui("app.name")}</Title>
-        <Text style={[styles.tagline, { color: colors.mutedForeground }]}>{ui("app.tagline")}</Text>
+        <View style={styles.brand}>
+          <Text style={[styles.eyebrow, { color: colors.primary }]}>{ui("picker.eyebrow")}</Text>
+          <Title colors={colors}>{ui("app.name")}</Title>
+          <Text style={[styles.tagline, { color: colors.mutedForeground }]}>{ui("app.tagline")}</Text>
+        </View>
 
         <Card colors={colors} style={styles.form}>
-          <Text style={[styles.subtitle, { color: colors.foreground }]}>{ui("picker.title")}</Text>
-          <Text style={[styles.body, { color: colors.mutedForeground }]}>{ui("picker.subtitle")}</Text>
+          <View style={styles.formText}>
+            <Text accessibilityRole="header" style={[styles.subtitle, { color: colors.foreground }]}>
+              {ui("picker.title")}
+            </Text>
+            <Text style={[styles.body, { color: colors.mutedForeground }]}>{ui("picker.subtitle")}</Text>
+          </View>
           <Field
             colors={colors}
             label={ui("picker.codeLabel")}
@@ -157,7 +163,11 @@ export default function SchoolPickerScreen() {
             onChangeText={setValue}
             onSubmitEditing={() => void submit()}
           />
-          {errorKey ? <Text style={[styles.error, { color: colors.destructive }]}>{ui(errorKey)}</Text> : null}
+          {errorKey ? (
+            <Text accessibilityLiveRegion="polite" style={[styles.error, { color: colors.destructive }]}>
+              {ui(errorKey)}
+            </Text>
+          ) : null}
           <View style={styles.buttonRow}>
             <View style={styles.grow}>
               <Button
@@ -181,9 +191,11 @@ export default function SchoolPickerScreen() {
           </Text>
         </Card>
 
-        <Text style={[styles.section, { color: colors.foreground }]}>{ui("picker.saved")}</Text>
+        <Text accessibilityRole="header" style={[styles.section, { color: colors.foreground }]}>
+          {ui("picker.saved")}
+        </Text>
         {profiles.length === 0 ? (
-          <Text style={[styles.body, { color: colors.mutedForeground }]}>{ui("picker.noSaved")}</Text>
+          <Text style={[styles.empty, { color: colors.mutedForeground }]}>{ui("picker.noSaved")}</Text>
         ) : (
           profiles.map((saved) => (
             <Card colors={colors} key={saved.instanceId} style={styles.savedCard}>
@@ -193,7 +205,7 @@ export default function SchoolPickerScreen() {
                     <Image source={{ uri: saved.logoUrl }} style={styles.logo} />
                   ) : (
                     <View style={[styles.logo, styles.logoFallback, { backgroundColor: colors.muted }]}>
-                      <Text style={{ color: colors.foreground, fontWeight: "700" }}>
+                      <Text style={[styles.logoLetter, { color: colors.foreground }]}>
                         {saved.name.slice(0, 1).toUpperCase()}
                       </Text>
                     </View>
@@ -205,8 +217,15 @@ export default function SchoolPickerScreen() {
                     </Text>
                   </View>
                 </Pressable>
-                <Pressable onPress={() => void removeSavedProfile(saved.instanceId)}>
-                  <Text style={{ color: colors.destructive }}>{ui("picker.remove")}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${ui("picker.remove")} ${saved.name}`}
+                  style={styles.remove}
+                  onPress={() => void removeSavedProfile(saved.instanceId)}
+                >
+                  <Text style={[styles.removeLabel, { color: colors.destructive }]}>
+                    {ui("picker.remove")}
+                  </Text>
                 </Pressable>
               </View>
             </Card>
@@ -218,24 +237,47 @@ export default function SchoolPickerScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 22, paddingBottom: 48 },
+  content: { padding: space.base, paddingBottom: space["2xl"], gap: space.base },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  suspended: { flex: 1, justifyContent: "center", padding: 24, gap: 16 },
-  eyebrow: { fontSize: 12, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
-  tagline: { fontSize: 16, marginBottom: 22 },
-  form: { gap: 8 },
-  subtitle: { fontSize: 20, fontWeight: "700" },
-  body: { fontSize: 15, lineHeight: 22, marginBottom: 12 },
-  error: { fontSize: 14, marginBottom: 8 },
-  buttonRow: { flexDirection: "row", gap: 10, marginTop: 4 },
+  suspended: { flex: 1, justifyContent: "center", padding: space.lg, gap: space.base },
+  brand: { gap: space.xs },
+  eyebrow: {
+    fontSize: text.xs,
+    fontWeight: weight.semibold,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    fontFamily: font.family,
+  },
+  tagline: { fontSize: text.base, lineHeight: 24, fontFamily: font.family },
+  form: { gap: space.md },
+  formText: { gap: space.xs },
+  subtitle: { fontSize: text.lg, fontWeight: weight.semibold, fontFamily: font.family },
+  body: { fontSize: text.sm, lineHeight: 21, fontFamily: font.family },
+  error: { fontSize: text.sm, fontFamily: font.family },
+  buttonRow: { flexDirection: "row", gap: space.sm, marginTop: space.xs },
   grow: { flex: 1 },
-  footnote: { fontSize: 12, marginTop: 10 },
-  section: { fontSize: 18, fontWeight: "700", marginTop: 28, marginBottom: 10 },
-  savedCard: { marginBottom: 10 },
-  savedRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  savedMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+  footnote: { fontSize: text.xs, marginTop: space.sm, fontFamily: font.family },
+  section: {
+    fontSize: text.md,
+    fontWeight: weight.semibold,
+    marginTop: space.sm,
+    fontFamily: font.family,
+  },
+  empty: { fontSize: text.sm, lineHeight: 21, fontFamily: font.family },
+  savedCard: { padding: 0, gap: 0 },
+  savedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
+  },
+  savedMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: space.md },
   savedText: { flex: 1 },
-  savedName: { fontSize: 16, fontWeight: "600" },
-  logo: { width: 42, height: 42, borderRadius: 10 },
+  savedName: { fontSize: text.base, fontWeight: weight.medium, fontFamily: font.family },
+  logo: { width: 40, height: 40, borderRadius: radius.md },
   logoFallback: { alignItems: "center", justifyContent: "center" },
+  logoLetter: { fontSize: text.base, fontWeight: weight.semibold, fontFamily: font.family },
+  remove: { minHeight: 44, justifyContent: "center", paddingHorizontal: space.sm },
+  removeLabel: { fontSize: text.sm, fontWeight: weight.medium, fontFamily: font.family },
 });

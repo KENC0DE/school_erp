@@ -12,7 +12,7 @@ Status: `open` · `supplied` · `not-needed`
 | 3 | AI provider API key(s) | P9 | open — fake provider |
 | 4 | Expo / FCM / APNs push credentials | P11-12, P8-06 | open — logging fake provider |
 | 5 | Apple Developer and Google Play accounts | P12-09 | open — EAS profiles documented, no store submission |
-| 6 | A physical phone with Expo Go | P0 checkpoint, P12 | open — verified with Jest, expo-doctor and web export instead |
+| 6 | A physical phone with Expo Go | P0 checkpoint, P12 | open — verified with Jest, expo-doctor and Expo web at 390/430 px; native screenshots still need a device |
 | 7 | Curriculum starter data verification against the official curriculum | P2-04 | open — shipped marked unverified |
 | 8 | Accountant review of tax/pension configuration defaults | P3-05, P7 | open |
 | 9 | Amharic translation review | P14-13 | open — `am` strings drafted |

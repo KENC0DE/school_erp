@@ -1,4 +1,3 @@
-import * as SecureStore from "expo-secure-store";
 
 import {
   DIRECTORY_STATUS_SUSPENDED,
@@ -7,6 +6,7 @@ import {
   type VerifiedProfile,
 } from "../directory/types";
 import { verifyDirectoryRecord } from "../directory/verify";
+import { secureStorage } from "./secureStorage";
 
 const PROFILE_INDEX_KEY = "erp.profile_index";
 const ACTIVE_INSTANCE_KEY = "erp.active_instance";
@@ -47,7 +47,7 @@ function assertInstanceId(instanceId: string): void {
 }
 
 async function readJson<T>(key: string): Promise<T | null> {
-  const raw = await SecureStore.getItemAsync(key);
+  const raw = await secureStorage.getItem(key);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as T;
@@ -57,7 +57,7 @@ async function readJson<T>(key: string): Promise<T | null> {
 }
 
 async function writeJson(key: string, value: unknown): Promise<void> {
-  await SecureStore.setItemAsync(key, JSON.stringify(value));
+  await secureStorage.setItem(key, JSON.stringify(value));
 }
 
 async function readIndex(): Promise<string[]> {
@@ -113,16 +113,16 @@ export async function storeVerifiedProfile(record: unknown): Promise<VerifiedPro
 export async function removeProfile(instanceId: string): Promise<void> {
   assertInstanceId(instanceId);
   const keys = schoolStorageKeys(instanceId);
-  await SecureStore.deleteItemAsync(keys.profile);
-  await SecureStore.deleteItemAsync(keys.accessToken);
-  await SecureStore.deleteItemAsync(keys.refreshToken);
+  await secureStorage.deleteItem(keys.profile);
+  await secureStorage.deleteItem(keys.accessToken);
+  await secureStorage.deleteItem(keys.refreshToken);
   const index = await readIndex();
   await writeJson(
     PROFILE_INDEX_KEY,
     index.filter((id) => id !== instanceId),
   );
-  if ((await SecureStore.getItemAsync(ACTIVE_INSTANCE_KEY)) === instanceId) {
-    await SecureStore.deleteItemAsync(ACTIVE_INSTANCE_KEY);
+  if ((await secureStorage.getItem(ACTIVE_INSTANCE_KEY)) === instanceId) {
+    await secureStorage.deleteItem(ACTIVE_INSTANCE_KEY);
   }
 }
 
@@ -131,11 +131,11 @@ export async function setActiveInstance(instanceId: string): Promise<void> {
   if (!(await getVerifiedProfile(instanceId))) {
     throw new StorageError("PROFILE_NOT_VERIFIED", "School is not a verified profile");
   }
-  await SecureStore.setItemAsync(ACTIVE_INSTANCE_KEY, instanceId);
+  await secureStorage.setItem(ACTIVE_INSTANCE_KEY, instanceId);
 }
 
 export async function getActiveInstanceId(): Promise<string | null> {
-  const instanceId = await SecureStore.getItemAsync(ACTIVE_INSTANCE_KEY);
+  const instanceId = await secureStorage.getItem(ACTIVE_INSTANCE_KEY);
   if (!instanceId) return null;
   return (await getVerifiedProfile(instanceId)) ? instanceId : null;
 }
@@ -189,21 +189,21 @@ export function forSchool(instanceId: string): SchoolStorage {
     getProfile: requireProfile,
     async getAccessToken() {
       await requireProfile();
-      return SecureStore.getItemAsync(keys.accessToken);
+      return secureStorage.getItem(keys.accessToken);
     },
     async getRefreshToken() {
       await requireProfile();
-      return SecureStore.getItemAsync(keys.refreshToken);
+      return secureStorage.getItem(keys.refreshToken);
     },
     async setTokens(tokens) {
       await requireProfile();
-      await SecureStore.setItemAsync(keys.accessToken, tokens.accessToken);
-      await SecureStore.setItemAsync(keys.refreshToken, tokens.refreshToken);
+      await secureStorage.setItem(keys.accessToken, tokens.accessToken);
+      await secureStorage.setItem(keys.refreshToken, tokens.refreshToken);
     },
     async clearTokens() {
       await requireProfile();
-      await SecureStore.deleteItemAsync(keys.accessToken);
-      await SecureStore.deleteItemAsync(keys.refreshToken);
+      await secureStorage.deleteItem(keys.accessToken);
+      await secureStorage.deleteItem(keys.refreshToken);
     },
     async getCache<T>(name: string) {
       await requireProfile();
@@ -218,12 +218,12 @@ export function forSchool(instanceId: string): SchoolStorage {
     async getPreference(name: string) {
       await requireProfile();
       assertCacheName(name);
-      return SecureStore.getItemAsync(keys.preference(name));
+      return secureStorage.getItem(keys.preference(name));
     },
     async setPreference(name, value) {
       await requireProfile();
       assertCacheName(name);
-      await SecureStore.setItemAsync(keys.preference(name), value);
+      await secureStorage.setItem(keys.preference(name), value);
     },
   };
 }

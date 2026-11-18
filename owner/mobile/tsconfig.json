@@ -3,7 +3,16 @@
   "compilerOptions": {
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "types": ["jest", "node"]
+    "types": [
+      "jest",
+      "node"
+    ]
   },
-  "include": ["app", "src", "tests", "app.config.ts", "expo-env.d.ts"]
+  "include": [
+    "app",
+    "src",
+    "tests",
+    "app.config.ts",
+    "env.d.ts"
+  ]
 }

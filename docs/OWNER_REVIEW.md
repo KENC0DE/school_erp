@@ -33,3 +33,26 @@ The owner files any requested change as a new task.
   `RUN_DESIGN_SCREENSHOTS=1 pnpm --filter @erp/e2e exec playwright test
   tests/design-screenshots.spec.ts` against a running dev stack. The full UI
   gate (axe, states, theme-layout) lands in P1-27.
+
+## 2026-11-18 — P0-21b mobile design foundation
+
+- **What:** the native UI kit in `owner/mobile/src/ui` (buttons, fields, cards,
+  list rows, badges, segmented control, bottom tabs, sheet, toast, skeleton,
+  empty/error states, sticky save bar) on the shared tokens; the tab shell with
+  a “More” sheet for language, theme and sign-out; and three reference screens
+  (list, form, dashboard) in the development-only `Design reference` route.
+- **Screenshots:** `docs/review/p0/mobile-*` — list, form and dashboard at
+  390×844 and 430×932, light and dark, `en` and `am`, plus the school picker.
+- **How to look:** `pnpm --filter @erp/mobile web` (or `./scripts/dev.sh mobile`
+  on a device), open the app, then **More → Design reference** in a development
+  build. The picker screenshots come from the first screen of the app.
+- **Good:** calm native layout, one green accent, 16 px page padding, 48 dp
+  touch targets, Amharic and Latin together, filled status badges that meet AA,
+  the primary action pinned above the safe area on forms, both languages and
+  both colour modes checked on a small and a large phone.
+- **Checked against:** `docs/UI_CHECKLIST.md` (all applicable boxes). Known
+  open points are listed in `docs/QUESTIONS.md`; none block progress.
+- **Automation:** reproducible with `RUN_MOBILE_SCREENSHOTS=1 pnpm --filter
+  @erp/e2e exec playwright test tests/design-mobile-screenshots.spec.ts` while
+  Expo web runs on port 8081. No device was available, so this is Expo web at
+  phone viewports (see `docs/DECISIONS.md`).

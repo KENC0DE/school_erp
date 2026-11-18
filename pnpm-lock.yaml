@@ -93,9 +93,15 @@ importers:
 
   owner/mobile:
     dependencies:
+      '@erp/calendar':
+        specifier: workspace:*
+        version: link:../../shared/ts/calendar
       '@erp/i18n':
         specifier: workspace:*
         version: link:../../shared/ts/i18n
+      '@erp/money':
+        specifier: workspace:*
+        version: link:../../shared/ts/money
       '@erp/tokens':
         specifier: workspace:*
         version: link:../../shared/ts/tokens

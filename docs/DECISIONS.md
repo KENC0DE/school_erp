@@ -1207,3 +1207,39 @@ and recorded here (date, decision, reason).
   en/am screenshots of the list, form, dashboard, shell and the phone drawer;
   the self-review entry is in `docs/OWNER_REVIEW.md` and the checklist is
   `docs/UI_CHECKLIST.md`.
+
+## 2026-11-18 — P0-21b mobile design foundation
+
+- **The native kit mirrors the web kit.** `owner/mobile/src/ui` exports the same
+  component vocabulary (`Button`, `Field`, `Card`, `ListRow`, `BottomTabs`,
+  `Sheet`, `Toast`, `Badge`, `Skeleton`, `EmptyState`, `ErrorState`, `SaveBar`)
+  built from `@erp/tokens`. Spacing, type and touch sizes are imported from the
+  shared scales; colour and radius come from the active school theme, so a
+  community theme cannot move a layout. `oklch` tokens are converted to sRGB for
+  React Native in `nativeTheme.ts`, which is also what keeps web screenshots
+  faithful to the native colours.
+- **Bottom tabs are capped at five including “More”.** A school can have more
+  modules than that, so the first four fit in the bar and the rest live in a
+  sheet with the language, theme and sign-out controls (the same information
+  architecture as the phone web drawer). Safe-area insets pad both the tab bar
+  and the sheet.
+- **Badge tones use filled semantic pairs.** `success` is primary on
+  primary-foreground, `warning` is accent on accent-foreground, `danger` is
+  destructive on destructive-foreground. The earlier “tinted secondary” version
+  measured 4.42:1 for success in dark, just under WCAG AA, so the tokens are used
+  as designed instead of mixed.
+- **Forms scroll under a sticky action bar.** `SaveBar` sits outside the
+  `Screen` scroll view and pads for the bottom safe area, so the primary action
+  never scrolls away on a long form.
+- **Screenshots come from Expo web at phone sizes.** No emulator or device is
+  available on this host (OWNER_ACTIONS #6), so `owner/mobile` renders through
+  the Expo web target at 390×844 and 430×932 for review. To make that possible,
+  `src/storage/secureStorage.ts` wraps `expo-secure-store` with a `localStorage`
+  fallback on web; the native build still uses the Keychain/Keystore, and web is
+  not a supported production target for the app. The capture spec is
+  `e2e/tests/design-mobile-screenshots.spec.ts` (guarded by
+  `RUN_MOBILE_SCREENSHOTS=1`).
+- **Reference data is a fixture, formatting is real.** Rows and the request id
+  are demo data, but dates go through `@erp/calendar` (`formatDual`, both
+  calendars, localized) and the money figure through `formatSantim` with the
+  unit in the card label.

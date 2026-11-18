@@ -36,7 +36,7 @@ Last verified: 2026-11-18 (reconciliation baseline; see
 - [x] P0-19b **Web design foundation** — tokens, fonts, `shared/ts/ui-web` kit, reference screens, UI checklist, token lint
 - [x] P0-20 Controller web (schools, module toggles, support session, vault) — 13 component tests
 - [x] P0-21 Single multi-school mobile app (Expo Go) — 27 Jest tests
-- [ ] P0-21b **Mobile design foundation** — native kit from shared tokens, reference screens, screenshots
+- [x] P0-21b **Mobile design foundation** — native kit from shared tokens, reference screens, screenshots
 - [x] P0-22 AI wiring stub and chat panel
 - [x] P0-23 PDF spike with Amharic text
 - [x] P0-24 CI pipeline (Python, Node, e2e, api-client diff, i18n, boundaries, API compat)
