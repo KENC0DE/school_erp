@@ -1813,3 +1813,21 @@ and recorded here (date, decision, reason).
   finance. Existing instances keep local edits because default roles are only
   created when missing; a reset restores the shipped matrix.
 
+- **Attendance has one school-wide mode.** Module settings hold `mode`
+  (`daily` or `per_period`), `require_reason` and `allow_future_dates`, so a
+  school does not mix register shapes across sections. Per-period registers
+  carry their own `period` number because the timetable module (P6-07) does not
+  exist yet; when it lands, the period becomes a validated timetable slot
+  without changing the register or record tables.
+- **Opening a register seeds the roster as present.** Session creation writes
+  one `present` record per actively enrolled student in one transaction, which
+  makes the common "everyone is here" case a single tap and keeps the register
+  complete for reporting. Bulk entry (`PUT`-style upsert) is idempotent by the
+  natural key `(session_id, student_id)`: an omitted reason, note or late count
+  clears the old value, while the single-record `PATCH` only changes supplied
+  fields. Both accept an optional `row_version` so offline clients can detect a
+  stale write.
+- **Registers follow `open → submitted → locked`, and only `open` accepts
+  entry.** `attendance.record` may submit; `attendance.manage` locks and may
+  reopen a locked register. Records and sessions are soft-deleted, never
+  hard-deleted, and every transition is audited through the service layer.

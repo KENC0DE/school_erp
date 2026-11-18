@@ -111,6 +111,12 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         payroll_line_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(payroll_payslip_lines)")
         }
+        attendance_session_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(attendance_sessions)")
+        }
+        attendance_record_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(attendance_records)")
+        }
     finally:
         connection.close()
 
@@ -167,9 +173,11 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "payroll_runs",
         "payroll_payslips",
         "payroll_payslip_lines",
+        "attendance_sessions",
+        "attendance_records",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0025_payroll"
+    assert version == "0026_attendance"
 
     assert {
         "failed_login_count",
@@ -377,6 +385,28 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "deleted_at",
     } <= admission_guardian_columns
     assert {"scope", "value", "created_at", "updated_at"} <= admission_sequence_columns
+    assert {
+        "year_id",
+        "section_id",
+        "date",
+        "mode",
+        "period",
+        "subject_id",
+        "status",
+        "notes",
+        "status_changed_at",
+        "status_changed_by",
+    } <= attendance_session_columns
+    assert {
+        "session_id",
+        "student_id",
+        "status",
+        "reason",
+        "late_minutes",
+        "note",
+        "recorded_at",
+        "recorded_by",
+    } <= attendance_record_columns
     assert {"reason", "granted_by"} <= override_columns
     assert {"available_at", "last_attempt_at", "last_error"} <= outbox_columns
 
