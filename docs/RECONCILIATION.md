@@ -154,3 +154,19 @@ and `scripts/check-api-compat.py` already point at the new paths.
   compares the stable file path; the rest of the assertion is unchanged.
 - No structural rollback was needed, so nothing is recorded in QUESTIONS.md for
   the restructure.
+
+## Stage A close
+
+- `./scripts/dev.sh test` — all 8 steps pass (backend, controller, shared/zone,
+  ruff check, ruff format, import-linter, `pnpm -r test`).
+- `./e2e/run.sh` on a fresh stack — smoke 3/3 plus the always-on UI gate checks
+  (axe sweep, state check, theme contrast/injection/layout); screenshot specs
+  skip unless their env flags are set.
+- `v-reconciled` tags the commit that merges this branch into `main`;
+  `v0.1-foundations` is moved onto the same commit as the P1 checkpoint asks.
+- Two regressions found by that run were fixed before the tag:
+  - SQLite's audit sequence allocation now takes the write lock (no-op UPDATE)
+    before reading `max(seq)`, because two concurrent `record()` calls could pick
+    the same sequence; covered by `test_concurrent_writers_get_unique_sequence_numbers`.
+  - Horizontally scrolling table wrappers are keyboard focusable regions, which
+    clears axe `scrollable-region-focusable`.

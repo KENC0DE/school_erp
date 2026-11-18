@@ -6,7 +6,8 @@ step passes. Commit format: `P{phase}-{nn}: short description`.
 Status markers: `[x]` verified · `[ ]` todo · `[~]` blocked (see
 `docs/QUESTIONS.md`).
 
-Last verified: 2026-11-18 (reconciliation baseline; see
+Last verified: 2026-11-18 (post-reconciliation: `./scripts/dev.sh test` all
+steps green, `./e2e/run.sh` smoke + UI gate green; see
 `docs/RECONCILIATION.md`).
 
 ## Phase 0 — Walking skeleton
@@ -49,7 +50,7 @@ Last verified: 2026-11-18 (reconciliation baseline; see
 - [x] Amharic renders in the PDF spike and in the web UI
 - [x] Design foundation (P0-19b, P0-21b) self-reviewed against `docs/UI_CHECKLIST.md` with screenshots
 - [x] Every connection in the architecture diagram (ARCH §4.1) is exercised by a test
-- [ ] `docs/PROGRESS.md` and `docs/DECISIONS.md` current at the end of P0
+- [x] `docs/PROGRESS.md` and `docs/DECISIONS.md` current at the end of P0
 - [x] Tag `v0.0-skeleton` (pre-reconciliation)
 
 ## Phase 1 — Foundations
@@ -86,7 +87,7 @@ Last verified: 2026-11-18 (reconciliation baseline; see
 ### Checkpoint P1
 - [x] All tests green; permission matrix covers every route × seeded role
 - [x] Owner script verified against a fresh seed
-- [ ] Tag `v0.1-foundations` (re-tag after P0-19b/P0-21b/P1-27)
+- [x] Tag `v0.1-foundations` (re-tag after P0-19b/P0-21b/P1-27)
 
 ## Phase 2 — Academic structure, students and admissions
 
