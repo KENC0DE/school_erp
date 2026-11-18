@@ -56,6 +56,71 @@ const noLiteralUiText = {
   },
 };
 
+const noHardcodedStyle = {
+  meta: {
+    type: "problem",
+    docs: {
+      description: "Ban hard-coded colours, font sizes and spacing outside the design tokens.",
+    },
+    schema: [],
+    messages: {
+      colour: "Hard-coded colour \"{{value}}\" is not allowed. Use a theme token or a kit class.",
+      arbitrary:
+        "Arbitrary Tailwind value \"{{value}}\" is not allowed. Use a design token or a shared kit class.",
+      palette:
+        "Tailwind palette colour \"{{value}}\" is not allowed. Use a semantic token (primary, muted, destructive, …).",
+    },
+  },
+  create(context) {
+    const patterns = [
+      { id: "colour", re: /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch|oklab|lab|lch)\(/g },
+      {
+        id: "arbitrary",
+        re: /\b(?:bg|text|border|ring|fill|stroke|shadow|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|space-[xy]|w|h|min-w|min-h|max-w|max-h|size|rounded|leading|tracking)-\[[^\]]+\]/g,
+      },
+      {
+        id: "palette",
+        re: /\b(?:bg|text|border|ring|fill|stroke)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g,
+      },
+    ];
+    const check = (node, value) => {
+      for (const pattern of patterns) {
+        pattern.re.lastIndex = 0;
+        const match = pattern.re.exec(value);
+        if (match) {
+          context.report({ node, messageId: pattern.id, data: { value: match[0] } });
+          return;
+        }
+      }
+    };
+    return {
+      JSXAttribute(node) {
+        if (node.name?.name !== "className" && node.name?.name !== "style") return;
+        if (node.value?.type === "Literal" && typeof node.value.value === "string") {
+          check(node.value, node.value.value);
+          return;
+        }
+        if (node.value?.type === "JSXExpressionContainer") {
+          const seen = new Set();
+          const visit = (child) => {
+            if (!child || typeof child !== "object" || seen.has(child)) return;
+            seen.add(child);
+            if (child.type === "Literal" && typeof child.value === "string") check(child, child.value);
+            if (child.type === "TemplateElement") check(child, child.value.raw);
+            for (const [key, value] of Object.entries(child)) {
+              if (key === "parent") continue;
+              if (Array.isArray(value)) value.forEach(visit);
+              else if (value && typeof value === "object" && typeof value.type === "string") visit(value);
+            }
+          };
+          visit(node.value.expression);
+        }
+      },
+    };
+  },
+};
+
+
 export default [
   { ignores: ["**/dist/**", "**/node_modules/**", "**/.expo/**", "**/coverage/**"] },
   js.configs.recommended,
@@ -74,6 +139,16 @@ export default [
     ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
     plugins: { i18n: { rules: { "no-literal-ui-text": noLiteralUiText } } },
     rules: { "i18n/no-literal-ui-text": "error" },
+  },
+  {
+    files: [
+      "school-erp/web/src/**/*.{ts,tsx}",
+      "owner/controller-web/src/**/*.{ts,tsx}",
+      "shared/ts/ui-web/src/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    plugins: { design: { rules: { "no-hardcoded-style": noHardcodedStyle } } },
+    rules: { "design/no-hardcoded-style": "error" },
   },
   {
     files: ["school-erp/web/**/*.{ts,tsx}"],

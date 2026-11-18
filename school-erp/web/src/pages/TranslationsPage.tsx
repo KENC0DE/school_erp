@@ -532,7 +532,7 @@ export function TranslationsPage() {
       ) : (
         <Card>
           <CardContent className="overflow-x-auto p-0">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="ui-min-w-40 w-full text-left text-sm">
               <thead className="border-b border-border text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">{t("translations.key")}</th>

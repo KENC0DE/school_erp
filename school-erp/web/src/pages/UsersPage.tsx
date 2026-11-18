@@ -231,7 +231,7 @@ export function UsersPage() {
             <CardDescription>{t("users.intro")}</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-left text-sm">
+            <table className="ui-min-w-34 w-full text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-2 py-2 font-medium">{t("users.name")}</th>

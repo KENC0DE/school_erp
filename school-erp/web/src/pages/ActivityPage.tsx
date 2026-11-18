@@ -120,7 +120,7 @@ function ChangesTable({ entry }: { entry: ActivityEntry }) {
       {fields.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("activity.no_changes")}</p>
       ) : (
-        <table className="w-full min-w-[28rem] text-left text-sm">
+        <table className="ui-min-w-28 w-full text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="py-2 pr-4 font-medium">{t("activity.field")}</th>

@@ -96,6 +96,11 @@ test("controller drives module gating, support session and the audit vault", asy
   await support.getByLabel("Write a note").fill(noteText);
   await support.getByRole("button", { name: "Add note" }).click();
   await expect(support.getByText(noteText).first()).toBeVisible();
+  // The banner stays up for the whole controller session, not just the landing
+  // page: check it again after the change was made.
+  const banner = support.getByTestId("controller-session-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText("through the controller");
 
   // 6. Ship the audit entry and check the vault labels it `via=controller`.
   await syncSchoolWithController();

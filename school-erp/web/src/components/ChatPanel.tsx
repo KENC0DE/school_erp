@@ -5,6 +5,7 @@ import { api, type Navigation } from "../lib/api";
 import { useI18n } from "../providers/I18nProvider";
 import { Button } from "./ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card";
+import { Input } from "./ui/Input";
 
 interface Tool {
   key: string;
@@ -40,9 +41,9 @@ export function ChatPanel() {
   if (!canUseAi) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 w-[min(24rem,calc(100vw-3rem))]">
+    <div className="fixed bottom-6 right-6 z-40">
       {open ? (
-        <Card className="shadow-xl">
+        <Card className="ui-float-panel shadow-xl">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>{t("ai.title")}</CardTitle>
             <Button variant="ghost" onClick={() => setOpen(false)} aria-label={t("common.cancel")}>
@@ -57,11 +58,10 @@ export function ChatPanel() {
                 if (message.trim()) chat.mutate(message.trim());
               }}
             >
-              <input
+              <Input
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 placeholder={t("ai.placeholder")}
-                className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
               />
               <Button type="submit" disabled={chat.isPending}>
                 {t("ai.send")}
@@ -89,8 +89,12 @@ export function ChatPanel() {
           </CardContent>
         </Card>
       ) : (
-        <Button className="rounded-full shadow-lg" onClick={() => setOpen(true)}>
-          {t("ai.title")}
+        <Button
+          className="rounded-full shadow-lg"
+          onClick={() => setOpen(true)}
+          aria-label={t("ai.title")}
+        >
+          {t("ai.short")}
         </Button>
       )}
     </div>

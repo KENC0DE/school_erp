@@ -159,6 +159,102 @@ const dark: TokenSet = {
   "font-ethiopic": "'Noto Sans Ethiopic', sans-serif",
 };
 
+/**
+ * Design foundation scales (ARCH §11.5). Colour, radius and fonts live in the
+ * theme tokens so a school can change them; spacing, type sizes, shadows and
+ * layout are fixed across themes so a theme can never break a layout.
+ */
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  base: 16,
+  lg: 24,
+  xl: 32,
+  "2xl": 48,
+  "3xl": 64,
+} as const;
+
+export const SPACING_SCALE = [4, 8, 12, 16, 24, 32, 48, 64] as const;
+
+export const fontSize = {
+  xs: 12,
+  sm: 14,
+  base: 16,
+  md: 18,
+  lg: 20,
+  xl: 24,
+  "2xl": 30,
+} as const;
+
+export const fontWeight = {
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+} as const;
+
+export const lineHeight = {
+  tight: 1.4,
+  normal: 1.5,
+  relaxed: 1.6,
+} as const;
+
+export const shadows = {
+  none: "none",
+  sm: "0 1px 2px 0 oklch(0 0 0 / 6%)",
+  md: "0 4px 12px -2px oklch(0 0 0 / 10%)",
+  lg: "0 12px 32px -8px oklch(0 0 0 / 18%)",
+} as const;
+
+export const breakpoints = {
+  phoneMax: 639,
+  tabletMin: 640,
+  desktopMin: 1025,
+} as const;
+
+export const layout = {
+  pagePaddingMobile: 16,
+  pagePaddingDesktop: 24,
+  cardPaddingMin: 16,
+  cardPaddingMax: 24,
+  sidebarWidth: 264,
+  sidebarRailWidth: 72,
+  topBarHeight: 64,
+  contentMaxWidth: 1280,
+  formMaxWidth: 720,
+  radius: 8,
+} as const;
+
+export const touchTarget = {
+  ios: 44,
+  android: 48,
+} as const;
+
+export const motion = {
+  fast: 150,
+  normal: 200,
+} as const;
+
+export const designTokens = {
+  spacing,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  shadows,
+  breakpoints,
+  layout,
+  touchTarget,
+  motion,
+} as const;
+
+export function px(value: number): string {
+  return `${value}px`;
+}
+
+export function spacingVar(key: keyof typeof spacing): string {
+  return `var(--space-${key})`;
+}
+
 export const DEFAULT_THEME: ThemeDefinition = {
   key: "default",
   name: "Default",

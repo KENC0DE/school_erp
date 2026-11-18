@@ -104,7 +104,7 @@ function ContrastTable({ rows }: { rows: ContrastRow[] }) {
   const { t } = useI18n();
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] text-left text-sm" data-testid="theme-contrast-table">
+      <table className="ui-min-w-34 w-full text-left text-sm" data-testid="theme-contrast-table">
         <thead className="border-b border-border text-xs uppercase text-muted-foreground">
           <tr>
             <th className="px-2 py-2">{t("themes.mode")}</th>
@@ -441,7 +441,7 @@ export function ThemeManagerPage() {
               {actionError.message}
             </p>
           ) : null}
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="ui-min-w-45 w-full text-left text-sm">
             <thead className="border-b border-border text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">{t("themes.name")}</th>

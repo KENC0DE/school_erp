@@ -33,7 +33,7 @@ Last verified: 2026-11-18 (reconciliation baseline; see
 - [x] P0-17 Controller support sessions
 - [x] P0-18 Shared frontend packages (generated api-client, tokens, i18n, module-sdk, calendar/money stubs)
 - [x] P0-19 School web shell (login, navigation, en/am, light/dark, dashboard, sample page)
-- [ ] P0-19b **Web design foundation** — tokens, fonts, `shared/ts/ui-web` kit, reference screens, UI checklist, token lint
+- [x] P0-19b **Web design foundation** — tokens, fonts, `shared/ts/ui-web` kit, reference screens, UI checklist, token lint
 - [x] P0-20 Controller web (schools, module toggles, support session, vault) — 13 component tests
 - [x] P0-21 Single multi-school mobile app (Expo Go) — 27 Jest tests
 - [ ] P0-21b **Mobile design foundation** — native kit from shared tokens, reference screens, screenshots

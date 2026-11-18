@@ -1160,3 +1160,50 @@ and recorded here (date, decision, reason).
   bundles under `<module>.<key>`, so `error.students.*` keys could never
   resolve. The students module now raises `students.error.*` keys, its bundle
   gains the new numbering errors, and the web loads the `students` namespace.
+
+## 2026-11-18 — P0-19b web design foundation
+
+- **One kit, one stylesheet.** `shared/ts/ui-web` ships React components plus
+  `src/styles.css`. Components emit `ui-*` classes; the stylesheet owns every
+  value and reads only tokens. Both web apps import the stylesheet once, so a
+  component added to the kit cannot drift between school web and controller
+  web. Local `components/ui/*` files re-export the kit, keeping existing imports
+  working while the feature screens migrate.
+- **Tokens in CSS variables, scales in `@erp/tokens`.** Spacing (4/8/12/16/24/
+  32/48/64), type (12–30), weights (400/500/600), line heights, radii, shadows,
+  breakpoints, layout sizes and touch targets are declared in
+  `shared/ts/tokens` for JS consumers and mirrored as `--*` variables in the kit
+  stylesheet. A school theme may change colour/radius/font tokens only; layout
+  and spacing are fixed so a community theme cannot move things.
+- **Fonts are bundled, with tabular numerals.** Inter Variable (OFL, licence
+  file next to the font) carries Latin text; Noto Sans Ethiopic is kept for
+  Ge'ez. `font-variant-numeric: tabular-nums lining-nums` (`.ui-num`) is applied
+  to table figures and money. Mobile uses the platform system sans (SF/Roboto)
+  because Expo Go cannot bundle a variable font reliably at runtime; the metrics
+  are close enough for the shared scale and the decision is revisited if the
+  owner wants Inter on mobile too.
+- **Kilobytes over pixel-perfect novelty.** Dates in the reference screens are
+  illustrative data, not formatting logic: every rendered date still goes
+  through the calendar layer and every amount through `formatSantim`. Demo rows
+  live in the page, translated text comes from `t()`.
+- **Lint replaces review-by-memory.** `design/no-hardcoded-style` rejects hex /
+  rgb / hsl / oklch literals, arbitrary Tailwind values (`p-[13px]`) and
+  palette colours (`bg-slate-100`) in web TSX; the i18n rule keeps banning
+  literal UI text. Escapes exist but are tokens: `.ui-min-w-28…56` for wide
+  tables, `.ui-float-panel` for the assistant, `.ui-mobile-only` /
+  `.ui-desktop-only` / `.ui-wide-only` for responsive visibility.
+- **Kit CSS is unlayered on purpose, with one gotcha.** Tailwind v4 puts
+  utilities in `@layer utilities`, so an unlayered kit rule wins over a
+  utility on the same property. That is desirable for component styling, but it
+  means visibility of kit components must use kit classes rather than
+  `md:hidden` (seen on the top-bar menu button). Layout of plain `div`s can
+  still use Tailwind utilities.
+- **Top-bar density by width.** Desktop shows identity, language, school theme
+  picker, light/dark and sign out. Tablets keep identity, language, light/dark
+  and sign out (the theme picker lives in Settings → Themes). Phones keep only
+  identity and the menu button; language, theme, mode and sign out move into
+  the navigation drawer, which has a tap-away scrim and closes on Escape.
+- **Review artefacts.** `docs/review/p0/` holds 1440/768/390 × light/dark ×
+  en/am screenshots of the list, form, dashboard, shell and the phone drawer;
+  the self-review entry is in `docs/OWNER_REVIEW.md` and the checklist is
+  `docs/UI_CHECKLIST.md`.

@@ -1,19 +1,11 @@
-import {
-  formatDual,
-  formatEthiopian,
-  gregorianToEthiopian,
-  parseIsoDate,
-  type CalendarPreference,
-} from "@erp/calendar";
+import { type CalendarPreference } from "@erp/calendar";
+import { DatePicker } from "@erp/ui-web";
 
-import { Input } from "./ui/Input";
 import { useI18n } from "../providers/I18nProvider";
-
-const PREFERENCES: CalendarPreference[] = ["ethiopian", "gregorian", "both"];
 
 /**
  * Stores Gregorian ISO (YYYY-MM-DD) and displays the date in the chosen
- * calendar. Ethiopian conversion lives in @erp/calendar, never here.
+ * calendar. The picker itself is the shared kit component.
  */
 export function CalendarDatePicker({
   value,
@@ -31,53 +23,25 @@ export function CalendarDatePicker({
   testId?: string;
 }) {
   const { t, locale } = useI18n();
-  const parsed = parseIsoDate(value);
-  const ethiopian = parsed ? gregorianToEthiopian(parsed) : null;
-
   return (
-    <div className="space-y-2" data-testid={testId}>
-      <label className="block space-y-1 text-sm">
-        <span className="text-muted-foreground">{label ?? t("calendar.date")}</span>
-        <Input
-          type="date"
-          data-testid={`${testId}-input`}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      </label>
-      {onPreferenceChange ? (
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">{t("calendar.display")}</span>
-          <select
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-            data-testid={`${testId}-preference`}
-            value={preference}
-            onChange={(event) => onPreferenceChange(event.target.value as CalendarPreference)}
-          >
-            {PREFERENCES.map((option) => (
-              <option key={option} value={option}>
-                {t(`calendar.${option}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-      <p className="text-sm text-foreground" data-testid={`${testId}-display`}>
-        {parsed && ethiopian
-          ? preference === "ethiopian"
-            ? formatEthiopian(ethiopian, locale)
-            : formatDual(parsed, preference, locale)
-          : t("calendar.empty")}
-      </p>
-      {preference !== "gregorian" && ethiopian ? (
-        <p className="text-xs text-muted-foreground" data-testid={`${testId}-ethiopian`}>
-          {t("calendar.ethiopianValue", {
-            year: ethiopian.year,
-            month: ethiopian.month,
-            day: ethiopian.day,
-          })}
-        </p>
-      ) : null}
-    </div>
+    <DatePicker
+      value={value}
+      onChange={onChange}
+      preference={preference}
+      onPreferenceChange={onPreferenceChange}
+      label={label ?? t("calendar.date")}
+      locale={locale}
+      emptyLabel={t("calendar.empty")}
+      preferenceLabel={t("calendar.display")}
+      preferenceOptions={{
+        ethiopian: t("calendar.ethiopian"),
+        gregorian: t("calendar.gregorian"),
+        both: t("calendar.both"),
+      }}
+      ethiopianValueLabel={(parts) =>
+        t("calendar.ethiopianValue", { year: parts.year, month: parts.month, day: parts.day })
+      }
+      testId={testId}
+    />
   );
 }

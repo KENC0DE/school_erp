@@ -53,7 +53,7 @@ function ChainSummary({ status }: { status: VaultStatusResponse | null }) {
             })}
           </p>
           {row.chain_head ? (
-            <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground">
+            <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
               {row.chain_head}
             </p>
           ) : null}
@@ -265,7 +265,7 @@ export function VaultPage() {
             {t("controller.vault.limit", { count: items.length })}
           </p>
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[900px] border-collapse text-left text-sm" data-testid="vault-table">
+            <table className="ui-min-w-56 w-full border-collapse text-left text-sm" data-testid="vault-table">
               <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-3 py-2 font-medium">{t("controller.vault.column.school")}</th>

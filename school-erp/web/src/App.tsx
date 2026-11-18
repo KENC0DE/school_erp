@@ -7,6 +7,7 @@ import { ActivityPage } from "./pages/ActivityPage";
 import { AcademicsPage } from "./pages/academics/AcademicsPage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
+import { DesignReferencePage } from "./pages/design/DesignReferencePage";
 import { JobsPage } from "./pages/JobsPage";
 import { LoginPage } from "./pages/Login";
 import { ModulesPage } from "./pages/ModulesPage";
@@ -78,6 +79,7 @@ export function AppRoutes() {
           <Route path="settings/modules" element={<ModulesPage />} />
           <Route path="settings/languages" element={<TranslationsPage />} />
           <Route path="settings/themes" element={<ThemeManagerPage />} />
+          <Route path="design" element={<DesignReferencePage />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />

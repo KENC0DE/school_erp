@@ -1,0 +1,38 @@
+{
+  "name": "@erp/ui-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "lint": "pnpm --workspace-root exec eslint src",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@erp/calendar": "workspace:*",
+    "@erp/tokens": "workspace:*",
+    "lucide-react": "1.74.0"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.4",
+    "jsdom": "31.0.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  }
+}
