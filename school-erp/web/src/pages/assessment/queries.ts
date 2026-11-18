@@ -2,7 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "../../lib/api";
 import type { LevelList, SubjectList, YearList } from "../academics/types";
-import type { StageList, StructureList } from "./types";
+import type {
+  AssessmentSummaryList,
+  GradeScaleList,
+  ScaleAssignmentList,
+  StageList,
+  StructureList,
+} from "./types";
 
 export const ASSESSMENT = "/api/v1/assessment";
 export const ACADEMICS = "/api/v1/academics";
@@ -62,6 +68,34 @@ export function useAssessmentSubjects(enabled: boolean) {
     queryKey: ["assessment", "subjects"],
     queryFn: () => api.get<SubjectList>(`${ACADEMICS}/subjects`),
     enabled,
+    retry: false,
+  });
+}
+
+export function useScales() {
+  return useQuery({
+    queryKey: ["assessment", "scales"],
+    queryFn: () => api.get<GradeScaleList>(`${ASSESSMENT}/scales`),
+    retry: false,
+  });
+}
+
+export function useScaleAssignments() {
+  return useQuery({
+    queryKey: ["assessment", "scale-assignments"],
+    queryFn: () => api.get<ScaleAssignmentList>(`${ASSESSMENT}/scale-assignments`),
+    retry: false,
+  });
+}
+
+export function useScaleAssessments(yearId: string | null) {
+  return useQuery({
+    queryKey: ["assessment", "assessments", yearId],
+    queryFn: () =>
+      api.get<AssessmentSummaryList>(
+        withQuery(`${ASSESSMENT}/assessments`, { year_id: yearId ?? undefined, limit: 200 }),
+      ),
+    enabled: Boolean(yearId),
     retry: false,
   });
 }

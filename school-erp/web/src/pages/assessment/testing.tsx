@@ -6,7 +6,7 @@ import { vi } from "vitest";
 import coreEn from "../../../../backend/core/i18n/en.json";
 import assessmentEn from "../../../../backend/modules/assessment/i18n/en.json";
 import { AppProviders, AppRoutes } from "../../App";
-import type { Structure } from "./types";
+import type { GradeScale, ScaleAssignment, Structure } from "./types";
 
 export const assessmentMessages: Record<string, string> = {
   ...coreEn,
@@ -250,4 +250,152 @@ export function baseRoutes(request: MockRequest): Response {
   if (url.includes("/api/v1/academics/stages")) return json(STAGES);
   if (url.includes("/api/v1/academics/subjects")) return json(SUBJECTS);
   throw new Error(`Unexpected request: ${request.method} ${url}`);
+}
+
+export const SCALE_BANDS = [
+  {
+    id: "band-1",
+    min_value: "0",
+    max_value: "50",
+    label: "F",
+    remark: null,
+    gpa_points: "0",
+    is_pass: false,
+    color: null,
+    sort_order: 0,
+    row_version: 1,
+  },
+  {
+    id: "band-2",
+    min_value: "50",
+    max_value: "75",
+    label: "C",
+    remark: null,
+    gpa_points: "2",
+    is_pass: true,
+    color: null,
+    sort_order: 1,
+    row_version: 1,
+  },
+  {
+    id: "band-3",
+    min_value: "75",
+    max_value: "85",
+    label: "C+",
+    remark: null,
+    gpa_points: "3",
+    is_pass: true,
+    color: null,
+    sort_order: 2,
+    row_version: 1,
+  },
+  {
+    id: "band-4",
+    min_value: "85",
+    max_value: "100",
+    label: "A",
+    remark: null,
+    gpa_points: "4",
+    is_pass: true,
+    color: null,
+    sort_order: 3,
+    row_version: 1,
+  },
+];
+
+export function gradeScale(overrides: Partial<GradeScale> = {}): GradeScale {
+  return {
+    id: "scale-1",
+    name: "School grading scale",
+    name_am: null,
+    type: "numeric_bands",
+    description: null,
+    is_default: true,
+    lower_bound: "0",
+    upper_bound: "100",
+    precision: 2,
+    rounding: "half_up",
+    version: 1,
+    effective_from: null,
+    effective_to: null,
+    is_active: true,
+    notes: null,
+    row_version: 1,
+    bands: SCALE_BANDS,
+    assignment_count: 0,
+    ...overrides,
+  };
+}
+
+export function scaleAssignment(
+  overrides: Partial<ScaleAssignment> = {},
+): ScaleAssignment {
+  return {
+    id: "assignment-1",
+    scale_id: "scale-1",
+    scale_name: "School grading scale",
+    context: "level",
+    scope_key: "level:lvl-1",
+    assessment_id: null,
+    assessment_title: null,
+    subject_id: null,
+    subject_name: null,
+    level_id: "lvl-1",
+    level_name: "Grade 5",
+    stage_id: null,
+    stage_name: null,
+    notes: null,
+    row_version: 1,
+    ...overrides,
+  };
+}
+
+export const ASSESSMENTS = {
+  items: [
+    {
+      id: "exam-1",
+      title: "Mathematics mid-term",
+      year_id: "year-1",
+      term_name: "Semester 1",
+      section_code: "G5A",
+      subject_name: "Mathematics",
+      component_name: "Final exam",
+    },
+  ],
+  next_cursor: null,
+  total: 1,
+};
+
+/** Grade routes shared by the grade panel tests. */
+export function gradeRoutes(
+  request: MockRequest,
+  scales: GradeScale[] = [gradeScale()],
+  assignments: ScaleAssignment[] = [],
+): Response {
+  const { url, method } = request;
+  if (url.includes("/api/v1/assessment/scale-assignments")) {
+    if (method === "POST") return json(scaleAssignment(), 201);
+    return json({ items: assignments, total: assignments.length });
+  }
+  if (url.match(/\/api\/v1\/assessment\/scales\/[^/]+\/test$/)) {
+    return json({
+      value: "75",
+      label: "C+",
+      remark: null,
+      gpa_points: "3",
+      is_pass: true,
+      color: null,
+      band_min: "75",
+      band_max: "85",
+      scale_name: "School grading scale",
+      scale_version: 1,
+    });
+  }
+  if (url.includes("/api/v1/assessment/scales")) {
+    if (method === "POST" || method === "PATCH") return json(scales[0], 201);
+    if (method === "DELETE") return json({ id: "scale-1", deleted: true });
+    return json({ items: scales, total: scales.length });
+  }
+  if (url.includes("/api/v1/assessment/assessments")) return json(ASSESSMENTS);
+  return baseRoutes(request);
 }

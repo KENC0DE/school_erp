@@ -1,8 +1,14 @@
-import { Page, PageHeader } from "@erp/ui-web";
+import { Page, PageHeader, Button } from "@erp/ui-web";
+import { useState } from "react";
 
 import { useAuth } from "../../providers/AuthProvider";
 import { useI18n } from "../../providers/I18nProvider";
+import { GradePanel } from "./GradePanel";
 import { StructurePanel } from "./StructurePanel";
+
+type Panel = "structure" | "grades";
+
+const PANELS: Panel[] = ["structure", "grades"];
 
 export function AssessmentPage() {
   const { t } = useI18n();
@@ -10,6 +16,7 @@ export function AssessmentPage() {
   const permissions = user?.permissions ?? [];
   const allowed = permissions.includes("assessment.view");
   const canManage = permissions.includes("assessment.manage");
+  const [panel, setPanel] = useState<Panel>("structure");
 
   if (!allowed) {
     return (
@@ -26,7 +33,22 @@ export function AssessmentPage() {
     <Page>
       <div className="space-y-5" data-testid="assessment-page">
         <PageHeader title={t("assessment.title")} description={t("assessment.intro")} />
-        <StructurePanel canManage={canManage} />
+        <div role="tablist" aria-label={t("assessment.title")} className="flex flex-wrap gap-2">
+          {PANELS.map((item) => (
+            <Button
+              key={item}
+              role="tab"
+              variant={panel === item ? "default" : "outline"}
+              aria-selected={panel === item}
+              data-testid={`assessment-tab-${item}`}
+              onClick={() => setPanel(item)}
+            >
+              {t(`assessment.tab.${item}`)}
+            </Button>
+          ))}
+        </div>
+        {panel === "structure" ? <StructurePanel canManage={canManage} /> : null}
+        {panel === "grades" ? <GradePanel canManage={canManage} /> : null}
       </div>
     </Page>
   );

@@ -216,3 +216,256 @@ export function componentsTotal(components: ComponentDraft[]): bigint | null {
   return total;
 }
 
+
+export type ScaleType = "numeric_bands" | "descriptive";
+export type ScaleContext = "assessment" | "subject" | "level" | "stage" | "default";
+
+export interface BandOut {
+  id: string;
+  min_value: string;
+  max_value: string;
+  label: string;
+  remark: string | null;
+  gpa_points: string | null;
+  is_pass: boolean;
+  color: string | null;
+  sort_order: number;
+  row_version: number;
+}
+
+export interface GradeScale {
+  id: string;
+  name: string;
+  name_am: string | null;
+  type: ScaleType;
+  description: string | null;
+  is_default: boolean;
+  lower_bound: string;
+  upper_bound: string;
+  precision: number;
+  rounding: Rounding;
+  version: number;
+  effective_from: string | null;
+  effective_to: string | null;
+  is_active: boolean;
+  notes: string | null;
+  row_version: number;
+  bands: BandOut[];
+  assignment_count: number;
+}
+
+export interface GradeScaleList {
+  items: GradeScale[];
+  total: number;
+}
+
+export interface BandDraft {
+  id: string | null;
+  min_value: string;
+  label: string;
+  remark: string;
+  gpa_points: string;
+  is_pass: boolean;
+  color: string;
+}
+
+export interface ScaleDraft {
+  id: string | null;
+  row_version: number | null;
+  name: string;
+  name_am: string;
+  type: ScaleType;
+  description: string;
+  is_default: boolean;
+  lower_bound: string;
+  upper_bound: string;
+  precision: string;
+  rounding: Rounding;
+  effective_from: string;
+  effective_to: string;
+  is_active: boolean;
+  bands: BandDraft[];
+}
+
+export interface ScaleTestResult {
+  value: string;
+  label: string;
+  remark: string | null;
+  gpa_points: string | null;
+  is_pass: boolean;
+  color: string | null;
+  band_min: string;
+  band_max: string;
+  scale_name: string;
+  scale_version: number;
+}
+
+export interface ScaleAssignment {
+  id: string;
+  scale_id: string;
+  scale_name: string;
+  context: ScaleContext;
+  scope_key: string;
+  assessment_id: string | null;
+  assessment_title: string | null;
+  subject_id: string | null;
+  subject_name: string | null;
+  level_id: string | null;
+  level_name: string | null;
+  stage_id: string | null;
+  stage_name: string | null;
+  notes: string | null;
+  row_version: number;
+}
+
+export interface ScaleAssignmentList {
+  items: ScaleAssignment[];
+  total: number;
+}
+
+export interface AssessmentSummary {
+  id: string;
+  title: string;
+  year_id: string;
+  term_name: string;
+  section_code: string;
+  subject_name: string;
+  component_name: string;
+}
+
+export interface AssessmentSummaryList {
+  items: AssessmentSummary[];
+  next_cursor: string | null;
+  total: number | null;
+}
+
+export const SCALE_TYPES: ScaleType[] = ["numeric_bands", "descriptive"];
+export const SCALE_CONTEXTS: ScaleContext[] = [
+  "default",
+  "stage",
+  "level",
+  "subject",
+  "assessment",
+];
+
+export function emptyBand(): BandDraft {
+  return {
+    id: null,
+    min_value: "",
+    label: "",
+    remark: "",
+    gpa_points: "",
+    is_pass: true,
+    color: "",
+  };
+}
+
+export function emptyScaleDraft(): ScaleDraft {
+  return {
+    id: null,
+    row_version: null,
+    name: "",
+    name_am: "",
+    type: "numeric_bands",
+    description: "",
+    is_default: false,
+    lower_bound: "0",
+    upper_bound: "100",
+    precision: "2",
+    rounding: "half_up",
+    effective_from: "",
+    effective_to: "",
+    is_active: true,
+    bands: [{ ...emptyBand(), min_value: "0" }],
+  };
+}
+
+export function scaleDraftFrom(scale: GradeScale): ScaleDraft {
+  const ordered = [...scale.bands].sort(
+    (left, right) => left.sort_order - right.sort_order || left.min_value.localeCompare(right.min_value),
+  );
+  return {
+    id: scale.id,
+    row_version: scale.row_version,
+    name: scale.name,
+    name_am: scale.name_am ?? "",
+    type: scale.type,
+    description: scale.description ?? "",
+    is_default: scale.is_default,
+    lower_bound: scale.lower_bound,
+    upper_bound: scale.upper_bound,
+    precision: String(scale.precision),
+    rounding: scale.rounding,
+    effective_from: scale.effective_from ?? "",
+    effective_to: scale.effective_to ?? "",
+    is_active: scale.is_active,
+    bands: ordered.map((band) => ({
+      id: band.id,
+      min_value: band.min_value,
+      label: band.label,
+      remark: band.remark ?? "",
+      gpa_points: band.gpa_points ?? "",
+      is_pass: band.is_pass,
+      color: band.color ?? "",
+    })),
+  };
+}
+
+/** The upper edge of band ``index``: the next band's start, or the scale's top. */
+export function bandTo(draft: ScaleDraft, index: number): string {
+  return index < draft.bands.length - 1 ? draft.bands[index + 1].min_value : draft.upper_bound;
+}
+
+/** A scale's bands must start at its lower bound, keep rising and stop below the top. */
+export function scaleBandsValid(draft: ScaleDraft): boolean {
+  if (draft.bands.length === 0) return false;
+  const lower = toMicro(draft.lower_bound);
+  const upper = toMicro(draft.upper_bound);
+  if (lower === null || upper === null || lower >= upper) return false;
+  let previous: bigint | null = null;
+  for (const [index, band] of draft.bands.entries()) {
+    if (!band.label.trim()) return false;
+    if (band.gpa_points.trim() && toMicro(band.gpa_points) === null) return false;
+    const min = toMicro(band.min_value);
+    if (min === null) return false;
+    if (index === 0 && min !== lower) return false;
+    if (previous !== null && min <= previous) return false;
+    previous = min;
+  }
+  return previous !== null && previous < upper;
+}
+
+/** Split the widest band so a new boundary becomes editable; null when impossible. */
+export function splitBand(draft: ScaleDraft): BandDraft[] | null {
+  let choice = -1;
+  let width = 0n;
+  for (const [index, band] of draft.bands.entries()) {
+    const min = toMicro(band.min_value);
+    const max = toMicro(bandTo(draft, index));
+    if (min === null || max === null) continue;
+    const span = max - min;
+    if (span > width) {
+      width = span;
+      choice = index;
+    }
+  }
+  if (choice < 0 || width <= 1n) return null;
+  const min = toMicro(draft.bands[choice].min_value);
+  if (min === null) return null;
+  const middle = fromMicro(min + width / 2n);
+  const next = [...draft.bands];
+  next.splice(choice + 1, 0, {
+    ...emptyBand(),
+    min_value: middle,
+    is_pass: draft.bands[choice].is_pass,
+  });
+  return next;
+}
+
+export function assignmentTargetName(assignment: ScaleAssignment): string | null {
+  if (assignment.context === "assessment") return assignment.assessment_title;
+  if (assignment.context === "subject") return assignment.subject_name;
+  if (assignment.context === "level") return assignment.level_name;
+  if (assignment.context === "stage") return assignment.stage_name;
+  return null;
+}

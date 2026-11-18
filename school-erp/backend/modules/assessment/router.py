@@ -18,14 +18,19 @@ from modules.assessment.actions import (
     approve_marks,
     create_assessment,
     create_correction,
+    create_grade_scale,
+    create_scale_assignment,
     create_structure,
     create_window,
     delete_assessment,
+    delete_grade_scale,
+    delete_scale_assignment,
     delete_structure,
     delete_window,
     ensure_submission,
     get_assessment,
     get_correction,
+    get_grade_scale,
     get_result_snapshot,
     get_structure,
     get_submission,
@@ -43,13 +48,17 @@ from modules.assessment.actions import (
     search_assessments,
     search_corrections,
     search_result_snapshots,
+    search_scale_assignments,
+    search_scales,
     search_structures,
     search_submissions,
     search_windows,
     structure_impact,
     submit_marks,
     term_results,
+    test_grade_scale,
     update_assessment,
+    update_grade_scale,
     update_structure,
     update_window,
     upsert_scores,
@@ -68,9 +77,18 @@ from modules.assessment.schemas import (
     CorrectionOut,
     CorrectionQuery,
     CorrectionStatus,
+    GradeScaleCreate,
+    GradeScaleList,
+    GradeScaleOut,
+    GradeScaleUpdate,
     ResultSnapshotList,
     ResultSnapshotOut,
     ResultSnapshotQuery,
+    ScaleAssignmentInput,
+    ScaleAssignmentList,
+    ScaleAssignmentOut,
+    ScaleTestInput,
+    ScaleTestResult,
     ScoreBulkInput,
     ScoreBulkResult,
     ScoreSheet,
@@ -222,6 +240,120 @@ async def delete_structure_route(
     return await delete_structure(
         _context(principal, session, request),
         {"structure_id": str(structure_id), "reason": reason},
+    )
+
+
+@router.get("/scales", response_model=GradeScaleList)
+async def list_scales_route(
+    request: Request,
+    include_inactive: bool = Query(False),
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> GradeScaleList:
+    return await search_scales(
+        _context(principal, session, request),
+        {"include_inactive": include_inactive},
+    )
+
+
+@router.post("/scales", response_model=GradeScaleOut, status_code=201)
+async def create_scale_route(
+    payload: GradeScaleCreate,
+    request: Request,
+    principal: Principal = Depends(require("assessment.manage")),
+    session: AsyncSession = Depends(db_session),
+) -> GradeScaleOut:
+    return await create_grade_scale(_context(principal, session, request), payload.model_dump(mode="json"))
+
+
+@router.get("/scales/{scale_id}", response_model=GradeScaleOut)
+async def get_scale_route(
+    scale_id: uuid.UUID,
+    request: Request,
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> GradeScaleOut:
+    return await get_grade_scale(_context(principal, session, request), {"scale_id": str(scale_id)})
+
+
+@router.patch("/scales/{scale_id}", response_model=GradeScaleOut)
+async def update_scale_route(
+    scale_id: uuid.UUID,
+    payload: GradeScaleUpdate,
+    request: Request,
+    principal: Principal = Depends(require("assessment.manage")),
+    session: AsyncSession = Depends(db_session),
+) -> GradeScaleOut:
+    return await update_grade_scale(
+        _context(principal, session, request),
+        {"scale_id": str(scale_id), **payload.model_dump(mode="json")},
+    )
+
+
+@router.delete("/scales/{scale_id}")
+async def delete_scale_route(
+    scale_id: uuid.UUID,
+    request: Request,
+    reason: str | None = Query(None, max_length=500),
+    principal: Principal = Depends(require("assessment.manage")),
+    session: AsyncSession = Depends(db_session),
+) -> dict:
+    return await delete_grade_scale(
+        _context(principal, session, request),
+        {"scale_id": str(scale_id), "reason": reason},
+    )
+
+
+@router.post("/scales/{scale_id}/test", response_model=ScaleTestResult)
+async def test_scale_route(
+    scale_id: uuid.UUID,
+    payload: ScaleTestInput,
+    request: Request,
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> ScaleTestResult:
+    return await test_grade_scale(
+        _context(principal, session, request),
+        {"scale_id": str(scale_id), **payload.model_dump(mode="json")},
+    )
+
+
+@router.get("/scale-assignments", response_model=ScaleAssignmentList)
+async def list_scale_assignments_route(
+    request: Request,
+    scale_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> ScaleAssignmentList:
+    return await search_scale_assignments(
+        _context(principal, session, request),
+        {"scale_id": str(scale_id) if scale_id else None},
+    )
+
+
+@router.post("/scale-assignments", response_model=ScaleAssignmentOut, status_code=201)
+async def create_scale_assignment_route(
+    payload: ScaleAssignmentInput,
+    request: Request,
+    principal: Principal = Depends(require("assessment.manage")),
+    session: AsyncSession = Depends(db_session),
+) -> ScaleAssignmentOut:
+    return await create_scale_assignment(
+        _context(principal, session, request), payload.model_dump(mode="json")
+    )
+
+
+@router.delete("/scale-assignments/{assignment_id}")
+async def delete_scale_assignment_route(
+    assignment_id: uuid.UUID,
+    request: Request,
+    reason: str | None = Query(None, max_length=500),
+    principal: Principal = Depends(require("assessment.manage")),
+    session: AsyncSession = Depends(db_session),
+) -> dict:
+    return await delete_scale_assignment(
+        _context(principal, session, request),
+        {"assignment_id": str(assignment_id), "reason": reason},
     )
 
 

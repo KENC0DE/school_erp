@@ -2197,3 +2197,35 @@ and recorded here (date, decision, reason).
   saying the switch flips once the APIs and demo data exist; P4-10 is the point
   where the module is reachable and usable, so `default_enabled=True` now
   matches the demo license and the navigation.
+
+## 2026-11-19 — P4-11 grade rules UI
+
+- **Grade scales get a service before a screen.** `modules/assessment/scales.py`
+  owns scale create/edit/delete, the band editor's validation and the context
+  assignments, and every mutation is audited (`assessment.scale.create`,
+  `assessment.scale.update`, `assessment.scale.delete`, `assessment.scale.assign`,
+  `assessment.scale.unassign`). The router only validates the HTTP shape.
+- **Replacing bands soft-deletes the old rows and bumps the scale version.** The
+  engine validates the new set exactly as it validates a new scale. A name-only
+  edit does not bump the version, and the web editor only sends `bands` when the
+  boundary rows changed, so renaming a scale never claims a new conversion rule.
+- **One live default, chosen explicitly.** Setting a scale as default clears the
+  previous default through individually audited updates. Deleting the default or
+  a scale that is assigned to a context is refused with a 409 instead of silently
+  leaving the school without grade rules.
+- **One live assignment per context target.** Assignments use the deterministic
+  `scope_key` (`default` or `<context>:<uuid>`); re-assigning the same target
+  soft-deletes the previous row first. Resolution order remains the P4-02 engine
+  order: assessment > subject > level > stage > default.
+- **The band editor derives each `to` from the next band's `from`.** Only the
+  lower edge is edited, so changing a boundary auto-adjusts the previous band's
+  upper edge and gaps/overlaps cannot be typed in. Live validation still checks
+  the first edge equals the scale's lower bound, edges strictly rise, the top
+  band starts below the upper bound and every label is filled. "Add band" splits
+  the widest band at its midpoint, which keeps every boundary reachable.
+- **The test tool is a read.** It needs only `assessment.view`, so a viewer can
+  type a mark and see the label while every editor and the assignment form stay
+  hidden behind `assessment.manage`.
+- **The committed OpenAPI client was regenerated.** `shared/ts/api-client/src/schema.d.ts`
+  now carries the assessment CRUD added since Phase 2 (including P4-11's scale
+  routes); the change stays additive inside `/api/v1`.

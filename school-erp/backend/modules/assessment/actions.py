@@ -6,7 +6,7 @@ import uuid
 
 from core.actions.registry import ActionContext, action
 
-from modules.assessment import results, service, workflow
+from modules.assessment import results, scales, service, workflow
 from modules.assessment.schemas import (
     AssessmentCreate,
     AssessmentList,
@@ -18,9 +18,18 @@ from modules.assessment.schemas import (
     CorrectionList,
     CorrectionOut,
     CorrectionQuery,
+    GradeScaleCreate,
+    GradeScaleList,
+    GradeScaleOut,
+    GradeScaleUpdate,
     ResultSnapshotList,
     ResultSnapshotOut,
     ResultSnapshotQuery,
+    ScaleAssignmentInput,
+    ScaleAssignmentList,
+    ScaleAssignmentOut,
+    ScaleTestInput,
+    ScaleTestResult,
     ScoreBulkInput,
     ScoreBulkResult,
     ScoreSheet,
@@ -645,19 +654,167 @@ async def get_result_snapshot(ctx: ActionContext, payload: dict) -> ResultSnapsh
     return await results.get_snapshot(ctx.session, ctx.principal, _id(payload, "snapshot_id"))
 
 
+@action(
+    key="assessment.scales.search",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="List grade scales with their bands",
+    output=GradeScaleList,
+)
+async def search_scales(ctx: ActionContext, payload: dict | None = None) -> GradeScaleList:
+    body = payload or {}
+    return await scales.list_scales(ctx.session, include_inactive=bool(body.get("include_inactive", False)))
+
+
+@action(
+    key="assessment.scales.get",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="Read one grade scale",
+    output=GradeScaleOut,
+)
+async def get_grade_scale(ctx: ActionContext, payload: dict) -> GradeScaleOut:
+    return await scales.get_scale(ctx.session, _id(payload, "scale_id"))
+
+
+@action(
+    key="assessment.scales.create",
+    module="assessment",
+    permission="assessment.manage",
+    risk="write",
+    describe="Create a grade scale with its bands",
+    input=GradeScaleCreate,
+    output=GradeScaleOut,
+)
+async def create_grade_scale(ctx: ActionContext, payload: dict) -> GradeScaleOut:
+    data = GradeScaleCreate.model_validate(payload)
+    return await scales.create_scale(ctx.session, ctx.principal, data, via=ctx.via)
+
+
+@action(
+    key="assessment.scales.update",
+    module="assessment",
+    permission="assessment.manage",
+    risk="write",
+    describe="Edit a grade scale, its bands or its default flag",
+    input=GradeScaleUpdate,
+    output=GradeScaleOut,
+)
+async def update_grade_scale(ctx: ActionContext, payload: dict) -> GradeScaleOut:
+    scale_id = _id(payload, "scale_id")
+    body = {key: value for key, value in payload.items() if key != "scale_id"}
+    data = GradeScaleUpdate.model_validate(body)
+    return await scales.update_scale(
+        ctx.session,
+        ctx.principal,
+        scale_id,
+        data,
+        via=ctx.via,
+    )
+
+
+@action(
+    key="assessment.scales.delete",
+    module="assessment",
+    permission="assessment.manage",
+    risk="destructive",
+    describe="Remove a grade scale that is not the default and is unassigned",
+    output=dict,
+)
+async def delete_grade_scale(ctx: ActionContext, payload: dict) -> dict:
+    return await scales.delete_scale(
+        ctx.session,
+        ctx.principal,
+        _id(payload, "scale_id"),
+        reason=payload.get("reason"),
+        via=ctx.via,
+    )
+
+
+@action(
+    key="assessment.scales.test",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="Resolve a mark against a grade scale",
+    input=ScaleTestInput,
+    output=ScaleTestResult,
+)
+async def test_grade_scale(ctx: ActionContext, payload: dict) -> ScaleTestResult:
+    scale_id = _id(payload, "scale_id")
+    data = ScaleTestInput.model_validate(_body(payload, "scale_id"))
+    return await scales.test_scale(ctx.session, scale_id, data.value)
+
+
+@action(
+    key="assessment.scale-assignments.search",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="List grade scale assignments by context",
+    output=ScaleAssignmentList,
+)
+async def search_scale_assignments(ctx: ActionContext, payload: dict | None = None) -> ScaleAssignmentList:
+    body = payload or {}
+    scale_id = body.get("scale_id")
+    return await scales.list_assignments(
+        ctx.session,
+        scale_id=uuid.UUID(str(scale_id)) if scale_id else None,
+    )
+
+
+@action(
+    key="assessment.scale-assignments.create",
+    module="assessment",
+    permission="assessment.manage",
+    risk="write",
+    describe="Attach a grade scale to a context, replacing the previous one",
+    input=ScaleAssignmentInput,
+    output=ScaleAssignmentOut,
+)
+async def create_scale_assignment(ctx: ActionContext, payload: dict) -> ScaleAssignmentOut:
+    data = ScaleAssignmentInput.model_validate(payload)
+    return await scales.create_assignment(ctx.session, ctx.principal, data, via=ctx.via)
+
+
+@action(
+    key="assessment.scale-assignments.delete",
+    module="assessment",
+    permission="assessment.manage",
+    risk="destructive",
+    describe="Detach a grade scale from its context",
+    output=dict,
+)
+async def delete_scale_assignment(ctx: ActionContext, payload: dict) -> dict:
+    return await scales.delete_assignment(
+        ctx.session,
+        ctx.principal,
+        _id(payload, "assignment_id"),
+        reason=payload.get("reason"),
+        via=ctx.via,
+    )
+
+
 __all__ = [
     "approve_correction",
     "approve_marks",
     "create_assessment",
     "create_correction",
+    "create_grade_scale",
+    "create_scale_assignment",
     "create_structure",
     "create_window",
     "delete_assessment",
+    "delete_grade_scale",
+    "delete_scale_assignment",
     "delete_structure",
     "delete_window",
     "ensure_submission",
     "get_assessment",
     "get_correction",
+    "get_grade_scale",
     "get_result_snapshot",
     "get_structure",
     "get_submission",
@@ -675,13 +832,17 @@ __all__ = [
     "search_assessments",
     "search_corrections",
     "search_result_snapshots",
+    "search_scale_assignments",
+    "search_scales",
     "search_structures",
     "search_submissions",
     "search_windows",
     "structure_impact",
     "submit_marks",
     "term_results",
+    "test_grade_scale",
     "update_assessment",
+    "update_grade_scale",
     "update_structure",
     "update_window",
     "upsert_scores",

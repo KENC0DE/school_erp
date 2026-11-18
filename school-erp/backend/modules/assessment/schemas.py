@@ -696,6 +696,185 @@ def _check_year_mode(mode: str, weights: list[Decimal] | None) -> None:
         raise ValueError("year weights only apply to weighted_average")
 
 
+ScaleType = Literal["numeric_bands", "descriptive"]
+ScaleContext = Literal["assessment", "subject", "level", "stage", "default"]
+
+
+class BandInput(BaseModel):
+    """One half-open grade band sent by the band editor."""
+
+    min_value: Mark
+    max_value: Mark
+    label: str = Field(min_length=1, max_length=40)
+    remark: str | None = Field(default=None, max_length=255)
+    gpa_points: Mark | None = None
+    is_pass: bool = True
+    color: str | None = Field(default=None, max_length=30)
+    sort_order: int | None = Field(default=None, ge=0, le=10_000)
+
+
+class BandOut(BaseModel):
+    id: str
+    min_value: str
+    max_value: str
+    label: str
+    remark: str | None = None
+    gpa_points: str | None = None
+    is_pass: bool
+    color: str | None = None
+    sort_order: int
+    row_version: int
+
+
+class GradeScaleCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    name_am: str | None = Field(default=None, max_length=120)
+    type: ScaleType = "numeric_bands"
+    description: str | None = None
+    is_default: bool = False
+    lower_bound: Mark = Decimal(0)
+    upper_bound: Mark = Decimal(100)
+    precision: int = Field(default=2, ge=0, le=6)
+    rounding: Rounding = "half_up"
+    effective_from: date | None = None
+    effective_to: date | None = None
+    is_active: bool = True
+    notes: str | None = None
+    bands: list[BandInput] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _bounds(self) -> GradeScaleCreate:
+        if self.lower_bound >= self.upper_bound:
+            raise ValueError("lower_bound must be less than upper_bound")
+        if self.effective_from and self.effective_to and self.effective_from > self.effective_to:
+            raise ValueError("effective_from cannot be after effective_to")
+        return self
+
+
+class GradeScaleUpdate(BaseModel):
+    row_version: int = Field(ge=1)
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    name_am: str | None = Field(default=None, max_length=120)
+    type: ScaleType | None = None
+    description: str | None = None
+    is_default: bool | None = None
+    lower_bound: Mark | None = None
+    upper_bound: Mark | None = None
+    precision: int | None = Field(default=None, ge=0, le=6)
+    rounding: Rounding | None = None
+    effective_from: date | None = None
+    effective_to: date | None = None
+    is_active: bool | None = None
+    notes: str | None = None
+    bands: list[BandInput] | None = Field(default=None, min_length=1)
+    reason: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def _bounds(self) -> GradeScaleUpdate:
+        if (
+            self.lower_bound is not None
+            and self.upper_bound is not None
+            and self.lower_bound >= self.upper_bound
+        ):
+            raise ValueError("lower_bound must be less than upper_bound")
+        if self.effective_from and self.effective_to and self.effective_from > self.effective_to:
+            raise ValueError("effective_from cannot be after effective_to")
+        return self
+
+
+class GradeScaleOut(BaseModel):
+    id: str
+    name: str
+    name_am: str | None = None
+    type: str
+    description: str | None = None
+    is_default: bool
+    lower_bound: str
+    upper_bound: str
+    precision: int
+    rounding: str
+    version: int
+    effective_from: date | None = None
+    effective_to: date | None = None
+    is_active: bool
+    notes: str | None = None
+    row_version: int
+    bands: list[BandOut] = Field(default_factory=list)
+    assignment_count: int = 0
+
+
+class GradeScaleList(BaseModel):
+    items: list[GradeScaleOut]
+    total: int
+
+
+class ScaleTestInput(BaseModel):
+    value: Mark
+
+
+class ScaleTestResult(BaseModel):
+    value: str
+    label: str
+    remark: str | None = None
+    gpa_points: str | None = None
+    is_pass: bool
+    color: str | None = None
+    band_min: str
+    band_max: str
+    scale_name: str
+    scale_version: int
+
+
+class ScaleAssignmentInput(BaseModel):
+    scale_id: uuid.UUID
+    context: ScaleContext = "default"
+    assessment_id: uuid.UUID | None = None
+    subject_id: uuid.UUID | None = None
+    level_id: uuid.UUID | None = None
+    stage_id: uuid.UUID | None = None
+    notes: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def _target(self) -> ScaleAssignmentInput:
+        targets = {
+            "assessment": self.assessment_id,
+            "subject": self.subject_id,
+            "level": self.level_id,
+            "stage": self.stage_id,
+        }
+        chosen = [name for name, value in targets.items() if value is not None]
+        if self.context == "default":
+            if chosen:
+                raise ValueError("the default assignment cannot name a target")
+            return self
+        if chosen != [self.context]:
+            raise ValueError(f"a {self.context} assignment needs exactly that target")
+        return self
+
+
+class ScaleAssignmentOut(BaseModel):
+    id: str
+    scale_id: str
+    scale_name: str
+    context: str
+    scope_key: str
+    assessment_id: str | None = None
+    assessment_title: str | None = None
+    subject_id: str | None = None
+    subject_name: str | None = None
+    level_id: str | None = None
+    level_name: str | None = None
+    stage_id: str | None = None
+    stage_name: str | None = None
+    notes: str | None = None
+    row_version: int
+
+
+class ScaleAssignmentList(BaseModel):
+    items: list[ScaleAssignmentOut]
+    total: int
+
+
 __all__ = [
     "Aggregation",
     "AssessmentCreate",
@@ -712,6 +891,12 @@ __all__ = [
     "CorrectionOut",
     "CorrectionQuery",
     "CorrectionStatus",
+    "BandInput",
+    "BandOut",
+    "GradeScaleCreate",
+    "GradeScaleList",
+    "GradeScaleOut",
+    "GradeScaleUpdate",
     "ImpactSample",
     "Mark",
     "PositiveMark",
@@ -720,6 +905,13 @@ __all__ = [
     "ResultSnapshotOut",
     "ResultSnapshotQuery",
     "Rounding",
+    "ScaleAssignmentInput",
+    "ScaleAssignmentList",
+    "ScaleAssignmentOut",
+    "ScaleContext",
+    "ScaleTestInput",
+    "ScaleTestResult",
+    "ScaleType",
     "ScopeType",
     "ScoreBulkInput",
     "ScoreBulkResult",
