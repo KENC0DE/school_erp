@@ -1494,3 +1494,35 @@ and recorded here (date, decision, reason).
   Audit rollback restores the student state but intentionally does not retract
   historical outbox rows, because an event records that something happened even
   if it was later corrected.
+
+## 2026-11-18 — P2-SEED demo academic year, roster and staff
+
+- **The demo school is narrowed to kindergarten through Grade 8 before the
+  2026-2027 year is created.** Scope is written through the audited
+  `update_scope` service first, so applying the `ethiopian_national` profile
+  maps only the levels the demo actually teaches and the Grade 9–12 starters
+  never appear in the year's subject map.
+- **One section per KG level and two (A/B) per grade.** That gives 19
+  sections across 9 levels. The plan lives in `DEMO_SECTION_PLAN` and is shared
+  by the seed and its test, so the expected count cannot drift.
+- **The roster is deterministic and explicitly numbered.** `STU-2026-0001` to
+  `STU-2026-0060` are generated from a fixed name pool; matching on the number
+  is what makes a re-run a no-op. Numbers rather than generated sequences are
+  used because `register_student` would otherwise advance the school's
+  numbering sequence on every seed run.
+- **The first two students are siblings.** They share the same father and
+  mother guardians, and the father is the person behind `parent1@demo.school`,
+  so the parent account already used by the demo has two children to view.
+  Every other guardian is a seeded person with a deterministic email.
+- **Staff placeholders are `Person` rows, not users.** The staff module arrives
+  in Phase 3; each placeholder reuses the email of an existing demo user
+  (`director@`, `teacher1@`, …) so the module can link the person to the
+  account later without renaming. Homeroom references reuse those teachers.
+- **Every write goes through an audited service function.** Scope, year,
+  sections, people and student registration are all created via
+  `update_scope`, `create_year`/`open_year`/`open_term`, `create_section`,
+  `create_person` and `register_student`, so a fresh demo instance carries a
+  realistic, verifiable activity history instead of direct inserts.
+- **The demo year is opened with its first semester.** The seed only opens the
+  year when no year is current and only opens term 1 when no term is open, so
+  re-running never disturbs a year an operator has since closed or advanced.

@@ -17,7 +17,7 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -326,6 +326,574 @@ def _school_principal(user) -> object:
     )
 
 
+# ---------------------------------------------------------------------------
+# P2-SEED: demo academic structure, staff placeholders and student roster
+# ---------------------------------------------------------------------------
+
+DEMO_YEAR_CODE = "2026-2027"
+DEMO_YEAR_NAME = "2026/27"
+DEMO_YEAR_NAME_AM = "2019 ዓ.ም"
+DEMO_YEAR_START = date(2026, 9, 11)
+DEMO_YEAR_END = date(2027, 6, 30)
+DEMO_CURRICULUM_CODE = "ethiopian_national"
+# The demo school teaches kindergarten through Grade 8. Scope is narrowed before
+# the year is created so the curriculum map only contains the levels it teaches.
+DEMO_SCOPE = (0, 8)
+
+# (code, English name, Amharic name). Names are combined deterministically into
+# three-part names; Amharic and Latin are carried side by side on every person.
+MALE_NAMES: tuple[tuple[str, str], ...] = (
+    ("Abebe", "አበበ"),
+    ("Bekele", "በቀለ"),
+    ("Tesfaye", "ተስፋዬ"),
+    ("Dawit", "ዳዊት"),
+    ("Yonas", "ዮናስ"),
+    ("Samuel", "ሳሙኤል"),
+    ("Henok", "ሄኖክ"),
+    ("Bereket", "በረከት"),
+    ("Nahom", "ናሆም"),
+    ("Mikias", "ሚኪያስ"),
+    ("Eyob", "ኢዮብ"),
+    ("Girmay", "ግርማይ"),
+    ("Haile", "ኃይሌ"),
+    ("Kebede", "ከበደ"),
+    ("Solomon", "ሰለሞን"),
+    ("Tewodros", "ተወድሮስ"),
+    ("Mulugeta", "ሙሉጌታ"),
+    ("Fikru", "ፍቅሩ"),
+    ("Getachew", "ጌታቸው"),
+    ("Abera", "አበራ"),
+    ("Chala", "ቻላ"),
+    ("Desta", "ደስታ"),
+    ("Elias", "ኤልያስ"),
+    ("Fitsum", "ፍጹም"),
+    ("Gebre", "ገብሬ"),
+    ("Hailu", "ሃይሉ"),
+    ("Isayas", "ኢሳያስ"),
+    ("Jemal", "ጀማል"),
+    ("Kassa", "ካሳ"),
+    ("Lemma", "ለማ"),
+)
+
+FEMALE_NAMES: tuple[tuple[str, str], ...] = (
+    ("Marta", "ማርታ"),
+    ("Hana", "ሐና"),
+    ("Selam", "ሰላም"),
+    ("Meron", "ሜሮን"),
+    ("Tigist", "ትግስት"),
+    ("Aster", "አስተር"),
+    ("Genet", "ገነት"),
+    ("Hirut", "ሂሩት"),
+    ("Almaz", "አልማዝ"),
+    ("Bethlehem", "ቤተልሔም"),
+    ("Rahel", "ራሔል"),
+    ("Sara", "ሳራ"),
+    ("Sofia", "ሶፊያ"),
+    ("Eden", "ኤደን"),
+    ("Feven", "ፌቨን"),
+    ("Mahlet", "ማህሌት"),
+    ("Meseret", "መሰረት"),
+    ("Netsanet", "ነጻነት"),
+    ("Tsion", "ጽዮን"),
+    ("Zewditu", "ዘውዲቱ"),
+    ("Lulit", "ሉሊት"),
+    ("Blen", "ብለን"),
+    ("Eyerusalem", "እየሩሳሌም"),
+    ("Frehiwot", "ፍሬሕይወት"),
+    ("Gelila", "ገሊላ"),
+    ("Helen", "ሄለን"),
+    ("Kalkidan", "ቅልቅዳን"),
+    ("Lidya", "ሊድያ"),
+    ("Mekdes", "መቅደስ"),
+    ("Ruth", "ሩት"),
+)
+
+DEMO_ADDRESSES: tuple[str, ...] = (
+    "Addis Ababa",
+    "Adama",
+    "Bahir Dar",
+    "Hawassa",
+    "Mekelle",
+    "Gondar",
+    "Jimma",
+    "Dire Dawa",
+)
+
+# One section entry per class; the count is the number of demo students placed
+# in that section. Grades 1–8 have an A and B stream, kindergarten has one.
+DEMO_SECTION_PLAN: tuple[tuple[str, str, int], ...] = (
+    ("kg1", "A", 4),
+    ("kg2", "A", 4),
+    ("kg3", "A", 4),
+    ("g1", "A", 3),
+    ("g1", "B", 3),
+    ("g2", "A", 3),
+    ("g2", "B", 3),
+    ("g3", "A", 3),
+    ("g3", "B", 3),
+    ("g4", "A", 3),
+    ("g4", "B", 3),
+    ("g5", "A", 3),
+    ("g5", "B", 3),
+    ("g6", "A", 3),
+    ("g6", "B", 3),
+    ("g7", "A", 3),
+    ("g7", "B", 3),
+    ("g8", "A", 3),
+    ("g8", "B", 3),
+)
+
+# Staff placeholders until the staff module lands in Phase 3. Each person uses
+# the same email as the demo user account so P3 can link them without renaming.
+# (email, sex, given_en, father_en, grandfather_en, given_am, father_am, grandfather_am)
+DEMO_STAFF: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
+    (
+        "director@demo.school",
+        "male",
+        "Alemayehu",
+        "Bekele",
+        "Wondimu",
+        "አለማየሁ",
+        "በቀለ",
+        "ወንድሙ",
+    ),
+    (
+        "academichead@demo.school",
+        "female",
+        "Tigist",
+        "Hailu",
+        "Mekonnen",
+        "ትግስት",
+        "ሃይሉ",
+        "መኮንን",
+    ),
+    (
+        "registrar@demo.school",
+        "female",
+        "Marta",
+        "Girma",
+        "Assefa",
+        "ማርታ",
+        "ግርማ",
+        "አሰፋ",
+    ),
+    (
+        "teacher1@demo.school",
+        "male",
+        "Solomon",
+        "Tesfaye",
+        "Gebre",
+        "ሰለሞን",
+        "ተስፋዬ",
+        "ገብሬ",
+    ),
+    (
+        "teacher2@demo.school",
+        "female",
+        "Hana",
+        "Desta",
+        "Alemu",
+        "ሐና",
+        "ደስታ",
+        "አለሙ",
+    ),
+    (
+        "hr@demo.school",
+        "male",
+        "Yohannes",
+        "Kebede",
+        "Tadesse",
+        "ዮሐንስ",
+        "ከበደ",
+        "ታደሰ",
+    ),
+)
+
+
+def _level_scope(level_code: str) -> int:
+    """Grade 1–12 map to their number; every KG level maps to 0."""
+    return int(level_code[1:]) if level_code.startswith("g") else 0
+
+
+def _guardian_specs(index: int, family_group: int) -> list[dict]:
+    father = MALE_NAMES[(family_group * 7 + 3) % len(MALE_NAMES)]
+    grandfather = MALE_NAMES[(family_group * 11 + 5) % len(MALE_NAMES)]
+    great_grandfather = MALE_NAMES[(family_group * 23 + 17) % len(MALE_NAMES)]
+    mother = FEMALE_NAMES[(family_group * 13 + 7) % len(FEMALE_NAMES)]
+    mother_father = MALE_NAMES[(family_group * 17 + 11) % len(MALE_NAMES)]
+    mother_grandfather = MALE_NAMES[(family_group * 19 + 13) % len(MALE_NAMES)]
+    father_email = "parent1@demo.school" if family_group == 0 else f"guardian.{family_group:03d}@demo.school"
+    mother_email = f"guardian.mother.{family_group:03d}@demo.school"
+    place = DEMO_ADDRESSES[index % len(DEMO_ADDRESSES)]
+    return [
+        {
+            "relationship": "father",
+            "email": father_email,
+            "person": {
+                "given_name_en": father[0],
+                "father_name_en": grandfather[0],
+                "grandfather_name_en": great_grandfather[0],
+                "given_name_am": father[1],
+                "father_name_am": grandfather[1],
+                "grandfather_name_am": great_grandfather[1],
+                "sex": "male",
+                "phone": f"+2519{family_group:08d}",
+                "address": place,
+            },
+        },
+        {
+            "relationship": "mother",
+            "email": mother_email,
+            "person": {
+                "given_name_en": mother[0],
+                "father_name_en": mother_father[0],
+                "grandfather_name_en": mother_grandfather[0],
+                "given_name_am": mother[1],
+                "father_name_am": mother_father[1],
+                "grandfather_name_am": mother_grandfather[1],
+                "sex": "female",
+                "phone": f"+2519{family_group + 500:08d}",
+                "address": place,
+            },
+        },
+    ]
+
+
+def demo_student_roster() -> list[dict]:
+    """Build the deterministic 60-student roster used by the seed and its tests.
+
+    The first two students are siblings: they share the same father and mother
+    guardians, and the father is the person behind ``parent1@demo.school``.
+    """
+    roster: list[dict] = []
+    index = 0
+    for level_code, section_code, count in DEMO_SECTION_PLAN:
+        scope_level = _level_scope(level_code)
+        for roll in range(1, count + 1):
+            male = index % 2 == 0
+            pool = MALE_NAMES if male else FEMALE_NAMES
+            given = pool[(index // 2) % len(pool)]
+            family_group = 0 if index < 2 else index
+            father = MALE_NAMES[(family_group * 7 + 3) % len(MALE_NAMES)]
+            grandfather = MALE_NAMES[(family_group * 11 + 5) % len(MALE_NAMES)]
+            year = DEMO_YEAR_START.year
+            roster.append(
+                {
+                    "index": index,
+                    "level_code": level_code,
+                    "section_code": section_code,
+                    "roll_number": str(roll),
+                    "student_number": f"STU-{year}-{index + 1:04d}",
+                    "person": {
+                        "given_name_en": given[0],
+                        "father_name_en": father[0],
+                        "grandfather_name_en": grandfather[0],
+                        "given_name_am": given[1],
+                        "father_name_am": father[1],
+                        "grandfather_name_am": grandfather[1],
+                        "sex": "male" if male else "female",
+                        "date_of_birth": date(
+                            year - (5 + scope_level),
+                            1 + (index % 12),
+                            1 + (index % 27),
+                        ),
+                        "address": DEMO_ADDRESSES[index % len(DEMO_ADDRESSES)],
+                    },
+                    "guardians": _guardian_specs(index, family_group),
+                }
+            )
+            index += 1
+    return roster
+
+
+async def _ensure_demo_person(
+    session,
+    principal,
+    email: str,
+    person: dict,
+    summary: dict,
+) -> object:
+    """Find a demo person by email, or create it through the audited service."""
+    from core.people.models import Person
+    from core.people.service import create_person
+    from sqlalchemy import select
+
+    existing = (
+        (await session.execute(select(Person).where(Person.email == email, Person.deleted_at.is_(None))))
+        .scalars()
+        .first()
+    )
+    if existing is not None:
+        return existing.id
+    created, _warnings = await create_person(
+        session,
+        principal,
+        {**person, "email": email},
+        via="api",
+        reason="Demo seed person",
+        commit=False,
+    )
+    summary["people_created"] = summary.get("people_created", 0) + 1
+    return created.id
+
+
+async def seed_demo_data(session, principal, *, users_by_email: dict | None = None) -> dict:
+    """Seed the Phase 2 demo academic year, crew and 60-student roster.
+
+    Every write goes through the audited service functions, so a fresh demo
+    instance also carries realistic activity history. Re-running is a no-op:
+    the year, sections, staff persons, guardians and students are matched on
+    stable codes/emails/numbers before anything is created.
+    """
+    import uuid
+
+    from modules.academics import curriculum_service, section_service
+    from modules.academics import service as academics
+    from modules.academics import years as year_service
+    from modules.academics.curriculum_schemas import CurriculumApply
+    from modules.academics.models import AcademicYear, LevelSubject, Subject
+    from modules.academics.schemas import ScopeUpdate, YearCreate
+    from modules.academics.section_schemas import SectionCreate
+    from modules.students import service as student_service
+    from modules.students.models import StudentProfile
+    from modules.students.schemas import EnrollmentInput, GuardianInput, StudentRegister
+    from sqlalchemy import func, select
+
+    users_by_email = users_by_email or {}
+    summary: dict = {
+        "year_code": DEMO_YEAR_CODE,
+        "scope": DEMO_SCOPE,
+        "sections_created": 0,
+        "students_created": 0,
+        "staff_created": 0,
+        "people_created": 0,
+    }
+
+    # Narrow the scope before creating the year: the profile application only
+    # maps levels that are inside the school's current scope.
+    await academics.update_scope(
+        session,
+        principal,
+        ScopeUpdate(
+            first_level=DEMO_SCOPE[0],
+            last_level=DEMO_SCOPE[1],
+            reason="Demo school: kindergarten through Grade 8",
+        ),
+        via="api",
+    )
+
+    year = (
+        await session.execute(
+            select(AcademicYear).where(
+                AcademicYear.code == DEMO_YEAR_CODE,
+                AcademicYear.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if year is None:
+        profiles = await curriculum_service.list_profiles(session)
+        profile = next(
+            (item for item in profiles.items if item.code == DEMO_CURRICULUM_CODE),
+            None,
+        )
+        created_year = await year_service.create_year(
+            session,
+            principal,
+            YearCreate(
+                code=DEMO_YEAR_CODE,
+                name=DEMO_YEAR_NAME,
+                name_am=DEMO_YEAR_NAME_AM,
+                start_date=DEMO_YEAR_START,
+                end_date=DEMO_YEAR_END,
+                curriculum_profile_id=uuid.UUID(profile.id) if profile is not None else None,
+            ),
+            via="api",
+        )
+        year_id = uuid.UUID(created_year.id)
+    else:
+        year_id = year.id
+
+    year = await session.get(AcademicYear, year_id)
+    year_out = await year_service.get_year(session, year_id)
+    summary["year_id"] = str(year_id)
+    summary["year_status"] = year_out.status
+
+    if year.curriculum_profile_id is None:
+        profiles = await curriculum_service.list_profiles(session)
+        profile = next(
+            (item for item in profiles.items if item.code == DEMO_CURRICULUM_CODE),
+            None,
+        )
+        if profile is not None:
+            await curriculum_service.apply_profile(
+                session,
+                principal,
+                uuid.UUID(profile.id),
+                CurriculumApply(year_id=year_id, confirm=True, reason="Demo curriculum"),
+                via="api",
+            )
+
+    if year_out.status == "draft":
+        years = await year_service.list_years(session)
+        if years.current_year_id is None:
+            year_out = await year_service.open_year(
+                session, principal, year_id, reason="Demo academic year", via="api"
+            )
+    if year_out.status == "open" and not any(term.status == "open" for term in year_out.terms):
+        first_term = next((term for term in year_out.terms if term.number == 1), None)
+        if first_term is not None:
+            year_out = await year_service.open_term(
+                session,
+                principal,
+                year_id,
+                uuid.UUID(first_term.id),
+                reason="Demo first semester",
+                via="api",
+            )
+    summary["year_status"] = year_out.status
+
+    levels = {
+        item.code: uuid.UUID(item.id) for item in (await academics.list_levels(session, all_scope=True)).items
+    }
+
+    staff_ids: dict[str, object] = {}
+    for (
+        email,
+        sex,
+        given_en,
+        father_en,
+        grandfather_en,
+        given_am,
+        father_am,
+        grandfather_am,
+    ) in DEMO_STAFF:
+        before = summary["people_created"]
+        staff_ids[email] = await _ensure_demo_person(
+            session,
+            principal,
+            email,
+            {
+                "given_name_en": given_en,
+                "father_name_en": father_en,
+                "grandfather_name_en": grandfather_en,
+                "given_name_am": given_am,
+                "father_name_am": father_am,
+                "grandfather_name_am": grandfather_am,
+                "sex": sex,
+                "address": "Addis Ababa",
+            },
+            summary,
+        )
+        if summary["people_created"] > before:
+            summary["staff_created"] += 1
+
+    existing_sections = await section_service.list_sections(
+        session,
+        year_id=year_id,
+        include_inactive=True,
+        all_scope=True,
+    )
+    section_ids = {(item.level_code, item.code): uuid.UUID(item.id) for item in existing_sections.items}
+    homerooms = {
+        ("g5", "A"): users_by_email.get("teacher1@demo.school"),
+        ("g6", "A"): users_by_email.get("teacher2@demo.school"),
+    }
+    for level_code, section_code, _count in DEMO_SECTION_PLAN:
+        if (level_code, section_code) in section_ids:
+            continue
+        homeroom = homerooms.get((level_code, section_code))
+        created_section = await section_service.create_section(
+            session,
+            principal,
+            SectionCreate(
+                year_id=year_id,
+                level_id=levels[level_code],
+                code=section_code,
+                name=f"Section {section_code}",
+                name_am=f"ክፍል {section_code}",
+                capacity=40,
+                homeroom_user_id=getattr(homeroom, "id", None),
+            ),
+            via="api",
+        )
+        section_ids[(level_code, section_code)] = uuid.UUID(created_section.id)
+        summary["sections_created"] += 1
+    summary["sections"] = len(section_ids)
+
+    existing_numbers = set(
+        (
+            await session.execute(
+                select(StudentProfile.student_number).where(
+                    StudentProfile.deleted_at.is_(None),
+                    StudentProfile.student_number.like(f"STU-{DEMO_YEAR_START.year}-%"),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    roster = demo_student_roster()
+    for student in roster:
+        if student["student_number"] in existing_numbers:
+            continue
+        guardians = []
+        for guardian in student["guardians"]:
+            person_id = await _ensure_demo_person(
+                session,
+                principal,
+                guardian["email"],
+                guardian["person"],
+                summary,
+            )
+            guardians.append(
+                GuardianInput(
+                    person_id=person_id,
+                    relationship=guardian["relationship"],
+                    is_primary=guardian["relationship"] == "father",
+                    can_pickup=True,
+                )
+            )
+        await student_service.register_student(
+            session,
+            principal,
+            StudentRegister(
+                person=student["person"],
+                student_number=student["student_number"],
+                status="active",
+                admission_date=DEMO_YEAR_START,
+                enrollment=EnrollmentInput(
+                    year_id=year_id,
+                    level_id=levels[student["level_code"]],
+                    section_id=section_ids[(student["level_code"], student["section_code"])],
+                    roll_number=student["roll_number"],
+                    status="active",
+                ),
+                guardians=guardians,
+            ),
+            via="api",
+        )
+        summary["students_created"] += 1
+
+    summary["students"] = int(
+        (
+            await session.execute(
+                select(func.count())
+                .select_from(StudentProfile)
+                .where(
+                    StudentProfile.deleted_at.is_(None),
+                    StudentProfile.student_number.like(f"STU-{DEMO_YEAR_START.year}-%"),
+                )
+            )
+        ).scalar_one()
+    )
+    summary["subjects"] = int((await session.execute(select(func.count()).select_from(Subject))).scalar_one())
+    summary["level_subjects"] = int(
+        (await session.execute(select(func.count()).select_from(LevelSubject))).scalar_one()
+    )
+    await session.commit()
+    return summary
+
+
 async def seed_school(school_settings, controller_summary: dict) -> dict:
     # Importing the app factory module registers every core and module ORM mapper
     # with Base.metadata, so create_all() makes every table the running server
@@ -587,6 +1155,10 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
             )
             await session.commit()
 
+            # Phase 2 demo data: KG–Grade 8 year, sections, subjects applied
+            # through the starter curriculum, staff placeholders and 60 students.
+            demo = await seed_demo_data(session, principal, users_by_email=user_rows)
+
             summary.update(
                 {
                     "instance_id": controller_summary["school_id"],
@@ -599,6 +1171,7 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
                     "themes": ["default", *(spec["key"] for spec in DEMO_THEMES)],
                     "themes_created": theme_created,
                     "licensed_modules": controller_summary["modules"],
+                    "demo": demo,
                 }
             )
     finally:
@@ -687,6 +1260,20 @@ async def _run() -> int:
     if school_summary["themes_created"]:
         print(f"                        created: {', '.join(school_summary['themes_created'])}")
     print(f" Sample note ......... {school_summary['note_id']}")
+    demo = school_summary.get("demo", {})
+    if demo:
+        print(
+            f" Academic year ....... {demo['year_code']} "
+            f"({demo['year_status']}, semester, {demo['sections']} sections)"
+        )
+        print(
+            f" Demo roster .......... {demo['students']} students, "
+            f"{demo['subjects']} subjects, {demo['level_subjects']} level-subject rows"
+        )
+        print(
+            f"                        created now: {demo['students_created']} students, "
+            f"{demo['sections_created']} sections, {demo['people_created']} people"
+        )
     print(
         " Activity history ..... seeded through audited service calls (roles, i18n, themes, settings, note)"
     )

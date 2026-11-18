@@ -104,7 +104,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P2-11 — Promotion and transfer
 - [x] P2-12 — Mobile: student directory/profile/registration
 - [x] P2-13 — Events
-- [ ] P2-SEED — Seed
+- [x] P2-SEED — Seed
 
 ## Phase 3 — Staff, HR and attendance
 
