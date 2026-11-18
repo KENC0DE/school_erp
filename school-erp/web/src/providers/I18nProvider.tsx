@@ -12,7 +12,7 @@ import {
 import { API_URL } from "../lib/api";
 import { getStoredLocale, storeLocale } from "../lib/storage";
 
-const NAMESPACES = ["core", "sample", "academics", "students"];
+const NAMESPACES = ["core", "sample", "academics", "students", "admissions"];
 
 interface I18nState {
   locale: string;

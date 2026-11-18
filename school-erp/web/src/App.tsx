@@ -5,6 +5,10 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "rea
 import { Shell } from "./components/Shell";
 import { ActivityPage } from "./pages/ActivityPage";
 import { AcademicsPage } from "./pages/academics/AcademicsPage";
+import { AdmissionsPage } from "./pages/admissions/AdmissionsPage";
+import { ApplicationFormPage } from "./pages/admissions/ApplicationFormPage";
+import { ApplicationProfilePage } from "./pages/admissions/ApplicationProfilePage";
+import { PublicApplicationPage } from "./pages/admissions/PublicApplicationPage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
 import { DesignReferencePage } from "./pages/design/DesignReferencePage";
@@ -67,6 +71,7 @@ export function AppRoutes() {
       <Route path="/setup" element={<SetupWizardPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/controller-login" element={<ControllerLoginPage />} />
+      <Route path="/apply" element={<PublicApplicationPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
           <Route index element={<DashboardPage />} />
@@ -79,6 +84,10 @@ export function AppRoutes() {
           <Route path="academics" element={<AcademicsPage />} />
           <Route path="students" element={<StudentsPage />} />
           <Route path="students/:studentId" element={<StudentProfilePage />} />
+          <Route path="admissions" element={<AdmissionsPage />} />
+          <Route path="admissions/new" element={<ApplicationFormPage mode="new" />} />
+          <Route path="admissions/:id" element={<ApplicationProfilePage />} />
+          <Route path="admissions/:id/edit" element={<ApplicationFormPage mode="edit" />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
           <Route path="settings/languages" element={<TranslationsPage />} />

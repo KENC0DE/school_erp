@@ -42,12 +42,15 @@ type Values = Record<string, unknown>;
  */
 export function CustomFieldsForm({
   entityType,
+  definitions: provided,
   value,
   onChange,
   errors = {},
   disabled = false,
 }: {
   entityType: string;
+  /** Definitions from a public endpoint; skips the authenticated fetch when set. */
+  definitions?: CustomFieldDefinition[];
   value: Values;
   onChange: (value: Values) => void;
   errors?: Record<string, string>;
@@ -60,16 +63,17 @@ export function CustomFieldsForm({
       api.get<{ items: CustomFieldDefinition[] }>(
         `/api/v1/custom-fields?entity_type=${encodeURIComponent(entityType)}`,
       ),
+    enabled: provided === undefined,
   });
 
   const definitions = useMemo(
-    () => (query.data?.items ?? []).filter((definition) => definition.active),
-    [query.data],
+    () => (provided ?? query.data?.items ?? []).filter((definition) => definition.active),
+    [provided, query.data],
   );
 
   const set = (key: string, next: unknown) => onChange({ ...value, [key]: next });
 
-  if (query.isLoading) {
+  if (provided === undefined && query.isLoading) {
     return (
       <p role="status" className="text-sm text-muted-foreground">
         {t("custom.loading")}
@@ -77,7 +81,7 @@ export function CustomFieldsForm({
     );
   }
 
-  if (query.isError) {
+  if (provided === undefined && query.isError) {
     return (
       <p role="alert" className="text-sm text-destructive">
         {t("common.error")}
