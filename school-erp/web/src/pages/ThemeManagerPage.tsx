@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
 import { useTheme } from "../providers/ThemeProvider";
@@ -434,7 +436,18 @@ export function ThemeManagerPage() {
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {themes.isLoading ? (
-            <p className="text-sm text-muted-foreground">{t("themes.loading")}</p>
+            <LoadingState label={t("themes.loading")} />
+          ) : themes.isError ? (
+            <ErrorState
+              title={t("common.error")}
+              requestId={requestIdOf(themes.error)}
+              requestIdLabel={t("common.request_id")}
+              retry={
+                <Button size="sm" variant="outline" onClick={() => void themes.refetch()}>
+                  {t("common.retry")}
+                </Button>
+              }
+            />
           ) : null}
           {actionError ? (
             <p role="alert" className="pb-2 text-sm text-destructive">
@@ -531,8 +544,8 @@ export function ThemeManagerPage() {
               ))}
             </tbody>
           </table>
-          {!themes.isLoading && (themes.data?.items ?? []).length === 0 ? (
-            <p className="py-4 text-sm text-muted-foreground">{t("themes.no_items")}</p>
+          {!themes.isLoading && !themes.isError && (themes.data?.items ?? []).length === 0 ? (
+            <EmptyState className="my-2" title={t("themes.no_items")} />
           ) : null}
         </CardContent>
       </Card>
@@ -552,10 +565,18 @@ export function ThemeManagerPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {detail.isLoading ? (
-              <p className="text-sm text-muted-foreground">{t("themes.loading")}</p>
-            ) : null}
-            {detail.isError ? (
-              <p className="text-sm text-destructive">{t("common.error")}</p>
+              <LoadingState label={t("themes.loading")} rows={2} columns={3} />
+            ) : detail.isError ? (
+              <ErrorState
+                title={t("common.error")}
+                requestId={requestIdOf(detail.error)}
+                requestIdLabel={t("common.request_id")}
+                retry={
+                  <Button size="sm" variant="outline" onClick={() => void detail.refetch()}>
+                    {t("common.retry")}
+                  </Button>
+                }
+              />
             ) : null}
             {detail.data ? <ThemePreview result={detail.data} /> : null}
           </CardContent>

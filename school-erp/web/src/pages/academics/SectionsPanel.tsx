@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
+import { requestIdOf } from "../../lib/errors";
 import { useAuth } from "../../providers/AuthProvider";
 import { useI18n } from "../../providers/I18nProvider";
 import { ACADEMICS, can, useHomeroomUsers, useLevels, useSections, useYears } from "./queries";
@@ -189,9 +191,21 @@ export function SectionsPanel({ canManage }: { canManage: boolean }) {
           <CardDescription>{t("academics.section.list_hint")}</CardDescription>
         </CardHeader>
         <CardContent>
-          {sections.isLoading ? <p className="text-sm text-muted-foreground">{t("common.loading")}</p> : null}
-          {rows.length === 0 && !sections.isLoading ? (
-            <p className="text-sm text-muted-foreground">{t("academics.empty.sections")}</p>
+          {sections.isLoading ? (
+            <LoadingState label={t("common.loading")} />
+          ) : sections.isError ? (
+            <ErrorState
+              title={t("common.error")}
+              requestId={requestIdOf(sections.error)}
+              requestIdLabel={t("common.request_id")}
+              retry={
+                <Button size="sm" variant="outline" onClick={() => void sections.refetch()}>
+                  {t("common.retry")}
+                </Button>
+              }
+            />
+          ) : rows.length === 0 ? (
+            <EmptyState title={t("academics.empty.sections")} />
           ) : null}
           <ul className="divide-y divide-border text-sm">
             {rows.map((section) => (

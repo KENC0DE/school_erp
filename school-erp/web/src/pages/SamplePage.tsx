@@ -1,11 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Button } from "../components/ui/Button";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useI18n } from "../providers/I18nProvider";
 
 interface Note {
@@ -81,23 +84,31 @@ export function SamplePage() {
                   {t("sample.add_note")}
                 </Button>
               </form>
-              {notes.isLoading ? <p className="text-sm text-muted-foreground">{t("common.loading")}</p> : null}
-              {notes.isError && !disabled ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {t("common.error")}
-                </p>
-              ) : null}
-              <ul className="divide-y divide-border">
-                {(notes.data?.items ?? []).map((note) => (
-                  <li key={note.id} className="flex items-start justify-between gap-3 py-2">
-                    <span className="text-sm">{note.content}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{note.author_name}</span>
-                  </li>
-                ))}
-              </ul>
-              {notes.data && notes.data.items.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("sample.empty")}</p>
-              ) : null}
+              {notes.isLoading ? (
+                <LoadingState label={t("common.loading")} rows={2} columns={2} />
+              ) : notes.isError && !disabled ? (
+                <ErrorState
+                  title={t("common.error")}
+                  requestId={requestIdOf(notes.error)}
+                  requestIdLabel={t("common.request_id")}
+                  retry={
+                    <Button size="sm" variant="outline" onClick={() => void notes.refetch()}>
+                      {t("common.retry")}
+                    </Button>
+                  }
+                />
+              ) : (notes.data?.items ?? []).length === 0 ? (
+                <EmptyState title={t("sample.empty")} />
+              ) : (
+                <ul className="divide-y divide-border">
+                  {(notes.data?.items ?? []).map((note) => (
+                    <li key={note.id} className="flex items-start justify-between gap-3 py-2">
+                      <span className="text-sm">{note.content}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{note.author_name}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </CardContent>
           </Card>
           {create.isSuccess ? <p className="text-sm text-primary">{t("sample.created")}</p> : null}

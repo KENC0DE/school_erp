@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { Button, EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
@@ -29,13 +30,27 @@ export function DashboardPage() {
           <CardTitle>{t("dashboard.modules")}</CardTitle>
           <CardDescription>{t("dashboard.subtitle")}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {(nav.data?.modules ?? []).map((module) => (
-            <Badge key={module}>{module}</Badge>
-          ))}
-          {nav.data && nav.data.modules.length === 0 ? (
-            <span className="text-sm text-muted-foreground">{t("common.disabled")}</span>
-          ) : null}
+        <CardContent>
+          {nav.isPending ? (
+            <LoadingState label={t("common.loading")} rows={2} columns={4} />
+          ) : nav.isError ? (
+            <ErrorState
+              title={t("common.error")}
+              retry={
+                <Button size="sm" variant="outline" onClick={() => void nav.refetch()}>
+                  {t("common.retry")}
+                </Button>
+              }
+            />
+          ) : (nav.data?.modules ?? []).length === 0 ? (
+            <EmptyState title={t("dashboard.empty")} />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(nav.data?.modules ?? []).map((module) => (
+                <Badge key={module}>{module}</Badge>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

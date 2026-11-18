@@ -1,10 +1,13 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
 
@@ -282,25 +285,37 @@ export function ModulesPage() {
         </CardHeader>
         <CardContent>
           {modules.isLoading ? (
-            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-          ) : null}
-          {modules.isError ? (
-            <p className="text-sm text-destructive">{t("common.error")}</p>
+            <LoadingState label={t("common.loading")} />
+          ) : modules.isError ? (
+            <ErrorState
+              title={t("common.error")}
+              requestId={requestIdOf(modules.error)}
+              requestIdLabel={t("common.request_id")}
+              retry={
+                <Button size="sm" variant="outline" onClick={() => void modules.refetch()}>
+                  {t("common.retry")}
+                </Button>
+              }
+            />
+          ) : (modules.data?.items ?? []).length === 0 ? (
+            <EmptyState title={t("modules.empty")} />
           ) : null}
           {errorMessage ? (
             <p role="alert" className="pb-4 text-sm text-destructive">
               {errorMessage}
             </p>
           ) : null}
-          {(modules.data?.items ?? []).map((item) => (
-            <ModuleRow
-              key={item.key}
-              item={item}
-              canManage={canManage}
-              busy={toggle.isPending && toggle.variables?.key === item.key}
-              onToggle={(module, enabled) => toggle.mutate({ key: module.key, enabled })}
-            />
-          ))}
+          {!modules.isLoading && !modules.isError
+            ? (modules.data?.items ?? []).map((item) => (
+                <ModuleRow
+                  key={item.key}
+                  item={item}
+                  canManage={canManage}
+                  busy={toggle.isPending && toggle.variables?.key === item.key}
+                  onToggle={(module, enabled) => toggle.mutate({ key: module.key, enabled })}
+                />
+              ))
+            : null}
         </CardContent>
       </Card>
 

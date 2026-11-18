@@ -115,6 +115,21 @@ async def test_an_unreadable_pair_is_rejected_with_a_clear_reason(client, supera
     assert (await client.get("/api/v1/themes/active")).json()["key"] == "default"
 
 
+async def test_a_token_cannot_inject_css_into_the_stylesheet(client, superadmin_headers):
+    tokens = ocean_tokens()
+    tokens["light"]["font-sans"] = "Inter, sans-serif; } body { display: none"
+    response = await client.post(
+        "/api/v1/themes/import",
+        json=json_import("Injection", tokens),
+        headers=superadmin_headers,
+    )
+    assert response.status_code == 422, response.text
+    issues = response.json()["error"]["details"]["issues"]
+    unsafe = next(issue for issue in issues if issue["code"] == "unsafe_value")
+    assert unsafe["token"] == "font-sans"
+    assert unsafe["mode"] == "light"
+
+
 async def test_missing_modes_and_tokens_are_rejected(client, superadmin_headers):
     partial = css_from(ocean_tokens()["light"], {})
     response = await client.post(

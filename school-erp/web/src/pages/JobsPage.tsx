@@ -1,11 +1,12 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
-import { Card, CardContent } from "../components/ui/Card";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useI18n } from "../providers/I18nProvider";
 
 type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
@@ -143,15 +144,20 @@ export function JobsPage() {
       ) : null}
 
       {jobs.isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("jobs.loading")}</p>
-      ) : null}
-
-      {!jobs.isLoading && items.length === 0 ? (
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-sm text-muted-foreground">{t("jobs.empty")}</p>
-          </CardContent>
-        </Card>
+        <LoadingState label={t("jobs.loading")} />
+      ) : jobs.isError ? (
+        <ErrorState
+          title={t("common.error")}
+          requestId={requestIdOf(jobs.error)}
+          requestIdLabel={t("common.request_id")}
+          retry={
+            <Button size="sm" variant="outline" onClick={() => void jobs.refetch()}>
+              {t("common.retry")}
+            </Button>
+          }
+        />
+      ) : items.length === 0 ? (
+        <EmptyState title={t("jobs.empty")} />
       ) : null}
 
       {items.length > 0 ? (

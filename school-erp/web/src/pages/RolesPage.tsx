@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
 
@@ -240,16 +242,29 @@ export function RolesPage() {
         ) : null}
       </div>
 
-      {roles.isLoading ? <p className="text-sm text-muted-foreground">{t("common.loading")}</p> : null}
-      {roles.isError ? <p className="text-sm text-destructive">{t("common.error")}</p> : null}
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]">
         <Card className="h-fit">
           <CardHeader>
             <CardTitle>{t("roles.title")}</CardTitle>
             <CardDescription>{t("roles.select")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
+            {roles.isLoading ? (
+              <LoadingState label={t("common.loading")} rows={4} columns={1} />
+            ) : roles.isError ? (
+              <ErrorState
+                title={t("common.error")}
+                requestId={requestIdOf(roles.error)}
+                requestIdLabel={t("common.request_id")}
+                retry={
+                  <Button size="sm" variant="outline" onClick={() => void roles.refetch()}>
+                    {t("common.retry")}
+                  </Button>
+                }
+              />
+            ) : (roles.data?.items ?? []).length === 0 ? (
+              <EmptyState title={t("roles.empty_list")} />
+            ) : null}
             {[...(roles.data?.items ?? [])]
               .sort((left, right) => left.key.localeCompare(right.key))
               .map((role) => (
@@ -380,7 +395,22 @@ export function RolesPage() {
               {!fullAccess ? (
                 <div className="space-y-4">
                   {permissions.isLoading ? (
-                    <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+                    <LoadingState label={t("common.loading")} rows={3} columns={2} />
+                  ) : permissions.isError ? (
+                    <ErrorState
+                      title={t("common.error")}
+                      requestId={requestIdOf(permissions.error)}
+                      requestIdLabel={t("common.request_id")}
+                      retry={
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => void permissions.refetch()}
+                        >
+                          {t("common.retry")}
+                        </Button>
+                      }
+                    />
                   ) : null}
                   {grouped.map(([module, declarations]) => (
                     <section key={module} className="space-y-2">

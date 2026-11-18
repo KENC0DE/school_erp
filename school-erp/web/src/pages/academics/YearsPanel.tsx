@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
+import { requestIdOf } from "../../lib/errors";
 import { useI18n } from "../../providers/I18nProvider";
 import { ACADEMICS, useProfiles, useYears } from "./queries";
 import type { Year } from "./types";
@@ -168,9 +170,21 @@ export function YearsPanel({ canManage }: { canManage: boolean }) {
           <CardDescription>{t("academics.year.list_hint")}</CardDescription>
         </CardHeader>
         <CardContent>
-          {years.isLoading ? <p className="text-sm text-muted-foreground">{t("common.loading")}</p> : null}
-          {rows.length === 0 && !years.isLoading ? (
-            <p className="text-sm text-muted-foreground">{t("academics.empty.years")}</p>
+          {years.isLoading ? (
+            <LoadingState label={t("common.loading")} />
+          ) : years.isError ? (
+            <ErrorState
+              title={t("common.error")}
+              requestId={requestIdOf(years.error)}
+              requestIdLabel={t("common.request_id")}
+              retry={
+                <Button size="sm" variant="outline" onClick={() => void years.refetch()}>
+                  {t("common.retry")}
+                </Button>
+              }
+            />
+          ) : rows.length === 0 ? (
+            <EmptyState title={t("academics.empty.years")} />
           ) : null}
           <ul className="space-y-4">
             {rows.map((year) => (

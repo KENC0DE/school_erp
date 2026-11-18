@@ -17,12 +17,14 @@ export { Tabs, type TabItem, type TabsProps } from "./tabs";
 export {
   EmptyState,
   ErrorState,
+  LoadingState,
   Page,
   PageHeader,
   Skeleton,
   SkeletonRows,
   type EmptyStateProps,
   type ErrorStateProps,
+  type LoadingStateProps,
   type PageHeaderProps,
   type SkeletonProps,
 } from "./states";

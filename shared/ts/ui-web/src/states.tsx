@@ -33,17 +33,47 @@ export function SkeletonRows({ rows = 5, columns = 4 }: { rows?: number; columns
   );
 }
 
+export interface LoadingStateProps {
+  /** Announced to assistive technology; the skeleton itself is decorative. */
+  label?: ReactNode;
+  rows?: number;
+  columns?: number;
+  className?: string;
+  testId?: string;
+}
+
+export function LoadingState({ label, rows = 4, columns = 3, className, testId }: LoadingStateProps) {
+  return (
+    <div
+      className={cn("ui-state", "ui-state--loading", className)}
+      data-testid={testId}
+      data-ui-state="loading"
+      role="status"
+      aria-busy="true"
+    >
+      {label ? <span className="ui-visually-hidden">{label}</span> : null}
+      <SkeletonRows rows={rows} columns={columns} />
+    </div>
+  );
+}
+
 export interface EmptyStateProps {
   icon?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
   className?: string;
+  testId?: string;
 }
 
-export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action, className, testId }: EmptyStateProps) {
   return (
-    <div className={cn("ui-state", className)} role="status">
+    <div
+      className={cn("ui-state", className)}
+      role="status"
+      data-testid={testId}
+      data-ui-state="empty"
+    >
       {icon ? <span className="ui-state__icon">{icon}</span> : null}
       <p className="ui-state__title">{title}</p>
       {description ? <p className="ui-state__description">{description}</p> : null}
@@ -60,6 +90,7 @@ export interface ErrorStateProps {
   requestIdLabel?: string;
   retry?: ReactNode;
   className?: string;
+  testId?: string;
 }
 
 export function ErrorState({
@@ -70,9 +101,15 @@ export function ErrorState({
   requestIdLabel,
   retry,
   className,
+  testId,
 }: ErrorStateProps) {
   return (
-    <div className={cn("ui-state", className)} role="alert">
+    <div
+      className={cn("ui-state", className)}
+      role="alert"
+      data-testid={testId}
+      data-ui-state="error"
+    >
       {icon ? <span className="ui-state__icon">{icon}</span> : null}
       <p className="ui-state__title">{title}</p>
       {description ? <p className="ui-state__description">{description}</p> : null}

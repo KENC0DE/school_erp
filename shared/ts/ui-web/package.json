@@ -10,7 +10,7 @@
     "./styles.css": "./src/styles.css"
   },
   "scripts": {
-    "lint": "pnpm --workspace-root exec eslint src",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "test": "vitest run"

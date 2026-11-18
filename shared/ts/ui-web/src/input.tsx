@@ -1,4 +1,4 @@
-import { forwardRef, useId } from "react";
+import { Children, cloneElement, forwardRef, isValidElement, useId, type ReactElement } from "react";
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -21,6 +21,17 @@ export interface FieldProps {
 export function Field({ label, htmlFor, hint, error, required, children, className }: FieldProps) {
   const generated = useId();
   const id = htmlFor ?? generated;
+  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  // A single control gets the generated id, so the label is associated even
+  // when the screen does not hand-write matching ids. Screens can still pass
+  // their own id (or htmlFor) when they need one.
+  const control =
+    Children.count(children) === 1 && isValidElement(children)
+      ? cloneElement(children as ReactElement<{ id?: string; "aria-describedby"?: string }>, {
+          id: (children.props as { id?: string }).id ?? id,
+          "aria-describedby": describedBy,
+        })
+      : children;
   return (
     <div className={cn("ui-field", className)}>
       <label className="ui-label" htmlFor={id}>
@@ -31,13 +42,15 @@ export function Field({ label, htmlFor, hint, error, required, children, classNa
           </span>
         ) : null}
       </label>
-      {children}
+      {control}
       {error ? (
-        <p className="ui-error-text" role="alert">
+        <p className="ui-error-text" id={`${id}-error`} role="alert">
           {error}
         </p>
       ) : hint ? (
-        <p className="ui-help">{hint}</p>
+        <p className="ui-help" id={`${id}-hint`}>
+          {hint}
+        </p>
       ) : null}
     </div>
   );

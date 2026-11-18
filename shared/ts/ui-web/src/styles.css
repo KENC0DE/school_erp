@@ -291,9 +291,24 @@
   color: var(--muted-foreground);
 }
 
+:root {
+  /* Error text needs a lighter red on dark surfaces; the destructive token is
+     tuned for white text on a filled button. */
+  --destructive-text: var(--destructive);
+}
+
+.dark {
+  --destructive-text: color-mix(in oklch, var(--destructive) 62%, white);
+}
+
+/* Unlayered on purpose: wins over Tailwind's .text-destructive utility. */
+.text-destructive {
+  color: var(--destructive-text);
+}
+
 .ui-error-text {
   font-size: var(--text-xs);
-  color: var(--destructive);
+  color: var(--destructive-text);
 }
 
 .ui-check {
@@ -605,6 +620,10 @@
   .ui-tab {
     transition: none;
   }
+}
+
+.ui-state--loading {
+  align-items: stretch;
 }
 
 .ui-state {

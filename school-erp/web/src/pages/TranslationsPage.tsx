@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { API_URL, api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { getAccessToken } from "../lib/storage";
 import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
@@ -483,9 +485,19 @@ export function TranslationsPage() {
       ) : null}
 
       {entries.isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("translations.loading")}</p>
+        <LoadingState label={t("translations.loading")} />
+      ) : entries.isError ? (
+        <ErrorState
+          title={t("common.error")}
+          requestId={requestIdOf(entries.error)}
+          requestIdLabel={t("common.request_id")}
+          retry={
+            <Button size="sm" variant="outline" onClick={() => void entries.refetch()}>
+              {t("common.retry")}
+            </Button>
+          }
+        />
       ) : null}
-      {entries.isError ? <p className="text-sm text-destructive">{t("common.error")}</p> : null}
 
       {preview ? (
         <Card data-testid="in-context-preview">
@@ -567,8 +579,8 @@ export function TranslationsPage() {
                 ))}
               </tbody>
             </table>
-            {!entries.isLoading && items.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-muted-foreground">{t("translations.empty")}</p>
+            {!entries.isLoading && !entries.isError && items.length === 0 ? (
+              <EmptyState className="m-4" title={t("translations.empty")} />
             ) : null}
           </CardContent>
         </Card>

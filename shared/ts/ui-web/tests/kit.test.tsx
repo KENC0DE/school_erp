@@ -11,6 +11,7 @@ import {
   ErrorState,
   Field,
   Input,
+  LoadingState,
   Tabs,
   ToastProvider,
   useToast,
@@ -106,6 +107,20 @@ describe("shared web UI kit", () => {
     expect(screen.getByLabelText("Date")).toHaveValue("2026-09-11");
     expect(screen.getByTestId("date-picker-display")).toHaveTextContent("Meskerem");
     expect(screen.getByTestId("date-picker-display")).toHaveTextContent("2026");
+  });
+
+  it("renders a loading state with skeleton rows and markers", () => {
+    render(<LoadingState label="Loading users" rows={3} columns={2} />);
+    const state = document.querySelector('[data-ui-state="loading"]');
+    expect(state).toBeTruthy();
+    expect(state).toHaveAttribute("aria-busy", "true");
+    expect(document.querySelectorAll(".ui-skeleton").length).toBe(6);
+    expect(screen.getByText("Loading users")).toBeInTheDocument();
+  });
+
+  it("marks empty and error states for the UI gate", () => {
+    render(<EmptyState title="No notes" />);
+    expect(document.querySelector('[data-ui-state="empty"]')).toBeTruthy();
   });
 
   it("announces an empty state with a next action", () => {

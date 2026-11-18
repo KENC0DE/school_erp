@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
+import { requestIdOf } from "../../lib/errors";
 import { useI18n } from "../../providers/I18nProvider";
 import { ACADEMICS, useGroups, useLevels, useLevelSubjects, useSubjects } from "./queries";
 
@@ -131,6 +133,22 @@ export function SubjectsPanel({ canManage }: { canManage: boolean }) {
                 </div>
               </form>
             ) : null}
+            {subjects.isLoading ? (
+              <LoadingState label={t("common.loading")} rows={3} columns={3} />
+            ) : subjects.isError ? (
+              <ErrorState
+                title={t("common.error")}
+                requestId={requestIdOf(subjects.error)}
+                requestIdLabel={t("common.request_id")}
+                retry={
+                  <Button size="sm" variant="outline" onClick={() => void subjects.refetch()}>
+                    {t("common.retry")}
+                  </Button>
+                }
+              />
+            ) : subjectRows.length === 0 ? (
+              <EmptyState className="mt-4" title={t("academics.empty.subjects")} />
+            ) : null}
             <ul className="mt-4 divide-y divide-border text-sm">
               {subjectRows.map((subject) => (
                 <li key={subject.id} className="flex items-center justify-between gap-2 py-2">
@@ -143,9 +161,6 @@ export function SubjectsPanel({ canManage }: { canManage: boolean }) {
                   <Badge>{t(subject.is_active ? "common.enabled" : "common.disabled")}</Badge>
                 </li>
               ))}
-              {subjectRows.length === 0 ? (
-                <li className="py-2 text-muted-foreground">{t("academics.empty.subjects")}</li>
-              ) : null}
             </ul>
           </CardContent>
         </Card>
@@ -172,7 +187,18 @@ export function SubjectsPanel({ canManage }: { canManage: boolean }) {
             </select>
             {levelId ? (
               assignments.isLoading ? (
-                <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+                <LoadingState label={t("common.loading")} rows={3} columns={2} />
+              ) : assignments.isError ? (
+                <ErrorState
+                  title={t("common.error")}
+                  requestId={requestIdOf(assignments.error)}
+                  requestIdLabel={t("common.request_id")}
+                  retry={
+                    <Button size="sm" variant="outline" onClick={() => void assignments.refetch()}>
+                      {t("common.retry")}
+                    </Button>
+                  }
+                />
               ) : (
                 <ul className="max-h-72 space-y-1 overflow-y-auto text-sm">
                   {subjectRows.map((subject) => {
@@ -305,7 +331,7 @@ export function SubjectsPanel({ canManage }: { canManage: boolean }) {
               </li>
             ))}
             {(groups.data?.items ?? []).length === 0 ? (
-              <li className="py-2 text-muted-foreground">{t("academics.empty.subject_groups")}</li>
+              <EmptyState title={t("academics.empty.subject_groups")} />
             ) : null}
           </ul>
         </CardContent>

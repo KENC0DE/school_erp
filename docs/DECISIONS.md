@@ -1243,3 +1243,34 @@ and recorded here (date, decision, reason).
   are demo data, but dates go through `@erp/calendar` (`formatDual`, both
   calendars, localized) and the money figure through `formatSantim` with the
   unit in the card label.
+
+## 2026-11-18 — P1-27 UI quality gate
+
+- **The gate is split by cost and by what it needs.** `e2e/tests/ui-quality-gate.spec.ts`
+  runs the axe sweep, the static state check and the theme checks in the normal
+  e2e suite; the 48-shot screenshot matrix (4 key screens × 1440/768/390 ×
+  light/dark × en/am) plus the long-Amharic captures stay behind
+  `RUN_UI_GATE_SCREENSHOTS=1`, like the P0 screenshot specs, so a routine run
+  does not rewrite review artefacts. Captures land in `docs/review/p1/`.
+- **State coverage is checked at the source, not by driving every branch.**
+  Every data screen must reference `LoadingState`, `EmptyState` and `ErrorState`
+  from `@erp/ui-web`; the list lives in `e2e/lib/ui-gate.ts`. Driving each
+  screen into an empty or failed backend response would need per-screen API
+  stubs and would still miss the branch that matters on a real request. A
+  fixture screen that forgets its empty state is committed under
+  `e2e/fixtures/ui-gate/` and the gate proves it fails.
+- **Empty and error states are now part of every data screen, not just the
+  dashboard.** The migration also made the request id visible next to the retry
+  action through `requestIdOf()` in `school-erp/web/src/lib/errors.ts`, and
+  added the missing `EmptyState`/`ErrorState` branches to the academics panels.
+- **A theme can change colour and type, never structure or CSS.** The gate
+  previews a recoloured community theme (accepted) and applies its tokens to
+  `:root`; heading size, card padding, sidebar width and body size must not
+  move. Token values are also written into a stylesheet, so the backend now
+  rejects `;`, `{`, `}`, newlines, `</` and `/*` in any token with an
+  `unsafe_value` issue. A deliberately low-contrast theme must come back
+  `valid: false` with a `contrast` issue.
+- **768 px needed a real layout fix.** The Users table is wider than the
+  available card, and its grid item expanded the page instead of scrolling the
+  table. `min-w-0` on the card and grid keeps the overflow inside the table
+  wrapper, which is what the checklist requires.

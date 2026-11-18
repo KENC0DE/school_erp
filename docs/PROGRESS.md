@@ -47,7 +47,7 @@ Last verified: 2026-11-18 (reconciliation baseline; see
 - [x] `./scripts/dev.sh reset && ./scripts/dev.sh test` is green (252 backend, 10 controller, 45 shared/zone, 61 school web, 13 controller web, 27 mobile, shared TS)
 - [x] Smoke e2e passes (3/3)
 - [x] Amharic renders in the PDF spike and in the web UI
-- [ ] Design foundation (P0-19b, P0-21b) self-reviewed against `docs/UI_CHECKLIST.md` with screenshots
+- [x] Design foundation (P0-19b, P0-21b) self-reviewed against `docs/UI_CHECKLIST.md` with screenshots
 - [x] Every connection in the architecture diagram (ARCH §4.1) is exercised by a test
 - [ ] `docs/PROGRESS.md` and `docs/DECISIONS.md` current at the end of P0
 - [x] Tag `v0.0-skeleton` (pre-reconciliation)
@@ -80,7 +80,7 @@ Last verified: 2026-11-18 (reconciliation baseline; see
 - [x] P1-24 — Instance setup wizard
 - [x] P1-25 — Jobs UI
 - [x] P1-26 — API compatibility guard (95 released paths, CI + test)
-- [ ] P1-27 **UI quality gate automation** — screenshots, axe, states check, theme layout check
+- [x] P1-27 **UI quality gate automation** — screenshots, axe, states check, theme layout check
 - [x] P1-SEED — Update seed
 
 ### Checkpoint P1

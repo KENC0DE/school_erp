@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
+import { requestIdOf } from "../../lib/errors";
 import { useI18n } from "../../providers/I18nProvider";
 import { ACADEMICS, useLevels, useScope } from "./queries";
 
@@ -42,7 +44,20 @@ export function ScopePanel({ canManage }: { canManage: boolean }) {
   const inScope = options.filter((level) => level.scope_level >= Number(first) && level.scope_level <= Number(last));
   const error = save.error instanceof ApiRequestError ? save.error.message : null;
 
-  if (scope.isLoading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
+  if (scope.isLoading) return <LoadingState label={t("common.loading")} />;
+  if (scope.isError)
+    return (
+      <ErrorState
+        title={t("common.error")}
+        requestId={requestIdOf(scope.error)}
+        requestIdLabel={t("common.request_id")}
+        retry={
+          <Button size="sm" variant="outline" onClick={() => void scope.refetch()}>
+            {t("common.retry")}
+          </Button>
+        }
+      />
+    );
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -136,7 +151,7 @@ export function ScopePanel({ canManage }: { canManage: boolean }) {
               </li>
             ))}
             {inScope.length === 0 ? (
-              <li className="py-2 text-muted-foreground">{t("academics.empty.levels")}</li>
+              <EmptyState title={t("academics.empty.levels")} />
             ) : null}
           </ul>
         </CardContent>

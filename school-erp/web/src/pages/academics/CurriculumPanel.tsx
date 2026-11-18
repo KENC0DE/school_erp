@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { api } from "../../lib/api";
+import { requestIdOf } from "../../lib/errors";
 import { useI18n } from "../../providers/I18nProvider";
 import { ACADEMICS, useProfiles, useYears } from "./queries";
 import type { CurriculumApplyResult, CurriculumProfile } from "./types";
@@ -101,7 +103,20 @@ export function CurriculumPanel({ canManage }: { canManage: boolean }) {
           ? runApply.error.message
           : null;
 
-  if (profiles.isLoading) return <p className="text-sm text-muted-foreground">{t("common.loading")}</p>;
+  if (profiles.isLoading) return <LoadingState label={t("common.loading")} />;
+  if (profiles.isError)
+    return (
+      <ErrorState
+        title={t("common.error")}
+        requestId={requestIdOf(profiles.error)}
+        requestIdLabel={t("common.request_id")}
+        retry={
+          <Button size="sm" variant="outline" onClick={() => void profiles.refetch()}>
+            {t("common.retry")}
+          </Button>
+        }
+      />
+    );
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
@@ -111,6 +126,7 @@ export function CurriculumPanel({ canManage }: { canManage: boolean }) {
           <CardDescription>{t("academics.curriculum.starter_warning")}</CardDescription>
         </CardHeader>
         <CardContent>
+          {rows.length === 0 ? <EmptyState title={t("academics.empty.profiles")} /> : null}
           <ul className="space-y-2">
             {rows.map((profile) => (
               <li key={profile.id}>

@@ -7,6 +7,7 @@ the same token map, so an imported theme can never drift between platforms.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from core.themes.colors import pair_contrast, to_rn_color
@@ -90,6 +91,11 @@ DARK = {
 REQUIRED_TOKENS = tuple(LIGHT)
 NON_COLOR_TOKENS = {"radius", "font-sans", "font-ethiopic"}
 COLOR_TOKENS = tuple(token for token in REQUIRED_TOKENS if token not in NON_COLOR_TOKENS)
+
+# Token values are written into a stylesheet, so anything that could close the
+# declaration or add a new rule is rejected. Colours and lengths never need
+# these characters.
+_UNSAFE_TOKEN_VALUE = re.compile(r"[;{}\r\n]|</|/\*")
 
 # Key text pairs that must remain readable; WCAG 2.2 AA for normal text.
 CONTRAST_PAIRS: tuple[tuple[str, str, float], ...] = (
@@ -202,6 +208,16 @@ def validate_tokens(tokens: Any) -> list[dict[str, Any]]:
                     _issue(
                         "invalid_value",
                         f"The {mode} variant token '{token}' must be a string.",
+                        mode=mode,
+                        token=token,
+                    )
+                )
+            elif _UNSAFE_TOKEN_VALUE.search(value):
+                issues.append(
+                    _issue(
+                        "unsafe_value",
+                        f"The {mode} token '{token}' contains characters that could break the "
+                        "stylesheet; use a plain colour, length or font name.",
                         mode=mode,
                         token=token,
                     )

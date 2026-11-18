@@ -30,6 +30,7 @@
   "stage.in_scope": "In scope",
   "verify_hint": "Starter data — verify it against this school's actual structure.",
   "empty.levels": "No grade levels yet",
+  "empty.profiles": "No curriculum profiles yet.",
   "empty.stages": "No stages yet",
   "action.levels.list": "List grade levels",
   "action.levels.get": "Read a grade level",

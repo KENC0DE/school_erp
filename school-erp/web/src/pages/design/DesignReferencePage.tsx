@@ -205,9 +205,12 @@ function ReferenceForm() {
                     <option value="pending">{t("design.status.pending")}</option>
                   </Select>
                 </Field>
-                <Field label={t("design.form.date")}>
-                  <DatePicker value={date} onChange={setDate} locale={locale} />
-                </Field>
+                <DatePicker
+                  value={date}
+                  onChange={setDate}
+                  locale={locale}
+                  label={t("design.form.date")}
+                />
                 <FormSpan>
                   <Field label={t("design.form.notes")}>
                     <Textarea placeholder={t("design.form.notes.hint")} />

@@ -30,6 +30,7 @@
   "stage.in_scope": "በስፋት ውስጥ",
   "verify_hint": "የመነሻ መረጃ — ከትምህርት ቤቱ ትክክለኛ መዋቅር ጋር ያረጋግጡት።",
   "empty.levels": "እስካሁን የክፍል ደረጃ የለም",
+  "empty.profiles": "እስካሁን ምንም የስርዓተ ትምህርት መገለጫ የለም።",
   "empty.stages": "እስካሁን ደረጃ ቡድን የለም",
   "action.levels.list": "የክፍል ደረጃዎችን ይዘርዝሩ",
   "action.levels.get": "አንድ የክፍል ደረጃ ያንብቡ",

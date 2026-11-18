@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useI18n } from "../providers/I18nProvider";
 
 interface NotificationRow {
@@ -104,17 +106,22 @@ export function NotificationsPage() {
       </div>
 
       {inbox.isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("notifications.loading")}</p>
-      ) : null}
-
-      {!inbox.isLoading && items.length === 0 ? (
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-sm text-muted-foreground">
-              {filter === "unread" ? t("notifications.empty_unread") : t("notifications.empty")}
-            </p>
-          </CardContent>
-        </Card>
+        <LoadingState label={t("notifications.loading")} />
+      ) : inbox.isError ? (
+        <ErrorState
+          title={t("common.error")}
+          requestId={requestIdOf(inbox.error)}
+          requestIdLabel={t("common.request_id")}
+          retry={
+            <Button size="sm" variant="outline" onClick={() => void inbox.refetch()}>
+              {t("common.retry")}
+            </Button>
+          }
+        />
+      ) : items.length === 0 ? (
+        <EmptyState
+          title={filter === "unread" ? t("notifications.empty_unread") : t("notifications.empty")}
+        />
       ) : null}
 
       <div className="space-y-3" data-testid="notifications-list">

@@ -2,12 +2,14 @@ import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
 
@@ -239,10 +241,18 @@ export function SettingsPage() {
       </div>
 
       {settings.isLoading ? (
-        <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : null}
-      {settings.isError ? (
-        <p className="text-sm text-destructive">{t("common.error")}</p>
+        <LoadingState label={t("common.loading")} />
+      ) : settings.isError ? (
+        <ErrorState
+          title={t("common.error")}
+          requestId={requestIdOf(settings.error)}
+          requestIdLabel={t("common.request_id")}
+          retry={
+            <Button size="sm" variant="outline" onClick={() => void settings.refetch()}>
+              {t("common.retry")}
+            </Button>
+          }
+        />
       ) : null}
 
       {canViewModules ? (

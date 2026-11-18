@@ -1,12 +1,14 @@
 import { ApiRequestError } from "@erp/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
 
@@ -221,16 +223,29 @@ export function UsersPage() {
         ) : null}
       </div>
 
-      {users.isLoading ? <p className="text-sm text-muted-foreground">{t("common.loading")}</p> : null}
-      {users.isError ? <p className="text-sm text-destructive">{t("common.error")}</p> : null}
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <Card>
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle>{t("users.title")}</CardTitle>
             <CardDescription>{t("users.intro")}</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
+            {users.isLoading ? (
+              <LoadingState label={t("common.loading")} />
+            ) : users.isError ? (
+              <ErrorState
+                title={t("common.error")}
+                requestId={requestIdOf(users.error)}
+                requestIdLabel={t("common.request_id")}
+                retry={
+                  <Button size="sm" variant="outline" onClick={() => void users.refetch()}>
+                    {t("common.retry")}
+                  </Button>
+                }
+              />
+            ) : (users.data?.items ?? []).length === 0 ? (
+              <EmptyState title={t("users.empty")} />
+            ) : (
             <table className="ui-min-w-34 w-full text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
@@ -281,6 +296,7 @@ export function UsersPage() {
                 ))}
               </tbody>
             </table>
+            )}
           </CardContent>
         </Card>
 

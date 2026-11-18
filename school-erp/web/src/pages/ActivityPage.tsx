@@ -1,11 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { EmptyState, ErrorState, LoadingState } from "@erp/ui-web";
 
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { api } from "../lib/api";
+import { requestIdOf } from "../lib/errors";
 import { useAuth } from "../providers/AuthProvider";
 import { useI18n } from "../providers/I18nProvider";
 
@@ -435,13 +437,20 @@ export function ActivityPage() {
         </CardHeader>
         <CardContent>
           {activity.isPending ? (
-            <p className="text-sm text-muted-foreground">{t("activity.loading")}</p>
+            <LoadingState label={t("activity.loading")} />
           ) : activity.isError ? (
-            <p className="text-sm text-destructive">{t("common.error")}</p>
+            <ErrorState
+              title={t("common.error")}
+              requestId={requestIdOf(activity.error)}
+              requestIdLabel={t("common.request_id")}
+              retry={
+                <Button size="sm" variant="outline" onClick={() => void activity.refetch()}>
+                  {t("common.retry")}
+                </Button>
+              }
+            />
           ) : items.length === 0 ? (
-            <p className="text-sm text-muted-foreground" data-testid="activity-empty">
-              {t("activity.empty")}
-            </p>
+            <EmptyState testId="activity-empty" title={t("activity.empty")} />
           ) : (
             <div>
               {items.map((entry) => (
