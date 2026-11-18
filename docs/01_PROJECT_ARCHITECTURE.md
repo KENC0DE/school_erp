@@ -1,7 +1,8 @@
 # School ERP Platform: Project and Architecture Specification
 
-**Document 1 of 2.** This file describes *what* is being built and *how it is structured*.
+**Document 1 of 3.** This file describes *what* is being built and *how it is structured*.
 Document 2 (`02_BUILD_GUIDE.md`) is the step-by-step checklist the builder AI follows.
+Document 3 (`03_WEBSITE_MODULE.md`) specifies the public school website module (Phase 16).
 
 > **Rule for the builder AI:** this document is the source of truth. If a build task and this document disagree, follow this document and record the conflict in `docs/DECISIONS.md`. Library APIs change quickly, so verify every library's current official documentation before using it and pin exact versions in lockfiles. Do not rely on memory.
 
@@ -199,7 +200,7 @@ Disabled-module API calls return `403 MODULE_DISABLED`. Toggles are applied imme
 
 **Core (always on, not licensable):** auth, users, roles and permissions, audit, settings, modules registry, i18n, themes, files, notifications, persons and names, custom fields, instance setup.
 
-**Licensable modules:** academics, students, admissions, staff, attendance, assessment (marks and grading), timetable, fees, documents (Document Studio), communication, portals, ai (assistant), automation, plus add-ons (library, transport, inventory, hostel, health, events).
+**Licensable modules:** academics, students, admissions, staff, attendance, assessment (marks and grading), timetable, fees, documents (Document Studio), communication, portals, ai (assistant), automation, website (public school site, spec in `03_WEBSITE_MODULE.md`), plus add-ons (library, transport, inventory, hostel, health, events).
 
 ---
 ## 5. Cross-cutting design (shared kernel)
@@ -743,7 +744,8 @@ Naming: plural snake_case tables. All business tables include `id, created_at, u
 | 12 | The single multi-school mobile app: completion, offline hardening, version handshake, store release |
 | 13 | Add-on modules (optional) |
 | 14 | Hardening and production readiness |
-| 15 | Final dev launcher, seed data, documentation, release |
+| 15 | Final dev launcher, seed data, documentation, core release |
+| 16 | Public school website module (spec: `03_WEBSITE_MODULE.md`), built last |
 
 The dev launcher and demo accounts exist from phase 0 and grow each phase, so the owner can test everything built so far at every checkpoint.
 
@@ -765,6 +767,7 @@ The dev launcher and demo accounts exist from phase 0 and grow each phase, so th
 11. API stays backward compatible within `/api/v1` (additive only), because schools run different versions.
 12. Push notifications go through the controller with minimal payloads.
 13. **Design:** a modern, clean, restrained UI (§11.5), built from a shared UI kit on an 8-point grid with one brand accent. A design foundation is built and approved before feature screens, and every screen passes a UI quality gate.
+14. The public school website is a separate licensable module (`03_WEBSITE_MODULE.md`), built after the core release as Phase 16. It is server-rendered from the school's own instance, edited inside the ERP through templates and blocks, with opt-in privacy and consent rules. The ERP web app moves under `/app` in that phase.
 
 **To verify during the build (do not assume)**
 - Ethiopian calendar conversion test vectors (two independent sources).

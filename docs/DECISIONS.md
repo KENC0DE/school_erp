@@ -2063,3 +2063,20 @@ and recorded here (date, decision, reason).
   and writes assert the same section/subject pair as score entry. A teacher
   outside the pair gets `403 error.scope_denied` rather than a silent empty
   result.
+
+## 2026-11-18 — Phase 16 website module spec linked
+
+- **The public school website is a separate licensable module built as Phase 16.**
+  `docs/03_WEBSITE_MODULE.md` (WEB) is the third specification document. The
+  module has its own tables, permissions and i18n namespace, is default-off and
+  licensable, and talks to the rest of the ERP only through actions, events and
+  whitelisted service functions. It is built only after the Phase 15 RELEASE
+  CHECKPOINT; nothing in Phase 0–15 changes because of this decision.
+- **The ERP web app moves under `/app` only in task P16-02.** `APP_BASE_PATH`
+  defaults to `/app` in production and `/` in local development. No route, link,
+  Vite base or e2e test changes before P16-02; that task runs the full suite and
+  the smoke e2e and fixes every break before the phase continues.
+- **Announcements get no public flag.** The communication module stays unaware
+  of the public site. A "publish to website" action in the website module reads
+  an announcement and creates a **draft** news post that a human reviews and
+  publishes, so a private or internal announcement can never leak automatically.

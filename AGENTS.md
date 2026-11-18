@@ -9,13 +9,24 @@ next unchecked task. The only acceptable pause is a true blocker listed below,
 and even then you must record it in `docs/QUESTIONS.md` and continue with the
 next unblocked task rather than stopping.
 
-This repository is being built from `docs/02_BUILD_GUIDE.md`, task by task, using
-`docs/PROGRESS.md` as the checklist. Work autonomously:
+This repository is being built from three specification documents, task by task,
+using `docs/PROGRESS.md` as the checklist:
+
+1. `docs/01_PROJECT_ARCHITECTURE.md` (ARCH) — what is built and how it is structured.
+2. `docs/02_BUILD_GUIDE.md` (GUIDE) — the phase-by-phase build rules and tasks.
+3. `docs/03_WEBSITE_MODULE.md` (WEB) — the public school website module, built last
+   as Phase 16.
+
+The mission ends at the end of Phase 16, after the Phase 16 FINAL CHECKPOINT. Do
+not start any Phase 16 work before the Phase 15 RELEASE CHECKPOINT is complete.
+
+Work autonomously:
 
 1. Read `docs/PROGRESS.md` and take the **first unchecked task** (unless the user
    names a different task).
 2. Read only the architecture sections that task cites in
-   `docs/02_BUILD_GUIDE.md` / `docs/01_PROJECT_ARCHITECTURE.md`.
+   `docs/01_PROJECT_ARCHITECTURE.md` / `docs/02_BUILD_GUIDE.md` (and
+   `docs/03_WEBSITE_MODULE.md` for Phase 16 tasks).
 3. Implement the task and its tests. Never delete, skip or weaken a test to get
    green.
 4. Run the task's **Verify** step plus the tiered checks described below. The

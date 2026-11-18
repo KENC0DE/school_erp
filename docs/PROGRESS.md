@@ -298,3 +298,54 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [ ] P15-05 — Tags, changelog, release notes, onboarding checklist
 - [ ] P15-06 — Final review of decisions and questions
 - [ ] P15-07 — Optional repo split rehearsal (document only)
+
+## Phase 16 — Public school website module (starts after the Phase 15 RELEASE CHECKPOINT)
+
+Specification: `docs/03_WEBSITE_MODULE.md` (WEB). Do not start any task here before
+the Phase 15 RELEASE CHECKPOINT is complete.
+
+### Foundation
+- [ ] P16-01 — Scaffold module `website` (manifest, permissions, i18n, settings, licensable, default off)
+- [ ] P16-02 — Move the ERP web app under `/app` (`APP_BASE_PATH`, routing, links, Caddy, e2e)
+- [ ] P16-03 — Models and migrations for all WEB §8 tables
+- [ ] P16-04 — Public media pipeline (validation, derivatives, placeholders, alt text, consent, SVG policy)
+- [ ] P16-05 — Block system (schemas, registry, versioning, validation, minimum block set)
+- [ ] P16-06 — SSR renderer (Jinja2, token CSS, progressive JS, cache, ETag)
+- [ ] P16-07 — Templates `modern-clean`, `warm-primary`, `academic-classic` (optional `bold-contemporary`)
+- [ ] P16-08 — Public routing and i18n (`/`, `/{locale}/…`, hreflang, reserved slugs, error pages)
+- [ ] P16-09 — SEO (meta, Open Graph, JSON-LD, sitemap, robots, canonical, noindex for drafts)
+- [ ] P16-10 — Rich-text sanitizer and constrained editor component
+- [ ] P16-11 — Pages and versions (draft, preview, publish, schedule, rollback, audit, events)
+- [ ] P16-12 — News and events (EC/GC display, add-to-calendar, publish from announcement)
+- [ ] P16-13 — Public staff profiles, gallery, downloads, FAQ, testimonials with consent gates
+- [ ] P16-14 — Forms (inquiry/contact, honeypot, rate limit, CAPTCHA stub, inbox, admissions CTA)
+- [ ] P16-15 — Public data bridge (whitelisted minimal fields, privacy leak scan)
+
+### Editor in the ERP
+- [ ] P16-16 — Website Manager shell and dashboard
+- [ ] P16-17 — Page editor (blocks, add-block gallery, schema forms, live preview, undo/redo, auto-save)
+- [ ] P16-18 — Media library UI (upload, crop, alt text, consent, usage)
+- [ ] P16-19 — Menus, footer and site settings
+- [ ] P16-20 — Template and style picker with non-destructive switching
+- [ ] P16-21 — Publish workflow UI (preview, publish, schedule, history, rollback)
+- [ ] P16-22 — "Create my site" wizard
+- [ ] P16-23 — Domains (default subdomain, custom-domain verification, generated Caddy config)
+
+### AI and controller
+- [ ] P16-24 — Register website actions (risk levels, previews, consent enforcement)
+- [ ] P16-25 — Controller license key, plan inclusion, heartbeat `site_published`, CP toggle
+
+### Quality
+- [ ] P16-26 — Performance budgets and Lighthouse CI
+- [ ] P16-27 — Accessibility and i18n pass
+- [ ] P16-28 — Security tests (XSS, CSP, uploads, rate limits, leak scan, consent, draft isolation)
+- [ ] P16-29 — Visual review and `docs/website/WEBSITE_CHECKLIST.md`
+- [ ] P16-30 — Documentation (editor guide, domain runbook)
+- [ ] P16-31 — E2E (Playwright) of the full website journey
+- [ ] P16-32 — Update README, owner test guide and dev launcher; full regression
+- [ ] P16-SEED — Published demo site for Demo Academy (English and Amharic)
+
+### Phase 16 checkpoint
+- [ ] All WEB §15 acceptance criteria are true and recorded.
+- [ ] The full suite, smoke e2e and Lighthouse CI are green on the seeded demo site.
+- [ ] Tag `v1.1.0`, then write `docs/FINAL_REPORT.md` (GUIDE §0.7).

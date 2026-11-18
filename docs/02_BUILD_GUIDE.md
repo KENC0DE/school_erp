@@ -1,6 +1,6 @@
 # School ERP Platform: Build Guide for the Builder AI
 
-**Document 2 of 2.** Follow this checklist in order. The design lives in `01_PROJECT_ARCHITECTURE.md` (called **ARCH** below). Section references like `ARCH §9.5` point there.
+**Document 2 of 3.** Follow this checklist in order. The design lives in `01_PROJECT_ARCHITECTURE.md` (called **ARCH** below). Section references like `ARCH §9.5` point there. Document 3 (`03_WEBSITE_MODULE.md`, called WEB) specifies the public school website module, which is built last as Phase 16.
 
 ---
 
@@ -57,7 +57,7 @@ API 8000 · Controller API 8100 · School web 5173 · Controller web 5174 · Pos
 
 ### 0.7 Autonomous operation (the builder never waits for the owner)
 
-**Mission:** keep building, in guide order, until the **FINAL CHECKPOINT** at the end of Phase 15 is complete. Finishing a task or a phase is never a reason to stop.
+**Mission:** keep building, in guide order, until the **FINAL CHECKPOINT** at the end of Phase 16 (Phases 0 to 15 first, then Phase 16, the public website module) is complete. Finishing a task or a phase is never a reason to stop.
 
 **The loop (repeat without pausing)**
 1. Read `docs/PROGRESS.md`, take the first unchecked, non-blocked task.
@@ -91,7 +91,7 @@ API 8000 · Controller API 8100 · School web 5173 · Controller web 5174 · Pos
 
 **If you work with sub-agents or in parallel:** the same autonomy and guardrail rules apply to each of them. One integrator is responsible for running checkpoints and for keeping the loop going.
 
-**At the very end:** write `docs/FINAL_REPORT.md` with what was built, what was verified (and how), the `[~]` tasks left, everything in `OWNER_REVIEW.md` and `OWNER_ACTIONS.md`, and how to run `./scripts/dev.sh up` and `seed`.
+**At the very end (after Phase 16):** write `docs/FINAL_REPORT.md` with what was built, what was verified (and how), the `[~]` tasks left, everything in `OWNER_REVIEW.md` and `OWNER_ACTIONS.md`, and how to run `./scripts/dev.sh up` and `seed`.
 
 ---
 
@@ -551,11 +551,25 @@ Build only those listed in `docs/OWNER_REQUESTS.md`. If the file is empty or mis
 - [ ] **P15-06** Final review of `docs/DECISIONS.md` and `docs/QUESTIONS.md`: produce a summary for the owner of every open item (payment credentials, SMS provider, legal review, translations to review, curriculum starter data to verify).
 - [ ] **P15-07** **Optional: repo split rehearsal** (only if the owner asks to split). Write `docs/runbooks/split-repo.md` and verify it in a scratch copy: `school-erp/` + `shared/` become one repo, `owner/` + `shared/` another; `shared/` is published as versioned private packages (a Python wheel and an npm package, or tagged git dependencies); the OpenAPI schema is published as a release artifact that `owner/` consumes; each repo has its own CI. **Verify:** both scratch repos build and pass their tests (the boundary checks already being green proves there is no hidden coupling). Do **not** perform the real split unless instructed in `docs/OWNER_REQUESTS.md`.
 
-### ✅ FINAL CHECKPOINT
+### ✅ RELEASE CHECKPOINT (core platform)
 - [ ] `./scripts/dev.sh up && ./scripts/dev.sh seed` gives a fully working demo with all accounts in section 1.
 - [ ] Zone boundary checks and the API compatibility guard are green.
 - [ ] Every ARCH requirement is either implemented and tested, or listed in `docs/DECISIONS.md` with a reason.
 - [ ] Production deployment procedure verified. Tag `v1.0.0`.
+- [ ] Do not stop here: continue directly into Phase 16 (rule 17 and section 0.7). `docs/FINAL_REPORT.md` is written only after Phase 16.
+
+---
+
+## PHASE 16: Public school website module
+Starts only after the RELEASE CHECKPOINT of Phase 15 is complete. The specification, design standards, acceptance criteria and full task list are in docs/03_WEBSITE_MODULE.md (WEB). Tasks P16-01 to P16-32 and P16-SEED are in WEB section 16 and are mirrored in docs/PROGRESS.md. Do not start any Phase 16 work earlier.
+- All rules in section 0 apply: the task loop, autonomy (0.7), the testing cadence, the Definition of Done and the UI quality gate.
+- P16-02 changes the base path of the ERP web app (it moves under /app). Run the full test suite and the smoke e2e after it and fix every break before continuing.
+- Phase 16 extends the dev launcher and final seed (a published demo site for Demo Academy) and updates README.md and docs/OWNER_TEST_GUIDE.md (P16-32). Re-run the full regression at the end.
+- Respect module boundaries: the website module owns its tables and talks to other modules only through actions, events and whitelisted service functions.
+### FINAL CHECKPOINT
+- All acceptance criteria in WEB section 15 are true and recorded.
+- ./scripts/dev.sh reset && ./scripts/dev.sh test && ./scripts/dev.sh smoke is green, and the Lighthouse CI budgets pass on the seeded demo site.
+- docs/FINAL_REPORT.md is written (GUIDE 0.7). Tag v1.1.0.
 
 ---
 
