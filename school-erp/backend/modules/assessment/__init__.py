@@ -1,4 +1,4 @@
-"""Assessment engine (P4-01): pure mark conversion, aggregation and year rules."""
+"""Assessment engine (P4-01) and grade rules (P4-02)."""
 
 from modules.assessment.engine import (
     AggregationMode,
@@ -16,11 +16,30 @@ from modules.assessment.engine import (
     term_total,
     year_result,
 )
+from modules.assessment.grading import (
+    Band,
+    GradeResult,
+    GradeScale,
+    ScaleAssignment,
+    ScaleContext,
+    ScaleType,
+    display_value,
+    grade_for,
+    resolve_band,
+    resolve_scale,
+    validate_scale,
+)
 
 __all__ = [
     "AggregationMode",
+    "Band",
     "Component",
+    "GradeResult",
+    "GradeScale",
     "RoundingMode",
+    "ScaleAssignment",
+    "ScaleContext",
+    "ScaleType",
     "Score",
     "ScoreStatus",
     "YearMode",
@@ -28,8 +47,13 @@ __all__ = [
     "aggregate",
     "component_value",
     "converted_score",
+    "display_value",
+    "grade_for",
+    "resolve_band",
+    "resolve_scale",
     "round_mark",
     "score_percent",
     "term_total",
+    "validate_scale",
     "year_result",
 ]

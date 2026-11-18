@@ -1686,3 +1686,29 @@ and recorded here (date, decision, reason).
   term totals; missing (`None`) terms and their weights are skipped, and a year
   with no present terms returns `None`. Precision is limited to 0–6 decimal
   places with all standard Decimal rounding modes.
+
+## 2026-11-18 — P4-02 grade bands and scale assignment
+
+- **Bands carry both edges and are half-open.** Each `Band` has `min_value`
+  and `max_value`; resolution uses `[min, max)` and the top band alone includes
+  its `max_value`, so 74.99 is below a 75 cutoff while 100 resolves to the top
+  band. Validation rejects unsorted bands, duplicate minimums, gaps, overlaps,
+  values outside `lower_bound`/`upper_bound`, and bands extending past the top.
+- **Display rounding never changes a grade.** `GradeScale.precision` and
+  `rounding` are used by `display_value` only. Band resolution always uses the
+  exact converted mark, so a 74.99 mark cannot become a C+ merely because the
+  report shows one decimal place.
+- **Descriptive scales reuse the same thresholds.** A descriptive scale
+  (`ScaleType.DESCRIPTIVE`) still maps a numeric mark to a label, but the type
+  tells the UI to show the rating rather than a percentage. This keeps mark
+  storage identical for KG/lower grades while allowing different band labels.
+- **Scale assignment is most-specific-first.** Contexts resolve in the order
+  assessment > subject > level > stage > default; an assignment whose key does
+  not match or whose scale is not effective on the requested date is skipped.
+  Among matches, the latest `effective_from`, then the highest version wins.
+  Two different scales at the same date and version raise an ambiguity error
+  rather than silently choosing one.
+- **Scales are versioned and date-bounded.** `version` is part of the scale
+  record and is copied into `GradeResult`, so a published result can remember
+  exactly which scale produced its label. `effective_from`/`effective_to` are
+  inclusive; `at=None` means "ignore dates" for pure-engine callers.
