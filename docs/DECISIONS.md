@@ -1731,3 +1731,35 @@ and recorded here (date, decision, reason).
   the final level maps to `graduate`, and a fail maps to `repeat`. This keeps
   assessment free of student tables and the promotion service free of
   assessment tables.
+
+## 2026-11-18 — P3-04 staff UI and mobile directory
+
+- **The web staff page is one module with catalog tabs.** Directory, departments,
+  positions, leave types and the leave calendar live behind `/staff`, so the
+  module navigation item from the manifest is the only entry point. The
+  directory tab is the default; catalog tabs are only shown to users with the
+  related read permission.
+- **Permission gates mirror the API, not a second role model.** `staff.view`
+  opens the module, `staff.manage` reveals create/edit controls,
+  `staff.contracts.view` decides whether the contracts tab exists at all, and
+  the leave controls use the separate view/request/approve/manage permissions.
+  A hidden control is never the only defence: every mutation still calls its
+  permission-protected endpoint.
+- **Leave stays explicit.** Creating a leave request saves a draft; the user
+  then submits it, and a manager approves or rejects it with an optional
+  decision note. This matches the backend workflow and keeps the audit trail
+  honest, rather than silently auto-submitting from the form. The calendar
+  reads the API's overlap window and filters statuses client-side for the
+  current view.
+- **Money input never passes through a float.** Contract salaries are entered as
+  ETB text, converted with `parseMoney`, and displayed with `formatSantim`, so
+  the santim value remains an integer end to end.
+- **Soft deletes are the only delete actions exposed.** Contract, qualification
+  and document removal call the audited soft-delete endpoints; the UI does not
+  offer a hard delete. Restoring those records remains an API/audit operation in
+  this phase.
+- **Mobile stays a read-only directory.** Staff list, search, status filter and
+  a basic profile (employment, contact and notes) are available offline-cached
+  through the same session/token helpers as the student directory. No staff
+  editing or leave workflow is exposed on mobile yet; those remain web-only
+  until a later mobile task.

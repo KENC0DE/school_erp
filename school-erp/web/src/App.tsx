@@ -29,6 +29,8 @@ import { RolesPage } from "./pages/RolesPage";
 import { SamplePage } from "./pages/SamplePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SetupWizardPage } from "./pages/SetupWizardPage";
+import { StaffPage } from "./pages/staff/StaffPage";
+import { StaffProfilePage } from "./pages/staff/StaffProfilePage";
 import { StudentProfilePage } from "./pages/students/StudentProfilePage";
 import { PromotionPage } from "./pages/students/PromotionPage";
 import { StudentsPage } from "./pages/students/StudentsPage";
@@ -99,6 +101,8 @@ export function AppRoutes() {
           <Route path="students" element={<StudentsPage />} />
           <Route path="students/promotions" element={<PromotionPage />} />
           <Route path="students/:studentId" element={<StudentProfilePage />} />
+          <Route path="staff" element={<StaffPage />} />
+          <Route path="staff/:staffId" element={<StaffProfilePage />} />
           <Route path="admissions" element={<AdmissionsPage />} />
           <Route
             path="admissions/new"

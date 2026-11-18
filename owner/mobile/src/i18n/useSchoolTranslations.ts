@@ -5,7 +5,7 @@ import type { VerifiedProfile } from "../directory/types";
 import { forSchool, getVerifiedBaseUrl } from "../storage/schoolStorage";
 import type { Locale } from "./ui-messages";
 
-const NAMESPACES = ["core", "students", "sample"] as const;
+const NAMESPACES = ["core", "students", "staff", "sample"] as const;
 
 interface CachedBundle {
   messages?: Record<string, string>;
