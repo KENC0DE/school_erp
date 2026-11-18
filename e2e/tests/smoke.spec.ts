@@ -58,9 +58,11 @@ test("controller drives module gating, support session and the audit vault", asy
   const school = await schoolContext.newPage();
   await school.goto(SCHOOL_WEB);
   await login(school, SCHOOL_ADMIN, OWNER_PASSWORD);
-  await expect(school.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(school.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await school.reload();
-  await expect(school.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  // After a reload the i18n bundle is fetched again; wait for the translated
+  // heading rather than the raw key that is briefly rendered before it loads.
+  await expect(school.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
   await expect(school.getByRole("link", { name: "Sample module" })).toHaveCount(0);
   await expect(school.getByText("sample", { exact: true })).toHaveCount(0);
 
