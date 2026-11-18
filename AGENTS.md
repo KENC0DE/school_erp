@@ -18,14 +18,47 @@ This repository is being built from `docs/02_BUILD_GUIDE.md`, task by task, usin
    `docs/02_BUILD_GUIDE.md` / `docs/01_PROJECT_ARCHITECTURE.md`.
 3. Implement the task and its tests. Never delete, skip or weaken a test to get
    green.
-4. Run the task's **Verify** step plus the relevant full checks (backend tests,
-   lint/format, typecheck, build, i18n, api-client diff, e2e when the change
-   touches an exercised flow).
+4. Run the task's **Verify** step plus the tiered checks described below. The
+   whole backend suite belongs at the phase boundary; do not run it after every
+   task on the owner's slow machine unless the change touches shared core.
 5. Update `.env.example` and `docs/DECISIONS.md` when the task changes
    configuration or leaves a judgement call.
 6. Tick the task in `docs/PROGRESS.md` only after verification passes.
 7. Commit with `P{phase}-{nn}: short description`.
 8. Immediately continue with the next unchecked task.
+
+### Tiered verification policy
+
+The full backend suite takes roughly 17 minutes on the owner's machine, so it is
+run at phase boundaries rather than after every task. Verification has three
+tiers:
+
+1. **Every task — required before ticking it:**
+   - the task's **Verify** step and its new/updated tests;
+   - the tests for the modules the change touches, plus the directly affected
+     regression files;
+   - the fast global gates: `ruff check`, `ruff format --check`, the i18n check,
+     `lint-imports`, migration-head/drift checks, route-permission coverage,
+     API compatibility, and typecheck/build when UI code changed.
+2. **Every phase — required before the phase checkpoint and tag:**
+   - the full backend suite;
+   - the full web tests, build, and UI quality gate when the phase had UI work;
+   - any phase-level e2e suite.
+3. **Immediately after the task — full suite required regardless of phase:**
+   changes to shared core, auth, RBAC, scopes, permissions, migrations/models,
+   route ordering/surface, audit/outbox/events, or anything most modules import.
+   These are the changes where a late full-suite failure is hardest to debug.
+
+Rules that do not relax:
+
+- Never tick a task unless tier 1 is green for that task.
+- Never mark a phase checkpoint or tag a phase unless tier 2 is green.
+- Never delete, skip or weaken a test to make a tier pass.
+- If a task changes a shared contract, still run the affected consumer tests
+  immediately; "the full suite runs at phase end" is not permission to leave a
+  known broken import or permission code in place.
+- The full suite is still the final authority. If it fails at the phase
+  boundary, fix the failure and re-run before proceeding.
 
 Do **not** stop for per-task confirmation and do **not** ask "shall I continue?"
 between tasks. Keep going until every task in `docs/PROGRESS.md` is checked, or

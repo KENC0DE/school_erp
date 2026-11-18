@@ -1596,3 +1596,66 @@ and recorded here (date, decision, reason).
   route dependency covers the HTTP surface, while the action entry points repeat
   the check so AI or CLI callers cannot bypass visibility by invoking an action
   directly.
+
+## 2026-11-18 — P3-03 leave management
+
+- **Leave durations are stored in integer half-days.** `days_units` is two per
+  full day and one per half day, so half-day leave never reaches the database as
+  a float and balances always add up exactly. The API still speaks in days
+  (`3.0`, `0.5`) and rejects anything that is not a whole or half day.
+- **Leave types are a deactivatable catalogue.** A type carries its yearly
+  entitlement, whether it is paid, whether it counts against a balance, whether
+  approval is required, and sort order. Retiring a type sets `is_active=false`;
+  existing balances and historical requests keep pointing at it. A code is
+  unique among live types.
+- **Balances are one row per staff, academic year and leave type.** The first
+  request for a type lazily creates the row with the type's entitlement, so a
+  new school can start requesting without pre-seeding every balance. Entitled,
+  carried and adjustment values are snapshots; later edits to the type do not
+  retroactively rewrite an existing year.
+- **Only approved and submitted requests consume balance.** Submitted units are
+  shown as pending, approved units as used, and remaining subtracts both. Draft,
+  rejected and cancelled requests do not hold balance. Request overlap is
+  rejected across draft, submitted and approved rows so the same dates cannot be
+  double-booked.
+- **The workflow is draft → submitted → approved/rejected, with cancellation.**
+  A type that does not require approval moves straight from submitted to
+  approved on submission. A type that does not count against a balance can be
+  requested without a balance check. Only drafts can be edited, only submitted
+  requests can be decided, and cancelled/rejected requests are terminal.
+- **Leave shares the staff department scope vocabulary.** `staff.leave.view`
+  accepts `all`, `department` and `self`; `staff.leave.request` accepts `all`
+  and `self`; `staff.leave.approve` accepts `all` and `department`; managing
+  types and balances requires `staff.leave.manage`. A self requester can only
+  file or cancel their own leave, and a department approver can only decide for
+  staff in their department.
+- **The calendar returns requests overlapping a date range.** It defaults to
+  draft, submitted and approved rows, because cancelled and rejected requests no
+  longer occupy the calendar; an explicit `status` filter overrides that.
+- **Requests must stay inside their academic year.** A request whose dates fall
+  outside the named year, or that targets a closed year, is rejected. This keeps
+  leave balances tied to the year that funded them.
+
+## 2026-11-18 — tiered local verification
+
+- **The full backend suite moves to the phase boundary.** It takes roughly 17
+  minutes on the owner's machine, so running it after every task was slowing
+  delivery without catching many additional defects: most failures surface in
+  the changed module or its direct consumers first.
+- **Each task still runs its own tests, the tests of every module it touches,
+  and the fast global gates.** Ruff, formatting, i18n, import-linter,
+  migration-head checks, route-permission coverage and API compatibility stay
+  per-task because they are cheap and catch the highest-cost mistakes (missing
+  permissions, broken translations, migration drift, zone violations).
+- **Shared-core changes do not get the deferral.** Auth, RBAC, scopes,
+  permissions, migrations/models, route ordering/surface, audit/outbox/events
+  and widely imported helpers still trigger the full backend suite immediately,
+  because a failure there is expensive to debug after several more commits.
+- **Phase checkpoints and tags require the full suite.** Tier 1 being green is
+  enough to tick a task; tier 2 being green is required to close a phase. This
+  keeps the final authority with the complete suite while letting daily work
+  stay responsive.
+- **UI work runs its own tests, typecheck and build per task, and the full web
+  suite plus UI quality gate at the phase boundary.** No test is deleted,
+  skipped or weakened by this policy; only the timing of the expensive run
+  changes.
