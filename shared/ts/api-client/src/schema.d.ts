@@ -1989,6 +1989,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Photo Route */
+        post: operations["upload_photo_route_api_v1_students_photos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/students/register/preview": {
         parameters: {
             query?: never;
@@ -2177,6 +2194,23 @@ export interface paths {
         get: operations["get_medical_route_api_v1_students__student_id__medical_get"];
         /** Update Medical Route */
         put: operations["update_medical_route_api_v1_students__student_id__medical_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Photo Route */
+        get: operations["get_photo_route_api_v1_students__student_id__photo_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2494,6 +2528,11 @@ export interface components {
         };
         /** Body_upload_document_route_api_v1_students__student_id__documents_post */
         Body_upload_document_route_api_v1_students__student_id__documents_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_photo_route_api_v1_students_photos_post */
+        Body_upload_photo_route_api_v1_students_photos_post: {
             /** File */
             file: string;
         };
@@ -9314,6 +9353,43 @@ export interface operations {
             };
         };
     };
+    upload_photo_route_api_v1_students_photos_post: {
+        parameters: {
+            query?: {
+                person_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_photo_route_api_v1_students_photos_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     register_preview_route_api_v1_students_register_preview_post: {
         parameters: {
             query?: never;
@@ -9962,6 +10038,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MedicalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_photo_route_api_v1_students__student_id__photo_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

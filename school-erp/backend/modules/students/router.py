@@ -142,6 +142,39 @@ async def number_preview_route(
     return await preview_number(_context(principal, session), payload)
 
 
+@router.post("/photos", status_code=201)
+async def upload_photo_route(
+    file: UploadFile = File(...),
+    person_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("students.manage")),
+    session: AsyncSession = Depends(get_session),
+    storage: Storage = Depends(get_storage),
+    settings: Settings = Depends(get_app_settings),
+) -> dict:
+    data = await file.read(settings.storage_max_upload_bytes + 1)
+    return await documents_service.upload_photo(
+        session,
+        principal,
+        storage,
+        settings,
+        filename=file.filename,
+        content_type=file.content_type,
+        data=data,
+        person_id=person_id,
+    )
+
+
+@router.get("/{student_id}/photo")
+async def get_photo_route(
+    student_id: uuid.UUID,
+    principal: Principal = Depends(require("students.view")),
+    session: AsyncSession = Depends(get_session),
+    storage: Storage = Depends(get_storage),
+    settings: Settings = Depends(get_app_settings),
+) -> dict:
+    return await documents_service.get_photo(session, storage, settings, student_id)
+
+
 @router.get("/{student_id}", response_model=StudentOut)
 async def get_student_route(
     student_id: uuid.UUID,

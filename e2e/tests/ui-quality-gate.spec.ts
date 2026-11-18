@@ -47,6 +47,7 @@ const AXE_SCREENS = [
   "/users",
   "/roles",
   "/academics",
+  "/students",
   "/settings/modules",
   "/settings/languages",
   "/settings/themes",

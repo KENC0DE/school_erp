@@ -1274,3 +1274,23 @@ and recorded here (date, decision, reason).
   available card, and its grid item expanded the page instead of scrolling the
   table. `min-w-0` on the card and grid keeps the overflow inside the table
   wrapper, which is what the checklist requires.
+
+## 2026-11-18 — P2-08 students UI
+
+- **Student photos have their own endpoints.** `POST /api/v1/students/photos`
+  (before the record exists, so a new registration can attach a portrait) and
+  `GET /api/v1/students/{id}/photo` are guarded by `students.manage` /
+  `students.view` instead of `files.upload` / `files.view`. The shipped
+  registrar and academic-head roles hold the student permissions but not the
+  file permissions, so reusing the generic file routes would have hidden photos
+  from exactly the people who maintain student records. The uploaded row is
+  still a normal `StoredFile`; the profile only stores `photo_file_id`.
+- **Saved views are a client preference, not a backend model.** The list keeps
+  named filter sets in `localStorage` under `erp.students.saved_views`. The task
+  asks for saved views on one screen, and a per-user server model would be a new
+  table, route and permission for a personal convenience. Moving them to the
+  server later changes only `savedViews.ts` and the load/save calls.
+- **`DEMO_MODULES` now includes `students`.** The module ships `default_enabled
+  = True`, but the demo license is an explicit signed list, so the seeded school
+  would otherwise not show the students menu. `tests/test_seed.py` asserts the
+  licensed and enabled lists still match the constant.

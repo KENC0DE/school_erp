@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+
 from tests.conftest import create_role, create_user, login, unique_email
 
 BASE = "/api/v1/students"
@@ -629,6 +631,60 @@ async def test_documents_are_scoped_to_the_student(client, superadmin_headers, s
 
     actions = {item["action"] for item in await _activity(client, superadmin_headers)}
     assert {"students.documents.upload", "students.documents.delete"} <= actions
+
+
+async def test_photo_upload_is_scoped_and_visible_to_student_viewers(
+    client, app, superadmin_headers, seeded
+) -> None:
+    first = await _register(client, superadmin_headers, number="S-5101")
+    second = await _register(
+        client,
+        superadmin_headers,
+        number="S-5102",
+        person=_person(given_name_en="Selam", date_of_birth="2015-08-08"),
+    )
+
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGM8ISfH"
+        "wMDAxMDAwMDAAAANBAEIfXHKZgAAAABJRU5ErkJggg=="
+    )
+    uploaded = await client.post(
+        f"{BASE}/photos",
+        headers=superadmin_headers,
+        files={"file": ("portrait.png", png, "image/png")},
+    )
+    assert uploaded.status_code == 201, uploaded.text
+    photo = uploaded.json()
+    assert photo["mime"] == "image/png"
+    assert photo["url"]
+
+    updated = await client.patch(
+        f"{BASE}/{first['id']}",
+        headers=superadmin_headers,
+        json={"person": {"photo_file_id": photo["id"]}, "row_version": first["row_version"]},
+    )
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["person"]["photo_file_id"] == photo["id"]
+
+    fetched = await client.get(f"{BASE}/{first['id']}/photo", headers=superadmin_headers)
+    assert fetched.status_code == 200, fetched.text
+    assert fetched.json()["file_id"] == photo["id"]
+    assert fetched.json()["url"]
+
+    # The photo endpoint follows students.view, so a student viewer without
+    # files.view can still render the profile photo.
+    viewer_role = await create_role(app, "student_viewer_photo", [("students.view", "all")])
+    viewer_email = unique_email("student-photo-viewer")
+    await create_user(app, viewer_email, roles=[viewer_role.key])
+    viewer_headers = await login(client, viewer_email)
+    visible = await client.get(f"{BASE}/{first['id']}/photo", headers=viewer_headers)
+    assert visible.status_code == 200, visible.text
+
+    missing = await client.get(f"{BASE}/{second['id']}/photo", headers=superadmin_headers)
+    assert missing.status_code == 404
+
+    actions = {item["action"] for item in await _activity(client, superadmin_headers)}
+    assert "students.photo.upload" in actions
 
 
 async def test_student_custom_fields_are_validated(client, superadmin_headers, seeded) -> None:

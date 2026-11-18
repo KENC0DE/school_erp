@@ -23,6 +23,8 @@ export const DATA_SCREENS = [
   "school-erp/web/src/pages/academics/SectionsPanel.tsx",
   "school-erp/web/src/pages/academics/CurriculumPanel.tsx",
   "school-erp/web/src/pages/academics/ScopePanel.tsx",
+  "school-erp/web/src/pages/students/StudentsPage.tsx",
+  "school-erp/web/src/pages/students/StudentProfilePage.tsx",
 ] as const;
 
 const REQUIRED_STATES = ["LoadingState", "EmptyState", "ErrorState"] as const;

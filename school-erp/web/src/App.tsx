@@ -18,6 +18,8 @@ import { RolesPage } from "./pages/RolesPage";
 import { SamplePage } from "./pages/SamplePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SetupWizardPage } from "./pages/SetupWizardPage";
+import { StudentProfilePage } from "./pages/students/StudentProfilePage";
+import { StudentsPage } from "./pages/students/StudentsPage";
 import { ThemeManagerPage } from "./pages/ThemeManagerPage";
 import { TranslationsPage } from "./pages/TranslationsPage";
 import { UsersPage } from "./pages/UsersPage";
@@ -75,6 +77,8 @@ export function AppRoutes() {
           <Route path="sample" element={<SamplePage />} />
           <Route path="activity" element={<ActivityPage />} />
           <Route path="academics" element={<AcademicsPage />} />
+          <Route path="students" element={<StudentsPage />} />
+          <Route path="students/:studentId" element={<StudentProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
           <Route path="settings/languages" element={<TranslationsPage />} />

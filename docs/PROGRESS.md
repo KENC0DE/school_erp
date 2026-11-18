@@ -98,7 +98,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P2-05 — Academics UI (web)
 - [x] P2-06 — Module `students`
 - [x] P2-07 — Student ID generator with configurable format, atomic sequence
-- [ ] P2-08 — Students UI (web)
+- [x] P2-08 — Students UI (web)
 - [ ] P2-09 — Module `admissions`
 - [ ] P2-10 — Admissions UI and public application page
 - [ ] P2-11 — Promotion and transfer
