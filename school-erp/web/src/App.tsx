@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "rea
 
 import { Shell } from "./components/Shell";
 import { ActivityPage } from "./pages/ActivityPage";
+import { AcademicsPage } from "./pages/academics/AcademicsPage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
 import { JobsPage } from "./pages/JobsPage";
@@ -72,6 +73,7 @@ export function AppRoutes() {
           <Route path="roles" element={<RolesPage />} />
           <Route path="sample" element={<SamplePage />} />
           <Route path="activity" element={<ActivityPage />} />
+          <Route path="academics" element={<AcademicsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
           <Route path="settings/languages" element={<TranslationsPage />} />

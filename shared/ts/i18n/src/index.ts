@@ -69,7 +69,18 @@ export class TranslationLoader {
     return bundles.reduce<Record<string, string>>((messages, bundle) => {
       // Later namespaces do not override earlier ones silently; namespaces are
       // expected to use distinct prefixes. Core is loaded first by convention.
-      return { ...bundle.messages, ...messages };
+      // Module bundles ship bare keys ("nav", "perm.view"); manifests address
+      // them as "academics.nav", so prefix them here once, at load time.
+      if (bundle.namespace === "core") {
+        return { ...bundle.messages, ...messages };
+      }
+      const prefixed = Object.fromEntries(
+        Object.entries(bundle.messages).map(([key, value]) => [
+          `${bundle.namespace}.${key}`,
+          value,
+        ]),
+      );
+      return { ...prefixed, ...messages };
     }, {});
   }
 

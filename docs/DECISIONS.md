@@ -1021,3 +1021,32 @@ and recorded here (date, decision, reason).
   audited operation. Re-applying the same profile is a no-op.
 - **Closed years are frozen.** Applying a profile to a closed year is rejected
   even for a preview, matching the rule for sections and term edits.
+
+## 2026-11-18 — P2-05 academics UI
+
+- **Module bundles are prefixed once, at load time.** A module's `i18n/en.json`
+  ships bare keys (`"nav"`, `"perm.view"`) while the manifest and every module
+  router reference them as `academics.nav`, `academics.perm.view`. The shared
+  `TranslationLoader` now prefixes non-core bundles with their namespace when
+  stacking messages, so both server-side action labels and web screens resolve
+  the same key without duplicating the bundle under two names.
+- **The setup wizard is a checklist inside `/academics`, not a separate flow.**
+  The steps (scope, curriculum, year, subjects, sections) can be revisited in
+  any order as the school grows. The checklist shows live completion from the
+  real queries and each step opens the same tab used for day-to-day editing, so
+  there is one implementation per screen and no divergent "wizard" state.
+- **One route, tabbed panels, permission-aware controls.** `/academics` requires
+  `academics.view`; every mutating control is hidden without
+  `academics.manage`. The scope panel only requests `scope=all` when the user
+  can manage, so a viewer sees exactly the scoped catalogue the API allows.
+- **Scope pickers show level names, not synthetic prefixes.** The API keeps the
+  integer `scope_level` for ordering and filtering, but the UI displays the
+  school's own level names (which already include "KG"/"Grade"), avoiding a
+  hard-coded label that drifts from renamed levels.
+- **The curriculum screen is preview-gated.** "Apply profile" stays disabled
+  until a preview has been fetched and the term systems match; the preview card
+  shows added/removed counts and affected levels before the confirm call.
+- **Frontend tests stub `fetch` at the API boundary.** New Vitest suites render
+  the real routes with a shared mock-session/route helper, asserting request
+  paths and bodies for scope, year, subject assignment, section and curriculum
+  mutations rather than mocking React Query internals.

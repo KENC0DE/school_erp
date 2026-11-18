@@ -68,6 +68,22 @@ describe("i18n runtime loader", () => {
     expect(messages["app.name"]).toBe("School ERP");
   });
 
+  it("prefixes module bundles so manifest keys resolve", async () => {
+    const fetcher = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      const namespace = url.endsWith("/academics") ? "academics" : "core";
+      const messages =
+        namespace === "academics" ? { nav: "Academics", "perm.view": "View" } : { "app.name": "School ERP" };
+      return new Response(JSON.stringify({ locale: "en", namespace, messages }), { status: 200 });
+    });
+    const loader = new TranslationLoader({ baseUrl: "http://localhost:8000", fetcher: fetcher as typeof fetch });
+    const messages = await loader.loadMany("en", ["core", "academics"]);
+    expect(messages["app.name"]).toBe("School ERP");
+    expect(messages["academics.nav"]).toBe("Academics");
+    expect(messages["academics.perm.view"]).toBe("View");
+    expect(messages["nav"]).toBeUndefined();
+  });
+
   it("interpolates named values and keeps unknown placeholders", () => {
     expect(interpolate("Welcome, {{name}}", { name: "Abebe" })).toBe("Welcome, Abebe");
     expect(interpolate("Hello {{missing}}")).toBe("Hello {{missing}}");

@@ -123,7 +123,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P2-02 — Academic years and terms: semester/quarter snapshot per year, validated term dates, open/close workflow, EC/GC display, audited soft delete and restore
 - [x] P2-03 — Sections (per level per year, homeroom teacher, capacity), subjects, level-subject assignment, subject groups
 - [x] P2-04 — Curriculum profiles (starter templates, duplicate and edit, apply from a chosen year)
-- [ ] P2-05 — Academics UI (web)
+- [x] P2-05 — Academics UI (web)
 - [ ] P2-06 — Module `students`
 - [ ] P2-07 — Student ID generator with configurable format, atomic sequence
 - [ ] P2-08 — Students UI (web)
