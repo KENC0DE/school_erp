@@ -24,7 +24,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.academics.models import AcademicYear, Section, Subject
-from modules.assessment import common, scoping
+from modules.assessment import common, events, scoping
 from modules.assessment.common import MODULE, decimal_out
 from modules.assessment.models import (
     Assessment,
@@ -509,6 +509,7 @@ async def _transition(
     action: str,
     stamp: str,
     clear: tuple[str, ...] = (),
+    event: str | None = None,
     via: str = "api",
 ) -> SubmissionOut:
     row = await common.live_submission(session, submission_id)
@@ -550,6 +551,13 @@ async def _transition(
         reason=data.note,
         via=via,
     )
+    if event is not None:
+        counts = await _submission_counts(session, row)
+        actor_text = str(actor_id) if actor_id is not None else None
+        if event == "marks.submitted":
+            await events.marks_submitted(session, submission=row, counts=counts, actor_id=actor_text)
+        elif event == "marks.published":
+            await events.marks_published(session, submission=row, counts=counts, actor_id=actor_text)
     await session.commit()
     return await _detail(session, row)
 
@@ -593,6 +601,7 @@ async def submit_marks(
         target="submitted",
         action="assessment.submission.submit",
         stamp="submitted",
+        event="marks.submitted",
         via=via,
     )
 
@@ -660,6 +669,7 @@ async def publish_marks(
         target="published",
         action="assessment.submission.publish",
         stamp="published",
+        event="marks.published",
         via=via,
     )
 

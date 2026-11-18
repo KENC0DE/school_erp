@@ -38,6 +38,7 @@ MANIFEST = ModuleManifest(
         *_section_actions.__all__,
         *_curriculum_actions.__all__,
     ],
+    events=["term.closed"],
     i18n_namespaces=["academics"],
     bootstrap=ensure_default_academics,
     licensable=True,

@@ -2113,3 +2113,31 @@ and recorded here (date, decision, reason).
   by position and missing terms are omitted with their weights. A year sheet
   includes the per-term totals that produced each subject's year value, and it
   is published as a `kind="year"` snapshot (there is no year-result table).
+
+## 2026-11-18 — P4-09 domain events
+
+- **Events are written in the caller's transaction.** `core.events.service.emit`
+  inserts into the outbox table on the same session, so `marks.submitted`,
+  `marks.published` and `term.closed` commit with the change that caused them
+  and disappear on rollback. No event is emitted after a commit, and no handler
+  runs inside the request.
+- **`marks.submitted` is emitted once per successful submission submit.** The
+  payload carries the submission identity, the year/term/section/subject, the
+  status, the assessment/score/entered counts and the submit timestamp. Approve
+  does not emit: it is an internal review step, not a fact parents or the
+  automation engine need.
+- **`marks.published` has two payload shapes, told apart by their identity
+  field.** Publishing a submission emits `submission_id`; publishing or
+  re-publishing a term/year result sheet emits `snapshot_id` plus `kind`,
+  `checksum` and the student count. Both name the same event because downstream
+  consumers care that results became visible, and the identity fields let a
+  handler fetch the right record without guessing.
+- **`term.closed` is owned by academics, not assessment.** Closing a term is an
+  academic-calendar fact, so `modules/academics/events.py` emits it from both
+  `close_term` and `close_year`. Only terms that were not already closed are
+  emitted, so a repeated idempotent close (or a year close after a term close)
+  never duplicates the event. The payload includes the year code/number and the
+  close reason for report cards and notifications.
+- **The module manifests declare the events they emit** (`events=[...]`), so a
+  future event-catalog check and the automation engine can discover them
+  without importing every service module.

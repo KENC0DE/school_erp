@@ -145,7 +145,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P4-06 — Assessment and score APIs
 - [x] P4-07 — Workflow APIs
 - [x] P4-08 — Results
-- [ ] P4-09 — Events
+- [x] P4-09 — Events
 - [ ] P4-10 — Mark structure UI
 - [ ] P4-11 — Grade rules UI
 - [ ] P4-12 — Web mark-entry grid

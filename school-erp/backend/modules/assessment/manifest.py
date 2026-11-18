@@ -68,6 +68,7 @@ MANIFEST = ModuleManifest(
     ],
     router=router,
     actions=[*_actions.__all__],
+    events=["marks.submitted", "marks.published"],
     i18n_namespaces=["assessment"],
     licensable=True,
     # The module becomes default-enabled with P4-SEED, once its APIs and demo

@@ -27,7 +27,7 @@ from core.settings.service import effective_map
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.academics import curriculum_service
+from modules.academics import curriculum_service, events
 from modules.academics.models import AcademicYear, CurriculumProfile, Term
 from modules.academics.schemas import (
     TermInput,
@@ -579,11 +579,21 @@ async def close_year(
     before = _year_state(year, terms)
     year.status = "closed"
     year.row_version = (year.row_version or 0) + 1
+    newly_closed: list[Term] = []
     for term in terms:
         if term.status != "closed":
             term.status = "closed"
             term.row_version = (term.row_version or 0) + 1
+            newly_closed.append(term)
     await session.flush()
+    for term in newly_closed:
+        await events.term_closed(
+            session,
+            year=year,
+            term=term,
+            actor_id=principal.user_id if principal.actor_type == "user" else None,
+            reason=reason,
+        )
     await record(
         session,
         action="academics.years.close",
@@ -733,6 +743,13 @@ async def close_term(
     term.status = "closed"
     term.row_version = (term.row_version or 0) + 1
     await session.flush()
+    await events.term_closed(
+        session,
+        year=year,
+        term=term,
+        actor_id=principal.user_id if principal.actor_type == "user" else None,
+        reason=reason,
+    )
     await record(
         session,
         action="academics.terms.close",

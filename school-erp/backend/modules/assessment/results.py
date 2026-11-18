@@ -28,7 +28,7 @@ from sqlalchemy import false, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.academics.models import AcademicYear, GradeLevel, Section, Subject, Term
-from modules.assessment import common, grading, ranking, scoping
+from modules.assessment import common, events, grading, ranking, scoping
 from modules.assessment.common import MODULE, decimal_out
 from modules.assessment.engine import (
     AggregationMode,
@@ -1136,6 +1136,11 @@ async def _create_snapshot(
         actor=principal,
         reason=note,
         via=via,
+    )
+    await events.results_published(
+        session,
+        snapshot=row,
+        actor_id=str(row.published_by) if row.published_by is not None else None,
     )
     return _snapshot_out(row)
 
