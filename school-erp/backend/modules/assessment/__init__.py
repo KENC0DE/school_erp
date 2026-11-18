@@ -1,4 +1,4 @@
-"""Assessment engine (P4-01) and grade rules (P4-02)."""
+"""Assessment engine, grade rules, ranking and promotion (P4-01–P4-03)."""
 
 from modules.assessment.engine import (
     AggregationMode,
@@ -29,6 +29,17 @@ from modules.assessment.grading import (
     resolve_scale,
     validate_scale,
 )
+from modules.assessment.promotion import (
+    PromotionDecision,
+    PromotionPolicy,
+    decide_promotion,
+    decide_promotions,
+    subject_minimum,
+)
+from modules.assessment.promotion import (
+    SubjectResult as PromotionSubjectResult,
+)
+from modules.assessment.ranking import RankedStudent, TieMode, rank_students
 
 __all__ = [
     "AggregationMode",
@@ -40,6 +51,11 @@ __all__ = [
     "ScaleAssignment",
     "ScaleContext",
     "ScaleType",
+    "PromotionDecision",
+    "PromotionPolicy",
+    "PromotionSubjectResult",
+    "RankedStudent",
+    "TieMode",
     "Score",
     "ScoreStatus",
     "YearMode",
@@ -56,4 +72,8 @@ __all__ = [
     "term_total",
     "validate_scale",
     "year_result",
+    "decide_promotion",
+    "decide_promotions",
+    "rank_students",
+    "subject_minimum",
 ]

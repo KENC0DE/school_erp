@@ -1712,3 +1712,22 @@ and recorded here (date, decision, reason).
   record and is copied into `GradeResult`, so a published result can remember
   exactly which scale produced its label. `effective_from`/`effective_to` are
   inclusive; `at=None` means "ignore dates" for pure-engine callers.
+
+## 2026-11-18 — P4-03 ranking and promotion rules
+
+- **Tie handling is explicit.** `competition` produces 1, 1, 3, 4, `dense`
+  produces 1, 1, 2, 3, and `ordinal` produces 1, 2, 3, 4 with input order
+  breaking ties. The ranked output records the value, rank, position and whether
+  the student tied, so the UI can show either the rank competition or a simple
+  ordered list without recomputing.
+- **Promotion compares exact totals; only the displayed average is rounded.**
+  A student with a 74.995 average is shown as 75.00 but still fails a 75
+  minimum. Per-subject minima override `pass_mark` for that subject, and every
+  subject below its effective minimum counts against `max_failed_subjects`.
+- **The P2-11 hook is the integration point.** `promotion_rule_resolver(policy,
+  results_by_student)` lives in `modules/students/progression_rules.py` and
+  returns a `RuleResolver`; P4-08 will build the results map from published term
+  results. A student without results keeps the level-based default, a pass at
+  the final level maps to `graduate`, and a fail maps to `repeat`. This keeps
+  assessment free of student tables and the promotion service free of
+  assessment tables.
