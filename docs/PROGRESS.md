@@ -114,7 +114,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P3-04 — Staff UI and basic mobile directory
 - [x] P3-05 — Optional payroll sub-module
 - [x] P3-06 — Module `attendance`
-- [ ] P3-07 — Attendance UI and mobile offline entry
+- [x] P3-07 — Attendance UI and mobile offline entry
 - [ ] P3-08 — Staff attendance, events, reports
 - [ ] P3-SEED — Seed
 

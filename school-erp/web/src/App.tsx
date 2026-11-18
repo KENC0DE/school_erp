@@ -16,6 +16,7 @@ import { AdmissionsPage } from "./pages/admissions/AdmissionsPage";
 import { ApplicationFormPage } from "./pages/admissions/ApplicationFormPage";
 import { ApplicationProfilePage } from "./pages/admissions/ApplicationProfilePage";
 import { PublicApplicationPage } from "./pages/admissions/PublicApplicationPage";
+import { AttendancePage } from "./pages/attendance/AttendancePage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
 import { DesignReferencePage } from "./pages/design/DesignReferencePage";
@@ -103,6 +104,7 @@ export function AppRoutes() {
           <Route path="students/:studentId" element={<StudentProfilePage />} />
           <Route path="staff" element={<StaffPage />} />
           <Route path="staff/:staffId" element={<StaffProfilePage />} />
+          <Route path="attendance" element={<AttendancePage />} />
           <Route path="admissions" element={<AdmissionsPage />} />
           <Route
             path="admissions/new"

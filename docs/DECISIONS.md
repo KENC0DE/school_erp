@@ -1831,3 +1831,16 @@ and recorded here (date, decision, reason).
   entry.** `attendance.record` may submit; `attendance.manage` locks and may
   reopen a locked register. Records and sessions are soft-deleted, never
   hard-deleted, and every transition is audited through the service layer.
+- **Attendance entry works offline on mobile through a coalescing outbox.** A
+  network failure during entry stores the changes in the school's secure
+  storage keyed by `(session, student)`, replacing an earlier draft for the same
+  student so a long offline session still replays one row per student. The
+  outbox is flushed in one bulk call per register when the device reconnects;
+  because the API upserts on the natural key, replaying the same payload cannot
+  create duplicates. A failed flush keeps the entries on the device for the next
+  attempt instead of discarding a teacher's work.
+- **The web register shows the roster, not a raw record list.** Opening a
+  session seeds every enrolled student as present, so the grid renders the
+  roster and lets the teacher change only exceptions. Saves send just changed
+  students in chunks of at most 200, keeping large sections within the bulk API
+  limit while the response refreshes the whole register.

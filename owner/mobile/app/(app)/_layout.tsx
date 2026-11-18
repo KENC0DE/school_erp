@@ -37,6 +37,8 @@ function navigateTo(router: ReturnType<typeof useRouter>, item: NavItem): void {
     router.push("/(app)/students");
   } else if (item.path === "/staff") {
     router.push("/(app)/staff");
+  } else if (item.path === "/attendance") {
+    router.push("/(app)/attendance");
   } else if (item.path === "/sample") {
     router.push("/(app)/sample");
   } else {
