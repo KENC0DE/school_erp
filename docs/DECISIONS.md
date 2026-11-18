@@ -1916,3 +1916,65 @@ and recorded here (date, decision, reason).
   request is submitted and approved, teacher2's one-day sick request stays
   submitted. Requests are matched on staff, dates and reason before creation, so
   a re-run neither duplicates them nor adds audit rows.
+
+## 2026-11-18 — P4-04 assessment models and migration
+
+- **Marks are stored as signed integer micro-units in `BIGINT`.** Every mark
+  column uses the `Mark` type decorator (six decimal places, the engine's
+  `MAX_PRECISION`), so `0.1 + 0.2` cannot become `0.30000000000000004` in a
+  database that lacks a native exact decimal. Services and the pure engine keep
+  working with `Decimal`; only the type decorator knows about micro-units. A
+  migration assertion checks that `assessment_assessments.out_of` is `BIGINT`,
+  which fails loudly if anyone changes it to a float column.
+- **Raw values are copied onto the score.** `Score.out_of` is a snapshot of the
+  assessment's maximum at entry time, and `Score.converted` is a stored derived
+  value. A later edit to an assessment (or to a structure) therefore cannot
+  silently reinterpret a historical raw score; recalculation rewrites only
+  `converted`.
+- **Live unique indexes are partial indexes keyed by a deterministic scope
+  string.** SQLite and PostgreSQL both treat `NULL`s as distinct, so a nullable
+  `level_id`/`stage_id`/`subject_id` cannot prevent duplicate school-wide rows.
+  `scope_key` (`school`, `level:<id>`, …) is stored next to the FK and covered
+  by a unique index filtered on `deleted_at IS NULL`. The same pattern protects
+  component keys, one live default grade scale, scale assignments and
+  submissions.
+- **Every score change has an append-only revision row.** The audit log records
+  who did what; `assessment_score_revisions` keeps the old and new raw and
+  converted values together so a report-card reprint can explain a change
+  without parsing audit payloads; `assessment_result_snapshots` stores the
+  version of the structure and scale used to publish a result.
+
+## 2026-11-18 — P4-05 structure management, impact preview and recalculation
+
+- **Marks cross the HTTP API as decimal strings.** `Mark` inputs accept an
+  integer or a numeric string and are parsed into `Decimal`; every mark output
+  is a string with trailing zeros removed (`10.000000` becomes `"10"`). JSON
+  numbers are never used for marks, because one float round-trip is enough to
+  break an exact grade boundary. The P4-01 engine still rejects Python floats
+  outright.
+- **An edit never touches raw scores.** When a component maximum, an
+  aggregation setting or the rounding changes, the API writes an
+  `assessment.structure.update` audit entry, creates an
+  `assessment.recalculate` job and returns its id. The job recomputes
+  `Score.converted` from the untouched raw values and writes one
+  `assessment.structure.recalculate` entry with counts. The API attaches the job
+  row in the same transaction; the broker enqueue happens after commit and is
+  skipped in test runs (the same pattern as thumbnails), so tests exercise the
+  worker code directly without Redis.
+- **The impact preview is the same calculation as the job.** `POST
+  /structures/{id}/impact` accepts the proposed components and reports the
+  number of assessments, scores, students and changed values plus up to five
+  before/after samples. It is a dry run: nothing is written. The editor uses it
+  before saving so a maximum change is never a surprise.
+- **The component total is a warning, not a hard cap, unless it exceeds the
+  intended total.** The editor shows "components add up to X, not the intended
+  Y" and still saves. A total *greater* than the intended total is rejected
+  (`assessment.error.component_sum`) because that would make every result
+  exceed 100% without an explicit decision. Inactive components stay in the
+  structure but are excluded from conversion by the engine.
+- **A component with marks cannot be removed, and a component key is
+  immutable.** Removing a component with assessments would orphan scores or
+  silently drop them from result totals, so it returns `409
+  assessment.error.component_in_use`. Renaming a key would break stored
+  `component_id` references and external reports; a new component can be added
+  instead. A structure that already has marks cannot be deleted either.

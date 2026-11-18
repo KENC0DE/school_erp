@@ -665,5 +665,6 @@
   "design.stat.students": "ተማሪዎች",
   "design.stat.staff": "ሠራተኞች",
   "design.stat.attendance": "የዛሬ ክትትል",
-  "design.stat.fees": "በዚህ ወቅት የተሰበሰበ"
+  "design.stat.fees": "በዚህ ወቅት የተሰበሰበ",
+  "jobs.error.assessment": "ነጥቦቹ እንደገና ሊሰሉ አልቻሉም። እንደገና ይሞክሩ፤ ደጋግሞ ካልተሳካ ድጋፍን ያግኙ።"
 }

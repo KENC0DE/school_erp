@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from core.modules.manifest import ModuleManifest, Nav, Perm
 
+from modules.assessment import actions as _actions  # noqa: F401 - registers actions
 from modules.assessment import models as _models  # noqa: F401 - registers models
+from modules.assessment.router import router
 
 MANIFEST = ModuleManifest(
     key="assessment",
@@ -64,6 +66,8 @@ MANIFEST = ModuleManifest(
             order=26,
         )
     ],
+    router=router,
+    actions=[*_actions.__all__],
     i18n_namespaces=["assessment"],
     licensable=True,
     # The module becomes default-enabled with P4-SEED, once its APIs and demo

@@ -23,6 +23,7 @@ RETRY_TASKS: dict[str, str | None] = {
     "ping": None,
     "files.thumbnail": "file_id",
     "notifications.delivery": "notification_id",
+    "assessment.recalculate": "structure_id",
 }
 
 # Failed tasks store the real exception for operators. The API only ever
@@ -32,6 +33,7 @@ ERROR_KEYS: dict[str, str] = {
     "files.thumbnail": "jobs.error.thumbnail",
     "notifications.delivery": "jobs.error.notification",
     "ping": "jobs.error.generic",
+    "assessment.recalculate": "jobs.error.assessment",
 }
 
 
@@ -123,6 +125,10 @@ async def _enqueue(job: Job) -> None:
         from core.events.celery_app import notifications_delivery_task
 
         await asyncio.to_thread(notifications_delivery_task.delay, *args)
+    elif job.kind == "assessment.recalculate":
+        from core.events.celery_app import assessment_recalculate_task
+
+        await asyncio.to_thread(assessment_recalculate_task.delay, *args)
 
 
 async def retry_job(

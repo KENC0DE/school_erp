@@ -665,5 +665,6 @@
   "design.stat.students": "Students",
   "design.stat.staff": "Staff",
   "design.stat.attendance": "Attendance today",
-  "design.stat.fees": "Collected this term"
+  "design.stat.fees": "Collected this term",
+  "jobs.error.assessment": "The marks could not be recalculated. Retry, and contact support if it keeps failing."
 }

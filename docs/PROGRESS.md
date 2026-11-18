@@ -140,8 +140,8 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P4-01 — `assessment/engine.py`
 - [x] P4-02 — Grade rule engine
 - [x] P4-03 — Rank and promotion rules
-- [ ] P4-04 — Models and migrations
-- [ ] P4-05 — Structure management APIs and actions
+- [x] P4-04 — Models and migrations (marks as integer micro-units, partial live indexes)
+- [x] P4-05 — Structure management APIs and actions (impact preview, recalculation job)
 - [ ] P4-06 — Assessment and score APIs
 - [ ] P4-07 — Workflow APIs
 - [ ] P4-08 — Results

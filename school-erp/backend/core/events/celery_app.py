@@ -131,6 +131,31 @@ def notifications_delivery_task(job_id: str, notification_id: str) -> dict:
     return {"job_id": job_id, "ok": True}
 
 
+@celery_app.task(name="erp.assessment_recalculate")
+def assessment_recalculate_task(job_id: str, structure_id: str) -> dict:
+    """Recompute converted marks after a structure edit (P4-05).
+
+    Raw scores are never rewritten; only the derived ``converted`` column is
+    refreshed, so a reprint always agrees with the structure in force.
+    """
+    asyncio.run(_mark_job(job_id, "running"))
+
+    async def work(session):
+        from modules.assessment.service import recalculate_structure
+
+        result = await recalculate_structure(session, uuid.UUID(structure_id))
+        return result.model_dump(mode="json")
+
+    try:
+        result = asyncio.run(_run_in_session(work))
+    except Exception as exc:  # pragma: no cover - data errors are operational
+        logger.warning("assessment recalculation failed: %s", exc)
+        asyncio.run(_mark_job(job_id, "failed", error="The marks could not be recalculated"))
+        return {"job_id": job_id, "ok": False}
+    asyncio.run(_mark_job(job_id, "succeeded", result=result))
+    return {"job_id": job_id, "ok": True}
+
+
 @celery_app.task(name="erp.heartbeat")
 def heartbeat_task() -> dict:
     from core.controller_link.service import heartbeat
