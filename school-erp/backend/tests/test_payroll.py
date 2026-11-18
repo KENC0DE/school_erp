@@ -26,9 +26,7 @@ PERSON = {
 
 
 async def _enable(client, headers) -> None:
-    response = await client.put(
-        f"{MODULES}/payroll", headers=headers, json={"enabled": True}
-    )
+    response = await client.put(f"{MODULES}/payroll", headers=headers, json={"enabled": True})
     assert response.status_code == 200, response.text
 
 
@@ -67,9 +65,7 @@ async def _component(client, headers, code: str = "housing", **overrides) -> dic
     return response.json()
 
 
-async def _rule_set(
-    client, headers, code: str = "2026-v1", *, effective_from: str = "2026-01-01"
-) -> dict:
+async def _rule_set(client, headers, code: str = "2026-v1", *, effective_from: str = "2026-01-01") -> dict:
     response = await client.post(
         f"{PAYROLL}/rule-sets",
         headers=headers,
@@ -95,9 +91,7 @@ async def _rule(client, headers, rule_set_id: str, key: str = "income_tax", **ov
         "rate_basis_points": 1500,
     }
     payload.update(overrides)
-    response = await client.post(
-        f"{PAYROLL}/rule-sets/{rule_set_id}/rules", headers=headers, json=payload
-    )
+    response = await client.post(f"{PAYROLL}/rule-sets/{rule_set_id}/rules", headers=headers, json=payload)
     assert response.status_code == 201, response.text
     return response.json()
 
@@ -125,9 +119,7 @@ async def _seeded_rule_set(client, headers) -> dict:
         base="pensionable",
         rate_basis_points=1100,
     )
-    activated = await client.post(
-        f"{PAYROLL}/rule-sets/{rule_set['id']}/activate", headers=headers
-    )
+    activated = await client.post(f"{PAYROLL}/rule-sets/{rule_set['id']}/activate", headers=headers)
     assert activated.status_code == 200, activated.text
     return activated.json()
 
@@ -162,9 +154,7 @@ async def test_payroll_is_an_optional_module(client, superadmin_headers, seeded)
 # --------------------------------------------------------------- components
 
 
-async def test_components_are_managed_audited_and_restorable(
-    client, superadmin_headers, seeded
-) -> None:
+async def test_components_are_managed_audited_and_restorable(client, superadmin_headers, seeded) -> None:
     await _enable(client, superadmin_headers)
     housing = await _component(client, superadmin_headers)
     assert housing["code"] == "housing"
@@ -197,18 +187,14 @@ async def test_components_are_managed_audited_and_restorable(
     )
     assert stale.status_code == 409
 
-    deleted = await client.delete(
-        f"{PAYROLL}/components/{housing['id']}", headers=superadmin_headers
-    )
+    deleted = await client.delete(f"{PAYROLL}/components/{housing['id']}", headers=superadmin_headers)
     assert deleted.status_code == 200, deleted.text
     assert deleted.json()["deleted"] is True
     assert (
         await client.get(f"{PAYROLL}/components/{housing['id']}", headers=superadmin_headers)
     ).status_code == 404
 
-    restored = await client.post(
-        f"{PAYROLL}/components/{housing['id']}/restore", headers=superadmin_headers
-    )
+    restored = await client.post(f"{PAYROLL}/components/{housing['id']}/restore", headers=superadmin_headers)
     assert restored.status_code == 200, restored.text
     assert restored.json()["code"] == "housing"
 
@@ -221,9 +207,7 @@ async def test_components_are_managed_audited_and_restorable(
     } <= actions
 
 
-async def test_a_component_assigned_to_staff_cannot_be_deleted(
-    client, superadmin_headers, seeded
-) -> None:
+async def test_a_component_assigned_to_staff_cannot_be_deleted(client, superadmin_headers, seeded) -> None:
     await _enable(client, superadmin_headers)
     staff = await _staff(client, superadmin_headers)
     component = await _component(client, superadmin_headers)
@@ -238,9 +222,7 @@ async def test_a_component_assigned_to_staff_cannot_be_deleted(
     )
     assert assignment.status_code == 201, assignment.text
 
-    blocked = await client.delete(
-        f"{PAYROLL}/components/{component['id']}", headers=superadmin_headers
-    )
+    blocked = await client.delete(f"{PAYROLL}/components/{component['id']}", headers=superadmin_headers)
     assert blocked.status_code == 409
     assert blocked.json()["error"]["message_key"] == "payroll.error.component_in_use"
 
@@ -249,9 +231,7 @@ async def test_a_component_assigned_to_staff_cannot_be_deleted(
         headers=superadmin_headers,
     )
     assert removed.status_code == 200, removed.text
-    now_allowed = await client.delete(
-        f"{PAYROLL}/components/{component['id']}", headers=superadmin_headers
-    )
+    now_allowed = await client.delete(f"{PAYROLL}/components/{component['id']}", headers=superadmin_headers)
     assert now_allowed.status_code == 200, now_allowed.text
 
 
@@ -331,9 +311,7 @@ async def test_staff_components_require_one_amount_form_and_may_not_overlap(
     assert switched.json()["amount_santim"] == 750_00
     assert switched.json()["rate_basis_points"] is None
 
-    listed = await client.get(
-        f"{PAYROLL}/staff/{staff['id']}/components", headers=superadmin_headers
-    )
+    listed = await client.get(f"{PAYROLL}/staff/{staff['id']}/components", headers=superadmin_headers)
     assert listed.status_code == 200
     assert listed.json()["total"] == 2
 
@@ -431,9 +409,7 @@ async def test_rule_sets_are_configurable_versioned_and_frozen_once_active(
 
     second = await _rule_set(client, superadmin_headers, "2027-v1", effective_from="2027-01-01")
     await _rule(client, superadmin_headers, second["id"])
-    upgraded = await client.post(
-        f"{PAYROLL}/rule-sets/{second['id']}/activate", headers=superadmin_headers
-    )
+    upgraded = await client.post(f"{PAYROLL}/rule-sets/{second['id']}/activate", headers=superadmin_headers)
     assert upgraded.status_code == 200, upgraded.text
     assert upgraded.json()["status"] == "active"
 
@@ -444,31 +420,19 @@ async def test_rule_sets_are_configurable_versioned_and_frozen_once_active(
     )
     assert {item["code"] for item in all_sets.json()["items"]} == {"2026-v1", "2027-v1"}
 
-    active_delete = await client.delete(
-        f"{PAYROLL}/rule-sets/{second['id']}", headers=superadmin_headers
-    )
+    active_delete = await client.delete(f"{PAYROLL}/rule-sets/{second['id']}", headers=superadmin_headers)
     assert active_delete.status_code == 409
-    assert (
-        active_delete.json()["error"]["message_key"] == "payroll.error.rule_set_active_delete"
-    )
-    archived = await client.post(
-        f"{PAYROLL}/rule-sets/{second['id']}/archive", headers=superadmin_headers
-    )
+    assert active_delete.json()["error"]["message_key"] == "payroll.error.rule_set_active_delete"
+    archived = await client.post(f"{PAYROLL}/rule-sets/{second['id']}/archive", headers=superadmin_headers)
     assert archived.status_code == 200, archived.text
-    deleted = await client.delete(
-        f"{PAYROLL}/rule-sets/{second['id']}", headers=superadmin_headers
-    )
+    deleted = await client.delete(f"{PAYROLL}/rule-sets/{second['id']}", headers=superadmin_headers)
     assert deleted.status_code == 200, deleted.text
 
 
-async def test_activating_an_empty_rule_set_is_rejected(
-    client, superadmin_headers, seeded
-) -> None:
+async def test_activating_an_empty_rule_set_is_rejected(client, superadmin_headers, seeded) -> None:
     await _enable(client, superadmin_headers)
     rule_set = await _rule_set(client, superadmin_headers, "empty")
-    response = await client.post(
-        f"{PAYROLL}/rule-sets/{rule_set['id']}/activate", headers=superadmin_headers
-    )
+    response = await client.post(f"{PAYROLL}/rule-sets/{rule_set['id']}/activate", headers=superadmin_headers)
     assert response.status_code == 422
     assert response.json()["error"]["message_key"] == "payroll.error.rule_set_empty"
 
@@ -476,9 +440,7 @@ async def test_activating_an_empty_rule_set_is_rejected(
 # ------------------------------------------------------------------ runs
 
 
-async def test_run_calculates_payslips_and_finalizes_with_audit(
-    client, superadmin_headers, seeded
-) -> None:
+async def test_run_calculates_payslips_and_finalizes_with_audit(client, superadmin_headers, seeded) -> None:
     await _enable(client, superadmin_headers)
     rule_set = await _seeded_rule_set(client, superadmin_headers)
 
@@ -551,9 +513,7 @@ async def test_run_calculates_payslips_and_finalizes_with_audit(
     assert duplicate.status_code == 409
     assert duplicate.json()["error"]["message_key"] == "payroll.error.run_exists"
 
-    calculated = await client.post(
-        f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers
-    )
+    calculated = await client.post(f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers)
     assert calculated.status_code == 200, calculated.text
     summary = calculated.json()
     assert summary["status"] == "calculated"
@@ -569,9 +529,7 @@ async def test_run_calculates_payslips_and_finalizes_with_audit(
     assert summary["net_santim"] == gross - deductions
     assert summary["employer_santim"] == 1210_00
 
-    payslips = await client.get(
-        f"{PAYROLL}/runs/{run['id']}/payslips", headers=superadmin_headers
-    )
+    payslips = await client.get(f"{PAYROLL}/runs/{run['id']}/payslips", headers=superadmin_headers)
     assert payslips.status_code == 200, payslips.text
     assert payslips.json()["total"] == 1
     slip = payslips.json()["items"][0]
@@ -602,25 +560,17 @@ async def test_run_calculates_payslips_and_finalizes_with_audit(
     assert by_staff.status_code == 200, by_staff.text
     assert by_staff.json()["id"] == slip["id"]
 
-    one = await client.get(
-        f"{PAYROLL}/runs/{run['id']}/payslips/{slip['id']}", headers=superadmin_headers
-    )
+    one = await client.get(f"{PAYROLL}/runs/{run['id']}/payslips/{slip['id']}", headers=superadmin_headers)
     assert one.status_code == 200
 
-    finalized = await client.post(
-        f"{PAYROLL}/runs/{run['id']}/finalize", headers=superadmin_headers
-    )
+    finalized = await client.post(f"{PAYROLL}/runs/{run['id']}/finalize", headers=superadmin_headers)
     assert finalized.status_code == 200, finalized.text
     assert finalized.json()["status"] == "finalized"
 
-    again = await client.post(
-        f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers
-    )
+    again = await client.post(f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers)
     assert again.status_code == 409
     assert again.json()["error"]["message_key"] == "payroll.error.run_finalized"
-    delete_final = await client.delete(
-        f"{PAYROLL}/runs/{run['id']}", headers=superadmin_headers
-    )
+    delete_final = await client.delete(f"{PAYROLL}/runs/{run['id']}", headers=superadmin_headers)
     assert delete_final.status_code == 409
 
     labelled = await client.post(
@@ -659,24 +609,16 @@ async def test_recalculation_replaces_payslips_without_unique_conflicts(
         )
     ).json()
 
-    first = await client.post(
-        f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers
-    )
+    first = await client.post(f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers)
     assert first.status_code == 200, first.text
-    second = await client.post(
-        f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers
-    )
+    second = await client.post(f"{PAYROLL}/runs/{run['id']}/calculate", headers=superadmin_headers)
     assert second.status_code == 200, second.text
     assert second.json()["payslip_count"] == 1
 
-    payslips = await client.get(
-        f"{PAYROLL}/runs/{run['id']}/payslips", headers=superadmin_headers
-    )
+    payslips = await client.get(f"{PAYROLL}/runs/{run['id']}/payslips", headers=superadmin_headers)
     assert payslips.json()["total"] == 1
 
-    deleted = await client.delete(
-        f"{PAYROLL}/runs/{run['id']}", headers=superadmin_headers
-    )
+    deleted = await client.delete(f"{PAYROLL}/runs/{run['id']}", headers=superadmin_headers)
     assert deleted.status_code == 200, deleted.text
     gone = await client.get(f"{PAYROLL}/runs/{run['id']}", headers=superadmin_headers)
     assert gone.status_code == 404
@@ -705,9 +647,7 @@ async def test_run_needs_an_active_rule_set(client, superadmin_headers, seeded) 
 # ------------------------------------------------------------- permissions
 
 
-async def test_payroll_endpoints_require_payroll_permissions(
-    client, app, superadmin_headers, seeded
-) -> None:
+async def test_payroll_endpoints_require_payroll_permissions(client, app, superadmin_headers, seeded) -> None:
     await _enable(client, superadmin_headers)
 
     await create_role(app, "payroll_reader", [("payroll.view", "all")])
@@ -717,9 +657,7 @@ async def test_payroll_endpoints_require_payroll_permissions(
 
     assert (await client.get(f"{PAYROLL}/components", headers=reader)).status_code == 200
     assert (
-        await client.post(
-            f"{PAYROLL}/components", headers=reader, json={"code": "x", "name": "X"}
-        )
+        await client.post(f"{PAYROLL}/components", headers=reader, json={"code": "x", "name": "X"})
     ).status_code == 403
     assert (
         await client.post(
@@ -729,9 +667,7 @@ async def test_payroll_endpoints_require_payroll_permissions(
         )
     ).status_code == 403
 
-    await create_role(
-        app, "payroll_manager", [("payroll.view", "all"), ("payroll.manage", "all")]
-    )
+    await create_role(app, "payroll_manager", [("payroll.view", "all"), ("payroll.manage", "all")])
     manager_email = unique_email("payroll.manager")
     await create_user(app, manager_email, roles=["payroll_manager"])
     manager = await login(client, manager_email)
@@ -756,7 +692,5 @@ async def test_payroll_endpoints_require_payroll_permissions(
     await create_user(app, runner_email, roles=["payroll_runner"])
     runner = await login(client, runner_email)
     assert (
-        await client.post(
-            f"{PAYROLL}/components", headers=runner, json={"code": "no", "name": "No"}
-        )
+        await client.post(f"{PAYROLL}/components", headers=runner, json={"code": "no", "name": "No"})
     ).status_code == 403
