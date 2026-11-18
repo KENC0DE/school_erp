@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 from tests.conftest import unique_email
-from tests.test_students import _activity, _level, _person, _register, _section, _year
+from tests.test_students import (
+    _activity,
+    _level,
+    _person,
+    _register,
+    _section,
+    _student_events,
+    _year,
+)
 
 BASE = "/api/v1/students"
 PROMOTIONS = f"{BASE}/promotions"
@@ -107,7 +115,9 @@ async def test_promotion_preview_maps_levels_sections_and_exceptions(
     assert adjusted_body["skip"] == 1
 
 
-async def test_bulk_promotion_applies_exceptions_and_is_audited(client, superadmin_headers, seeded) -> None:
+async def test_bulk_promotion_applies_exceptions_and_is_audited(
+    app, client, superadmin_headers, seeded
+) -> None:
     data = await _promotion_setup(client, superadmin_headers)
     body = {
         "source_year_id": data["source"]["id"],
@@ -147,6 +157,21 @@ async def test_bulk_promotion_applies_exceptions_and_is_audited(client, superadm
 
     actions = {item["action"] for item in await _activity(client, superadmin_headers)}
     assert {"students.progress.promote", "students.progress.repeat", "students.progress.apply"} <= actions
+
+    events = await _student_events(app)
+    promoted_events = events["student.promoted"]
+    assert len(promoted_events) == 2
+    assert {event["action"] for event in promoted_events} == {"promote", "repeat"}
+    assert all(event["source_year_id"] == data["source"]["id"] for event in promoted_events)
+    assert all(event["target_year_id"] == data["target"]["id"] for event in promoted_events)
+    assert {event["student_id"] for event in promoted_events} == {
+        data["students"][0]["id"],
+        data["students"][1]["id"],
+    }
+    target_enrollments = [
+        event for event in events["student.enrolled"] if event["year_id"] == data["target"]["id"]
+    ]
+    assert len(target_enrollments) == 2
 
     # A second run now sees the target enrollments and skips them instead of
     # creating duplicates.

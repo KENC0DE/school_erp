@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import base64
+from collections import defaultdict
+
+from core.events.models import DomainEvent
+from sqlalchemy import select
 
 from tests.conftest import create_role, create_user, login, unique_email
 
@@ -76,6 +80,26 @@ async def _activity(client, headers, **params) -> list[dict]:
     response = await client.get(ACTIVITY, headers=headers, params={"limit": 200, **params})
     assert response.status_code == 200, response.text
     return response.json()["items"]
+
+
+async def _student_events(app) -> dict[str, list[dict]]:
+    """Student domain events in insertion order, grouped by event type."""
+    async with app.state.db.session() as session:
+        rows = (
+            (
+                await session.execute(
+                    select(DomainEvent)
+                    .where(DomainEvent.event_type.like("student.%"))
+                    .order_by(DomainEvent.occurred_at, DomainEvent.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    grouped: dict[str, list[dict]] = defaultdict(list)
+    for row in rows:
+        grouped[row.event_type].append(row.payload)
+    return grouped
 
 
 async def test_register_student_with_enrollment_guardians_and_medical(
@@ -779,3 +803,55 @@ async def test_students_permissions_module_gate_and_tools(app, client, superadmi
     assert blocked.json()["error"]["code"] == "MODULE_DISABLED"
     nav = await client.get("/api/v1/auth/me/navigation", headers=reader_headers)
     assert "students" not in [item["key"] for item in nav.json()["items"]]
+
+
+async def test_registration_emits_admitted_and_enrolled_events(
+    app, client, superadmin_headers, seeded
+) -> None:
+    year = await _year(client, superadmin_headers)
+    level = await _level(client, superadmin_headers)
+    section = await _section(client, superadmin_headers, year, level)
+    student = await _register(
+        client,
+        superadmin_headers,
+        number="S-EVT-01",
+        enrollment={"year_id": year["id"], "level_id": level["id"], "section_id": section["id"]},
+    )
+
+    events = await _student_events(app)
+    assert len(events["student.admitted"]) == 1
+    admitted = events["student.admitted"][0]
+    assert admitted["student_id"] == student["id"]
+    assert admitted["student_number"] == "S-EVT-01"
+    assert admitted["status"] == "active"
+    assert admitted["admission_date"] == "2026-09-15"
+
+    assert len(events["student.enrolled"]) == 1
+    enrolled = events["student.enrolled"][0]
+    assert enrolled["student_id"] == student["id"]
+    assert enrolled["enrollment_id"] == student["enrollment"]["id"]
+    assert enrolled["year_id"] == year["id"]
+    assert enrolled["level_id"] == level["id"]
+    assert enrolled["section_id"] == section["id"]
+    assert enrolled["status"] == "active"
+
+
+async def test_enrollment_route_emits_enrolled_event(app, client, superadmin_headers, seeded) -> None:
+    year = await _year(client, superadmin_headers)
+    level = await _level(client, superadmin_headers)
+    student = await _register(client, superadmin_headers, number="S-EVT-02")
+    before = await _student_events(app)
+    assert "student.enrolled" not in before
+
+    response = await client.post(
+        f"{BASE}/{student['id']}/enrollments",
+        headers=superadmin_headers,
+        json={"year_id": year["id"], "level_id": level["id"]},
+    )
+    assert response.status_code == 201, response.text
+    created = response.json()
+
+    events = await _student_events(app)
+    assert len(events["student.enrolled"]) == 1
+    assert events["student.enrolled"][0]["enrollment_id"] == created["id"]
+    assert events["student.enrolled"][0]["student_id"] == student["id"]

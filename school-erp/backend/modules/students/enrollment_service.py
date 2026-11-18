@@ -17,6 +17,7 @@ from modules.academics import section_service
 from modules.academics import service as catalog
 from modules.academics import years as year_service
 from modules.students.common import enrollment_state, live_student
+from modules.students.events import emit_enrolled
 from modules.students.lookups import AcademicLabels
 from modules.students.models import StudentEnrollment
 from modules.students.schemas import EnrollmentInput, EnrollmentOut, EnrollmentUpdate
@@ -169,6 +170,17 @@ async def create_enrollment(
     )
     session.add(row)
     await session.flush()
+    await emit_enrolled(
+        session,
+        student_id=str(student_id),
+        enrollment_id=str(row.id),
+        year_id=str(row.year_id),
+        level_id=str(row.level_id),
+        section_id=str(row.section_id) if row.section_id else None,
+        roll_number=row.roll_number,
+        status=row.status,
+        actor_id=principal.actor_id,
+    )
     await record(
         session,
         action="students.enrollments.create",

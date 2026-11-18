@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.academics import years as year_service
 from modules.students import enrollment_service, guardian_service, medical_service, numbering
 from modules.students.common import live_person, live_student, student_state
+from modules.students.events import emit_admitted
 from modules.students.lookups import AcademicLabels
 from modules.students.models import StudentEnrollment, StudentProfile
 from modules.students.schemas import (
@@ -390,6 +391,15 @@ async def create_profile_for_person(
     )
     session.add(profile)
     await session.flush()
+    await emit_admitted(
+        session,
+        student_id=str(profile.id),
+        student_number=profile.student_number,
+        person_id=str(profile.person_id),
+        status=profile.status,
+        admission_date=(profile.admission_date.isoformat() if profile.admission_date else None),
+        actor_id=principal.actor_id,
+    )
     await record(
         session,
         action="students.profile.create",
@@ -449,6 +459,15 @@ async def register_student(
     )
     session.add(profile)
     await session.flush()
+    await emit_admitted(
+        session,
+        student_id=str(profile.id),
+        student_number=profile.student_number,
+        person_id=str(profile.person_id),
+        status=profile.status,
+        admission_date=(profile.admission_date.isoformat() if profile.admission_date else None),
+        actor_id=principal.actor_id,
+    )
 
     enrollment_ids: list[str] = []
     if data.enrollment is not None:

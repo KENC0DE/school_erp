@@ -590,7 +590,13 @@ async def test_conversion_creates_student_enrollment_guardians_and_accounts(
         "admissions.convert",
     } <= actions
     event_types = await _events(app)
-    assert {"admission.application_created", "admission.decision", "admission.converted"} <= set(event_types)
+    assert {
+        "admission.application_created",
+        "admission.decision",
+        "admission.converted",
+        "student.admitted",
+        "student.enrolled",
+    } <= set(event_types)
 
 
 async def test_conversion_can_skip_guardian_accounts(app, client, superadmin_headers, seeded) -> None:

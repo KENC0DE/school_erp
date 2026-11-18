@@ -36,6 +36,7 @@ from modules.academics.schemas import LevelOut
 from modules.academics.section_schemas import SectionOut
 from modules.students import enrollment_service
 from modules.students.common import live_student, student_state
+from modules.students.events import emit_promoted
 from modules.students.models import StudentEnrollment, StudentProfile
 from modules.students.progression_schemas import (
     PromotionApplyOut,
@@ -501,6 +502,20 @@ async def apply_promotion(
             via=via,
         )
         counts[candidate.action] += 1
+        await emit_promoted(
+            session,
+            student_id=str(candidate.profile.id),
+            student_number=candidate.profile.student_number,
+            action=candidate.action,
+            status=candidate.profile.status,
+            source_year_id=str(data.source_year_id),
+            target_year_id=str(data.target_year_id),
+            from_level_id=candidate.level.id,
+            to_level_id=candidate.target_level.id if candidate.target_level else None,
+            target_section_id=(candidate.target_section.id if candidate.target_section else None),
+            effective_date=effective.isoformat(),
+            actor_id=principal.actor_id,
+        )
         applied.append(_row(candidate))
 
     batch_id = str(uuid.uuid4())

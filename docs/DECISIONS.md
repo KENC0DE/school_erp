@@ -1470,3 +1470,27 @@ and recorded here (date, decision, reason).
   loader prefixes non-core bundles with their namespace (`students.title`,
   `students.nav`), matching the web loader and the navigation keys returned by
   `/auth/me/navigation`.
+
+## 2026-11-18 — P2-13 student domain events
+
+- **Events live in `modules/students/events.py`.** Registration, admissions
+  conversion, enrollment and promotion all call the same three payload
+  builders, so the event names and fields cannot drift between entry points.
+- **`student.admitted` means a student profile was created.** Direct
+  registration emits it from `register_student`; admissions conversion emits it
+  from `create_profile_for_person`. It carries the student id, number, person,
+  status and admission date; the enrollment that may follow is described by its
+  own event rather than being duplicated in the admission payload.
+- **`student.enrolled` is owned by `create_enrollment`.** Registration,
+  admissions conversion, manual enrollment and promotion/repeat all go through
+  that service, so one hook covers every placement. The payload identifies the
+  enrollment, year, level, section, roll number and status.
+- **`student.promoted` records the year-end outcome.** It is emitted once per
+  non-skipped promotion row and carries an `action` of `promote`, `repeat` or
+  `graduate` plus the source and target years/levels/sections. A skipped row is
+  a no-op and emits nothing, so automation cannot mistake it for a move.
+- **Events join the caller's transaction.** The outbox row is written in the
+  same commit as the student change, and preview endpoints emit no events.
+  Audit rollback restores the student state but intentionally does not retract
+  historical outbox rows, because an event records that something happened even
+  if it was later corrected.
