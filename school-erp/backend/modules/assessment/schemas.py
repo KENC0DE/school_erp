@@ -535,6 +535,140 @@ class CorrectionList(BaseModel):
     total: int | None = None
 
 
+class TermResultQuery(BaseModel):
+    year_id: uuid.UUID
+    term_id: uuid.UUID
+    section_id: uuid.UUID
+    subject_id: uuid.UUID | None = None
+
+
+class YearResultQuery(BaseModel):
+    year_id: uuid.UUID
+    section_id: uuid.UUID
+
+
+class SubjectResult(BaseModel):
+    """One student's result in one subject for a term or the whole year."""
+
+    subject_id: str
+    subject_name: str
+    structure_id: str | None = None
+    structure_version: int
+    scale_id: str | None = None
+    scale_version: int | None = None
+    total: str
+    out_of: str
+    percent: str
+    grade_label: str | None = None
+    grade_remark: str | None = None
+    gpa_points: str | None = None
+    is_pass: bool
+    rank: int | None = None
+    rank_size: int | None = None
+    status: str
+    # Year results only: the term totals that produced the year total.
+    terms: dict[str, str] | None = None
+
+
+class StudentResult(BaseModel):
+    student_id: str
+    student_number: str
+    student_name: str
+    student_name_am: str | None = None
+    roll_number: str | None = None
+    subjects: list[SubjectResult] = Field(default_factory=list)
+    total: str
+    out_of: str
+    percent: str
+    grade_label: str | None = None
+    grade_remark: str | None = None
+    gpa_points: str | None = None
+    is_pass: bool
+    rank: int | None = None
+    rank_size: int | None = None
+    status: str
+
+
+class TermResultSheet(BaseModel):
+    year_id: str
+    year_code: str
+    term_id: str
+    term_name: str
+    section_id: str
+    section_code: str
+    level_id: str
+    level_name: str
+    students: list[StudentResult] = Field(default_factory=list)
+    subject_count: int
+
+
+class TermInfo(BaseModel):
+    id: str
+    number: int
+    name: str
+
+
+class YearResultSheet(BaseModel):
+    year_id: str
+    year_code: str
+    section_id: str
+    section_code: str
+    level_id: str
+    level_name: str
+    terms: list[TermInfo] = Field(default_factory=list)
+    students: list[StudentResult] = Field(default_factory=list)
+    subject_count: int
+
+
+class TermResultPublish(BaseModel):
+    year_id: uuid.UUID
+    term_id: uuid.UUID
+    section_id: uuid.UUID
+    note: str | None = Field(default=None, max_length=500)
+
+
+class YearResultPublish(BaseModel):
+    year_id: uuid.UUID
+    section_id: uuid.UUID
+    note: str | None = Field(default=None, max_length=500)
+
+
+class ResultSnapshotOut(BaseModel):
+    id: str
+    kind: str
+    year_id: str
+    term_id: str | None = None
+    section_id: str | None = None
+    student_id: str | None = None
+    structure_id: str | None = None
+    structure_version: int | None = None
+    scale_id: str | None = None
+    scale_version: int | None = None
+    checksum: str | None = None
+    published_at: datetime
+    published_by: str | None = None
+    note: str | None = None
+    supersedes_id: str | None = None
+    payload: dict
+
+
+class ResultSnapshotQuery(BaseModel):
+    year_id: uuid.UUID | None = None
+    term_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    student_id: uuid.UUID | None = None
+    kind: Literal["term", "year"] | None = None
+    limit: int = Field(default=25, ge=1, le=200)
+    cursor: str | None = Field(default=None, max_length=1000)
+    order: Literal["asc", "desc"] = "desc"
+
+
+class ResultSnapshotList(BaseModel):
+    items: list[ResultSnapshotOut]
+    next_cursor: str | None = None
+    total: int | None = None
+
+
 def _as_utc(value: datetime) -> datetime:
     """Compare window timestamps even when a client sends a naive datetime."""
     return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
@@ -582,6 +716,9 @@ __all__ = [
     "Mark",
     "PositiveMark",
     "RecalculationResult",
+    "ResultSnapshotList",
+    "ResultSnapshotOut",
+    "ResultSnapshotQuery",
     "Rounding",
     "ScopeType",
     "ScoreBulkInput",
@@ -599,6 +736,8 @@ __all__ = [
     "StructureQuery",
     "StructureUpdate",
     "StructureUpdateResult",
+    "StudentResult",
+    "SubjectResult",
     "SubmissionAction",
     "SubmissionCreate",
     "SubmissionList",
@@ -606,10 +745,17 @@ __all__ = [
     "SubmissionQuery",
     "SubmissionResult",
     "SubmissionStatus",
+    "TermInfo",
+    "TermResultPublish",
+    "TermResultQuery",
+    "TermResultSheet",
     "WindowCreate",
     "WindowList",
     "WindowOut",
     "WindowQuery",
     "WindowUpdate",
     "YearMode",
+    "YearResultPublish",
+    "YearResultQuery",
+    "YearResultSheet",
 ]

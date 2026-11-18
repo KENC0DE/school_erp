@@ -26,26 +26,34 @@ from modules.assessment.actions import (
     ensure_submission,
     get_assessment,
     get_correction,
+    get_result_snapshot,
     get_structure,
     get_submission,
     get_window,
     lock_marks,
     publish_marks,
+    publish_term_results,
+    publish_year_results,
     recalculate_structure,
     reject_correction,
     reject_marks,
+    republish_term_results,
+    republish_year_results,
     score_sheet,
     search_assessments,
     search_corrections,
+    search_result_snapshots,
     search_structures,
     search_submissions,
     search_windows,
     structure_impact,
     submit_marks,
+    term_results,
     update_assessment,
     update_structure,
     update_window,
     upsert_scores,
+    year_results,
 )
 from modules.assessment.schemas import (
     AssessmentCreate,
@@ -60,6 +68,9 @@ from modules.assessment.schemas import (
     CorrectionOut,
     CorrectionQuery,
     CorrectionStatus,
+    ResultSnapshotList,
+    ResultSnapshotOut,
+    ResultSnapshotQuery,
     ScoreBulkInput,
     ScoreBulkResult,
     ScoreSheet,
@@ -78,11 +89,15 @@ from modules.assessment.schemas import (
     SubmissionQuery,
     SubmissionResult,
     SubmissionStatus,
+    TermResultPublish,
+    TermResultSheet,
     WindowCreate,
     WindowList,
     WindowOut,
     WindowQuery,
     WindowUpdate,
+    YearResultPublish,
+    YearResultSheet,
 )
 
 router = APIRouter(tags=["assessment"])
@@ -571,6 +586,122 @@ async def reject_correction_route(
         _context(principal, session, request),
         {"correction_id": str(correction_id), **payload.model_dump(mode="json")},
     )
+
+
+@router.get("/results/term", response_model=TermResultSheet)
+async def term_results_route(
+    request: Request,
+    year_id: uuid.UUID = Query(...),
+    term_id: uuid.UUID = Query(...),
+    section_id: uuid.UUID = Query(...),
+    subject_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> TermResultSheet:
+    return await term_results(
+        _context(principal, session, request),
+        {
+            "year_id": str(year_id),
+            "term_id": str(term_id),
+            "section_id": str(section_id),
+            "subject_id": str(subject_id) if subject_id else None,
+        },
+    )
+
+
+@router.get("/results/year", response_model=YearResultSheet)
+async def year_results_route(
+    request: Request,
+    year_id: uuid.UUID = Query(...),
+    section_id: uuid.UUID = Query(...),
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> YearResultSheet:
+    return await year_results(
+        _context(principal, session, request),
+        {"year_id": str(year_id), "section_id": str(section_id)},
+    )
+
+
+@router.post("/results/term/publish", response_model=ResultSnapshotOut)
+async def publish_term_results_route(
+    payload: TermResultPublish,
+    request: Request,
+    principal: Principal = Depends(require("assessment.publish")),
+    session: AsyncSession = Depends(db_session),
+) -> ResultSnapshotOut:
+    return await publish_term_results(_context(principal, session, request), payload.model_dump(mode="json"))
+
+
+@router.post("/results/term/republish", response_model=ResultSnapshotOut)
+async def republish_term_results_route(
+    payload: TermResultPublish,
+    request: Request,
+    principal: Principal = Depends(require("assessment.publish")),
+    session: AsyncSession = Depends(db_session),
+) -> ResultSnapshotOut:
+    return await republish_term_results(
+        _context(principal, session, request), payload.model_dump(mode="json")
+    )
+
+
+@router.post("/results/year/publish", response_model=ResultSnapshotOut)
+async def publish_year_results_route(
+    payload: YearResultPublish,
+    request: Request,
+    principal: Principal = Depends(require("assessment.publish")),
+    session: AsyncSession = Depends(db_session),
+) -> ResultSnapshotOut:
+    return await publish_year_results(_context(principal, session, request), payload.model_dump(mode="json"))
+
+
+@router.post("/results/year/republish", response_model=ResultSnapshotOut)
+async def republish_year_results_route(
+    payload: YearResultPublish,
+    request: Request,
+    principal: Principal = Depends(require("assessment.publish")),
+    session: AsyncSession = Depends(db_session),
+) -> ResultSnapshotOut:
+    return await republish_year_results(
+        _context(principal, session, request), payload.model_dump(mode="json")
+    )
+
+
+@router.get("/results/snapshots", response_model=ResultSnapshotList)
+async def list_result_snapshots_route(
+    request: Request,
+    year_id: uuid.UUID | None = Query(None),
+    term_id: uuid.UUID | None = Query(None),
+    section_id: uuid.UUID | None = Query(None),
+    student_id: uuid.UUID | None = Query(None),
+    kind: Literal["term", "year"] | None = Query(None),
+    limit: int = Query(25, ge=1, le=200),
+    cursor: str | None = Query(None, max_length=1000),
+    order: Literal["asc", "desc"] = Query("desc"),
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> ResultSnapshotList:
+    query = ResultSnapshotQuery(
+        year_id=year_id,
+        term_id=term_id,
+        section_id=section_id,
+        student_id=student_id,
+        kind=kind,
+        limit=limit,
+        cursor=cursor,
+        order=order,
+    )
+    return await search_result_snapshots(_context(principal, session, request), query.model_dump(mode="json"))
+
+
+@router.get("/results/snapshots/{snapshot_id}", response_model=ResultSnapshotOut)
+async def get_result_snapshot_route(
+    snapshot_id: uuid.UUID,
+    request: Request,
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> ResultSnapshotOut:
+    return await get_result_snapshot(_context(principal, session, request), {"snapshot_id": str(snapshot_id)})
 
 
 __all__ = ["router"]

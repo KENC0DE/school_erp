@@ -6,7 +6,7 @@ import uuid
 
 from core.actions.registry import ActionContext, action
 
-from modules.assessment import service, workflow
+from modules.assessment import results, service, workflow
 from modules.assessment.schemas import (
     AssessmentCreate,
     AssessmentList,
@@ -18,6 +18,9 @@ from modules.assessment.schemas import (
     CorrectionList,
     CorrectionOut,
     CorrectionQuery,
+    ResultSnapshotList,
+    ResultSnapshotOut,
+    ResultSnapshotQuery,
     ScoreBulkInput,
     ScoreBulkResult,
     ScoreSheet,
@@ -35,11 +38,17 @@ from modules.assessment.schemas import (
     SubmissionOut,
     SubmissionQuery,
     SubmissionResult,
+    TermResultPublish,
+    TermResultQuery,
+    TermResultSheet,
     WindowCreate,
     WindowList,
     WindowOut,
     WindowQuery,
     WindowUpdate,
+    YearResultPublish,
+    YearResultQuery,
+    YearResultSheet,
 )
 
 
@@ -526,6 +535,116 @@ async def reject_correction(ctx: ActionContext, payload: dict) -> CorrectionOut:
     return await workflow.reject_correction(ctx.session, ctx.principal, correction_id, data, via=ctx.via)
 
 
+@action(
+    key="assessment.results.term",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="Compute a section's live term result sheet and ranks",
+    input=TermResultQuery,
+    output=TermResultSheet,
+)
+async def term_results(ctx: ActionContext, payload: dict) -> TermResultSheet:
+    data = TermResultQuery.model_validate(payload)
+    return await results.term_results(ctx.session, ctx.principal, data)
+
+
+@action(
+    key="assessment.results.year",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="Compute a section's live year result sheet and ranks",
+    input=YearResultQuery,
+    output=YearResultSheet,
+)
+async def year_results(ctx: ActionContext, payload: dict) -> YearResultSheet:
+    data = YearResultQuery.model_validate(payload)
+    return await results.year_results(ctx.session, ctx.principal, data)
+
+
+@action(
+    key="assessment.results.publish_term",
+    module="assessment",
+    permission="assessment.publish",
+    risk="write",
+    describe="Publish a term result sheet as an immutable snapshot",
+    input=TermResultPublish,
+    output=ResultSnapshotOut,
+)
+async def publish_term_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
+    data = TermResultPublish.model_validate(payload)
+    return await results.publish_term_results(ctx.session, ctx.principal, data, via=ctx.via)
+
+
+@action(
+    key="assessment.results.republish_term",
+    module="assessment",
+    permission="assessment.publish",
+    risk="write",
+    describe="Publish a corrected term result sheet, superseding the last snapshot",
+    input=TermResultPublish,
+    output=ResultSnapshotOut,
+)
+async def republish_term_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
+    data = TermResultPublish.model_validate(payload)
+    return await results.republish_term_results(ctx.session, ctx.principal, data, via=ctx.via)
+
+
+@action(
+    key="assessment.results.publish_year",
+    module="assessment",
+    permission="assessment.publish",
+    risk="write",
+    describe="Publish a year result sheet as an immutable snapshot",
+    input=YearResultPublish,
+    output=ResultSnapshotOut,
+)
+async def publish_year_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
+    data = YearResultPublish.model_validate(payload)
+    return await results.publish_year_results(ctx.session, ctx.principal, data, via=ctx.via)
+
+
+@action(
+    key="assessment.results.republish_year",
+    module="assessment",
+    permission="assessment.publish",
+    risk="write",
+    describe="Publish a corrected year result sheet, superseding the last snapshot",
+    input=YearResultPublish,
+    output=ResultSnapshotOut,
+)
+async def republish_year_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
+    data = YearResultPublish.model_validate(payload)
+    return await results.republish_year_results(ctx.session, ctx.principal, data, via=ctx.via)
+
+
+@action(
+    key="assessment.results.snapshots",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="List published result snapshots",
+    input=ResultSnapshotQuery,
+    output=ResultSnapshotList,
+)
+async def search_result_snapshots(ctx: ActionContext, payload: dict | None = None) -> ResultSnapshotList:
+    query = ResultSnapshotQuery.model_validate(payload or {})
+    return await results.list_snapshots(ctx.session, ctx.principal, query)
+
+
+@action(
+    key="assessment.results.snapshot",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="Read one published result snapshot",
+    output=ResultSnapshotOut,
+)
+async def get_result_snapshot(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
+    return await results.get_snapshot(ctx.session, ctx.principal, _id(payload, "snapshot_id"))
+
+
 __all__ = [
     "approve_correction",
     "approve_marks",
@@ -539,24 +658,32 @@ __all__ = [
     "ensure_submission",
     "get_assessment",
     "get_correction",
+    "get_result_snapshot",
     "get_structure",
     "get_submission",
     "get_window",
     "lock_marks",
     "publish_marks",
+    "publish_term_results",
+    "publish_year_results",
     "recalculate_structure",
     "reject_correction",
     "reject_marks",
+    "republish_term_results",
+    "republish_year_results",
     "score_sheet",
     "search_assessments",
     "search_corrections",
+    "search_result_snapshots",
     "search_structures",
     "search_submissions",
     "search_windows",
     "structure_impact",
     "submit_marks",
+    "term_results",
     "update_assessment",
     "update_structure",
     "update_window",
     "upsert_scores",
+    "year_results",
 ]

@@ -2080,3 +2080,36 @@ and recorded here (date, decision, reason).
   of the public site. A "publish to website" action in the website module reads
   an announcement and creates a **draft** news post that a human reviews and
   publishes, so a private or internal announcement can never leak automatically.
+
+## 2026-11-18 — P4-08 term and year results
+
+- **Results are recomputed from raw scores on every read.** No stored value is
+  trusted as the source of truth: the term sheet rebuilds each subject total
+  from the current structure components, grades it with the most specific
+  effective scale, and ranks the section. A published `TermResult` row and a
+  `ResultSnapshot` are copies for history and fast parent reads, never inputs.
+- **Publishing copies the sheet and records the rules that produced it.** The
+  snapshot stores the full JSON payload, a SHA-256 checksum, the structure
+  version and the scale version, plus who published it and when. `TermResult`
+  rows mirror the subject result with `status="published"`, so a later scale or
+  structure edit changes future reads but cannot rewrite what was issued.
+- **Re-publish is separate and explicit.** A second normal publish returns `409
+  assessment.error.results_already_published` with the existing snapshot id;
+  re-publishing requires the dedicated action, which requires a prior snapshot
+  (`409 assessment.error.no_published_result` when absent) and links the new
+  snapshot with `supersedes_id`. Both actions write an audit entry.
+- **Only approved marks can be published.** Every subject in the sheet must have
+  a submission in `approved`, `published` or `locked`; otherwise the publish
+  fails with `409 assessment.error.results_not_ready` and lists the blocked
+  subjects. Publishing is also restricted to school-wide `assessment.publish`
+  access, because one scoped teacher must not issue a whole section's results.
+- **Ranks use competition ties.** Equal percentages share the best rank and the
+  next distinct value skips ahead (`1, 1, 3`). Subject ranks are computed within
+  the section; the overall rank is shown only to an unrestricted viewer. A
+  scoped teacher sees only the subjects they teach and no class-wide rank, so
+  the sheet cannot leak another teacher's subject marks.
+- **Year results combine live term totals with the structure's year rule.**
+  `average`, `sum` and `weighted_average` are supported; weights address terms
+  by position and missing terms are omitted with their weights. A year sheet
+  includes the per-term totals that produced each subject's year value, and it
+  is published as a `kind="year"` snapshot (there is no year-result table).
