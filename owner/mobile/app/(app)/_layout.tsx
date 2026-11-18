@@ -33,6 +33,8 @@ const MAX_TABS = 4;
 function navigateTo(router: ReturnType<typeof useRouter>, item: NavItem): void {
   if (item.path === "/") {
     router.push("/(app)");
+  } else if (item.path === "/students") {
+    router.push("/(app)/students");
   } else if (item.path === "/sample") {
     router.push("/(app)/sample");
   } else {
@@ -53,7 +55,9 @@ function Shell({ profile }: { profile: VerifiedProfile }) {
 
   const items = navigation?.items ?? [];
   const isActive = (item: NavItem) =>
-    item.path === "/" ? pathname === "/" || pathname === "" : pathname === item.path;
+    item.path === "/"
+      ? pathname === "/" || pathname === ""
+      : pathname === item.path || pathname.startsWith(`${item.path}/`);
 
   const visible = items.slice(0, MAX_TABS);
   const overflow = items.slice(MAX_TABS);

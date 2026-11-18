@@ -14,4 +14,5 @@ export {
 } from "./controls";
 export { Card, Divider, PageHeader, Row, Screen, SectionTitle, type Palette } from "./layout";
 export { Button, Field, Muted, SafeScreen, Title } from "./primitives";
+export { SelectField, type SelectOption } from "./select";
 export { font, radius, space, text, touch, weight } from "./tokens";

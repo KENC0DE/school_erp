@@ -1436,3 +1436,37 @@ and recorded here (date, decision, reason).
   action. The default resolver encodes only the next-level/final-level rule;
   P4-03 will pass the assessment rule engine through the same hook without
   changing the HTTP surface.
+
+## 2026-11-18 — P2-12 mobile students
+
+- **The mobile directory is the same API, not a second read model.** It calls
+  `GET /api/v1/students` with the shared `q`, `status` and cursor parameters, so
+  the web and mobile screens cannot drift on filtering or page size. A search
+  only issues a request when the user submits it, and "Load more" appends the
+  next cursor page while keeping the first page visible.
+- **Profile visibility follows the permission, not the payload.** The medical
+  card renders only for `students.medical.view`; the backend already omits the
+  medical object for callers without that permission, so hiding the card is a
+  presentation guard rather than the security boundary.
+- **Registration is online only by design.** The phone posts the preview and the
+  create request directly to the school server and surfaces
+  `students.error.network` when it cannot reach it; there is no offline outbox
+  for student registration. Phase 3 adds offline entry only for attendance.
+- **Preview then confirm.** One tap runs
+  `POST /api/v1/students/register/preview`. Without duplicate warnings the app
+  immediately creates the student; with warnings it shows the candidate names
+  and generated number and changes the action to "Register anyway", matching
+  the web dialog's confirm step. This keeps one network round trip in the
+  common case without silently creating a likely duplicate.
+- **Name validation mirrors the backend.** A script (Latin or Amharic) must be
+  either empty or complete across given, father and grandfather names. The
+  screen rejects a partial script before calling the API, so the user does not
+  have to decode a server validation error.
+- **Enrollment stays optional, but all-or-nothing.** Leaving the year and level
+  empty registers an applicant. Choosing one without the other is rejected as
+  `students.register.enrollment_incomplete`; sections additionally require both
+  and are loaded only after a year and level are chosen.
+- **Module translation bundles are namespaced on mobile.** The translation
+  loader prefixes non-core bundles with their namespace (`students.title`,
+  `students.nav`), matching the web loader and the navigation keys returned by
+  `/auth/me/navigation`.

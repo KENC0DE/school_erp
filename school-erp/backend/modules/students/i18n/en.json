@@ -253,5 +253,20 @@
   "progress.error.not_final_level": "Only a student in the final grade level can graduate.",
   "action.promotions.preview": "Preview a bulk promotion",
   "action.promotions.apply": "Apply a bulk promotion",
-  "action.status.change": "Change a student's status"
+  "action.status.change": "Change a student's status",
+  "directory.load_more": "Load more",
+  "register.permission_denied": "You do not have permission to register students.",
+  "register.online_only": "Registration is saved directly to the school server; it is not queued offline.",
+  "register.no_year": "No academic year",
+  "profile.loading": "Loading the student…",
+  "error.network": "Cannot reach the school server. Check your connection.",
+  "register.names_required": "Enter at least one complete name script: given, father and grandfather names.",
+  "register.enrollment_incomplete": "Choose both an academic year and a grade level, or leave the enrollment empty.",
+  "register.previewing": "Checking the student…",
+  "register.options_error": "Academic years and grade levels could not be loaded",
+  "register.number_generated": "The next free student number is {{number}}.",
+  "register.number_manual": "The student will use number {{number}}.",
+  "date_format": "YYYY-MM-DD",
+  "yes": "Yes",
+  "no": "No"
 }

@@ -5,7 +5,7 @@ import type { VerifiedProfile } from "../directory/types";
 import { forSchool, getVerifiedBaseUrl } from "../storage/schoolStorage";
 import type { Locale } from "./ui-messages";
 
-const NAMESPACES = ["core", "sample"] as const;
+const NAMESPACES = ["core", "students", "sample"] as const;
 
 interface CachedBundle {
   messages?: Record<string, string>;
@@ -15,6 +15,23 @@ export interface SchoolTranslations {
   t: (key: string, values?: Record<string, string | number>) => string;
   ready: boolean;
   reload: () => void;
+}
+
+function mergeBundle(
+  merged: Record<string, string>,
+  namespace: string,
+  messages: Record<string, string>,
+): void {
+  if (namespace === "core") {
+    Object.assign(merged, messages);
+    return;
+  }
+  // Module bundles ship bare keys; navigation and screens address them as
+  // "students.title" / "students.nav", so prefix once at merge time exactly as
+  // the web translation loader does.
+  for (const [key, value] of Object.entries(messages)) {
+    merged[`${namespace}.${key}`] = value;
+  }
 }
 
 /**
@@ -40,7 +57,7 @@ export function useSchoolTranslations(
       const merged: Record<string, string> = {};
       for (const namespace of [...NAMESPACES].reverse()) {
         const bundle = await store.getCache<CachedBundle>(`i18n.${locale}.${namespace}`);
-        if (bundle?.messages) Object.assign(merged, bundle.messages);
+        if (bundle?.messages) mergeBundle(merged, namespace, bundle.messages);
       }
       return merged;
     }
@@ -58,7 +75,9 @@ export function useSchoolTranslations(
           NAMESPACES.map((namespace) => loader.load(locale, namespace)),
         );
         const merged: Record<string, string> = {};
-        for (const bundle of [...bundles].reverse()) Object.assign(merged, bundle.messages);
+        for (const bundle of [...bundles].reverse()) {
+          mergeBundle(merged, bundle.namespace, bundle.messages);
+        }
         if (!cancelled) {
           setMessages(merged);
           setReady(true);

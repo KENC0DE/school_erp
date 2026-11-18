@@ -253,5 +253,20 @@
   "progress.error.not_final_level": "የመጨረሻ ደረጃ ላይ ያለ ተማሪ ብቻ ሊመረቅ ይችላል።",
   "action.promotions.preview": "የጅምላ ማሳደግን አስቀድሞ ተመልከት",
   "action.promotions.apply": "የጅምላ ማሳደግን ተግብር",
-  "action.status.change": "የተማሪን ሁኔታ ቀይር"
+  "action.status.change": "የተማሪን ሁኔታ ቀይር",
+  "directory.load_more": "ተጨማሪ ጫን",
+  "register.permission_denied": "ተማሪዎችን ለመመዝገብ ፈቃድ የለዎትም።",
+  "register.online_only": "ምዝገባ በቀጥታ ወደ ትምህርት ቤቱ አገልጋይ ይቀመጣል፤ ከመስመር ውጭ አይሰለፍም።",
+  "register.no_year": "የትምህርት ዓመት የለም",
+  "profile.loading": "ተማሪውን በመጫን ላይ…",
+  "error.network": "ወደ ትምህርት ቤቱ አገልጋይ መድረስ አልተቻለም። ግንኙነትዎን ያረጋግጡ።",
+  "register.names_required": "ቢያንስ አንድ ሙሉ የስም ጽሑፍ ያስገቡ፦ የራስ፣ የአባትና የአያት ስም።",
+  "register.enrollment_incomplete": "የትምህርት ዓመትና የክፍል ደረጃ ሁለቱንም ይምረጡ፣ ወይም ምዝገባውን ባዶ ይተዉት።",
+  "register.previewing": "ተማሪውን በመፈተሽ ላይ…",
+  "register.options_error": "የትምህርት ዓመታትና የክፍል ደረጃዎች ሊጫኑ አልቻሉም",
+  "register.number_generated": "ቀጣዩ ነጻ የተማሪ ቁጥር {{number}} ነው።",
+  "register.number_manual": "ተማሪው ቁጥር {{number}} ይጠቀማል።",
+  "date_format": "YYYY-MM-DD",
+  "yes": "አዎ",
+  "no": "አይ"
 }
