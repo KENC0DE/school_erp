@@ -110,7 +110,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 
 - [x] P3-01 — Module `staff`
 - [x] P3-02 — Teaching assignments and scope resolvers
-- [ ] P3-03 — Leave
+- [x] P3-03 — Leave
 - [ ] P3-04 — Staff UI and basic mobile directory
 - [ ] P3-05 — Optional payroll sub-module
 - [ ] P3-06 — Module `attendance`

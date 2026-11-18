@@ -73,6 +73,8 @@ async def test_all_default_roles_are_seeded_with_declared_permissions(
         {"permission": "ai.use", "scope": "all"},
         {"permission": "sample.notes.create", "scope": "all"},
         {"permission": "sample.notes.view", "scope": "all"},
+        {"permission": "staff.leave.request", "scope": "self"},
+        {"permission": "staff.leave.view", "scope": "self"},
         {"permission": "students.view", "scope": "assigned_subjects"},
     ]
 
@@ -158,6 +160,8 @@ async def test_reset_permissions_restores_the_shipped_matrix(client, app, supera
         {"permission": "ai.use", "scope": "all"},
         {"permission": "sample.notes.create", "scope": "all"},
         {"permission": "sample.notes.view", "scope": "all"},
+        {"permission": "staff.leave.request", "scope": "self"},
+        {"permission": "staff.leave.view", "scope": "self"},
         {"permission": "students.view", "scope": "assigned_subjects"},
     ]
     assert roles["teacher"]["name"] == "Teacher"

@@ -82,6 +82,13 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         teaching_assignment_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(staff_teaching_assignments)")
         }
+        leave_type_columns = {row[1] for row in connection.execute("PRAGMA table_info(staff_leave_types)")}
+        leave_balance_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(staff_leave_balances)")
+        }
+        leave_request_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(staff_leave_requests)")
+        }
     finally:
         connection.close()
 
@@ -127,9 +134,12 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "staff_qualifications",
         "staff_number_sequences",
         "staff_teaching_assignments",
+        "staff_leave_types",
+        "staff_leave_balances",
+        "staff_leave_requests",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0023_teaching_assignments"
+    assert version == "0024_leave"
 
     assert {
         "failed_login_count",
@@ -187,6 +197,41 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "result",
     } <= staff_qualification_columns
     assert {"staff_id", "year_id", "section_id", "subject_id", "notes"} <= (teaching_assignment_columns)
+    assert {
+        "code",
+        "name",
+        "name_am",
+        "is_paid",
+        "annual_entitlement_units",
+        "counts_against_balance",
+        "requires_approval",
+        "is_active",
+        "sort_order",
+    } <= leave_type_columns
+    assert {
+        "staff_id",
+        "year_id",
+        "leave_type_id",
+        "entitled_units",
+        "carried_units",
+        "adjustment_units",
+        "notes",
+    } <= leave_balance_columns
+    assert {
+        "staff_id",
+        "year_id",
+        "leave_type_id",
+        "start_date",
+        "end_date",
+        "is_half_day",
+        "days_units",
+        "reason",
+        "status",
+        "submitted_at",
+        "decided_at",
+        "decided_by",
+        "decision_note",
+    } <= leave_request_columns
     assert {
         "application_number",
         "person_id",

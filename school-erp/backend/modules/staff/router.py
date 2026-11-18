@@ -51,6 +51,7 @@ from modules.staff.actions import (
     update_staff,
     update_teaching_assignment,
 )
+from modules.staff.leave_router import leave_router
 from modules.staff.schemas import (
     AccountLink,
     ContractInput,
@@ -82,6 +83,8 @@ from modules.staff.schemas import (
 )
 
 router = APIRouter(tags=["staff"])
+# Leave routes must come before the dynamic ``/{staff_id}`` routes.
+router.include_router(leave_router)
 
 
 def _context(principal: Principal, session: AsyncSession) -> ActionContext:

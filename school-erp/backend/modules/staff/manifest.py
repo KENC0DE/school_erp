@@ -3,6 +3,7 @@ from __future__ import annotations
 from core.modules.manifest import ModuleManifest, Nav, Perm
 
 from modules.staff import actions as _actions  # noqa: F401 - registers actions
+from modules.staff import leave_actions as _leave_actions  # noqa: F401 - registers actions
 from modules.staff import models as _models  # noqa: F401 - registers models
 from modules.staff.router import router
 
@@ -10,12 +11,16 @@ MANIFEST = ModuleManifest(
     key="staff",
     name="Staff",
     version="0.1.0",
-    description="Staff profiles on persons, departments, positions, contracts, qualifications, documents and user-account links.",
+    description="Staff profiles on persons, departments, positions, contracts, qualifications, documents, teaching assignments and leave.",
     permissions=[
         Perm("staff.view", "staff.perm.view", scopes=("all", "department")),
         Perm("staff.manage", "staff.perm.manage"),
         Perm("staff.contracts.view", "staff.perm.contracts_view"),
         Perm("staff.contracts.manage", "staff.perm.contracts_manage"),
+        Perm("staff.leave.view", "staff.perm.leave_view", scopes=("all", "department", "self")),
+        Perm("staff.leave.request", "staff.perm.leave_request", scopes=("all", "self")),
+        Perm("staff.leave.approve", "staff.perm.leave_approve", scopes=("all", "department")),
+        Perm("staff.leave.manage", "staff.perm.leave_manage"),
     ],
     nav=[
         Nav(
@@ -28,7 +33,7 @@ MANIFEST = ModuleManifest(
         )
     ],
     router=router,
-    actions=[*_actions.__all__],
+    actions=[*_actions.__all__, *_leave_actions.__all__],
     i18n_namespaces=["staff"],
     licensable=True,
     default_enabled=True,
