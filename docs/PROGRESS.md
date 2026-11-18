@@ -154,7 +154,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [ ] P4-15 — Approvals UI
 - [ ] P4-16 — Parent and student read views
 - [ ] P4-17 — Assessment actions and document fields
-- [ ] P4-SEED — Seed
+- [x] P4-SEED — Seed
 
 ## Phase 5 — Document Studio
 

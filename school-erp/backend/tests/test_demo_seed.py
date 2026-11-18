@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import uuid
+from decimal import Decimal
 from pathlib import Path
 
 from core.audit.models import AuditLog
@@ -12,6 +13,7 @@ from core.events.models import DomainEvent
 from core.people.models import Person
 from modules.academics.models import (
     AcademicYear,
+    GradeLevel,
     LevelSubject,
     Section,
     Subject,
@@ -280,3 +282,167 @@ async def test_staff_seed_links_existing_user_accounts(app) -> None:
             )
         ).scalar_one()
         assert profile.user_id == teacher.id
+
+
+async def test_assessment_seed_builds_structures_scales_and_published_term(app) -> None:
+    from modules.assessment.models import (
+        Assessment,
+        AssessmentComponent,
+        AssessmentStructure,
+        GradeBand,
+        GradeScale,
+        ResultSnapshot,
+        ScaleAssignment,
+        TermResult,
+    )
+    from modules.students.models import StudentProfile
+
+    summary = await _run_seed(app)
+    demo = summary["assessment_demo"]
+
+    assert demo["structure_created"] == 1
+    assert demo["scales_created"] == 2
+    assert demo["assessments_created"] == 5
+    assert demo["scores_created"] == 15
+    assert demo["published_terms"] == 1
+    assert demo["scales"] == 2
+
+    async with app.state.db.session() as session:
+        year = (
+            await session.execute(select(AcademicYear).where(AcademicYear.code == seed.DEMO_YEAR_CODE))
+        ).scalar_one()
+        structure = (
+            await session.execute(
+                select(AssessmentStructure).where(
+                    AssessmentStructure.year_id == year.id,
+                    AssessmentStructure.scope_key == "school",
+                )
+            )
+        ).scalar_one()
+        components = (
+            (
+                await session.execute(
+                    select(AssessmentComponent)
+                    .where(AssessmentComponent.structure_id == structure.id)
+                    .order_by(AssessmentComponent.sort_order)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert [row.key for row in components] == ["quizzes", "assignments", "midterm", "final"]
+        assert sum(row.max_points for row in components) == 100
+
+        default_scale = (
+            await session.execute(select(GradeScale).where(GradeScale.is_default.is_(True)))
+        ).scalar_one()
+        assert default_scale.name == "School grading scale"
+        bands = (
+            (
+                await session.execute(
+                    select(GradeBand)
+                    .where(GradeBand.scale_id == default_scale.id)
+                    .order_by(GradeBand.sort_order)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert [band.label for band in bands] == ["F", "D", "C", "C+", "B", "A"]
+        plus = next(band for band in bands if band.label == "C+")
+        assert plus.min_value == 75
+        assert plus.max_value == 85
+        assert plus.is_pass is True
+        assert plus.gpa_points == 3
+
+        official = (
+            await session.execute(select(GradeScale).where(GradeScale.name == "Official exam scale"))
+        ).scalar_one()
+        assert official.is_default is False
+        level_eight = (await session.execute(select(GradeLevel).where(GradeLevel.code == "g8"))).scalar_one()
+        assignment = (
+            await session.execute(
+                select(ScaleAssignment).where(
+                    ScaleAssignment.scale_id == official.id,
+                    ScaleAssignment.context == "level",
+                )
+            )
+        ).scalar_one()
+        assert assignment.level_id == level_eight.id
+        assert assignment.scope_key == f"level:{level_eight.id}"
+
+        assessments = (
+            (
+                await session.execute(
+                    select(Assessment)
+                    .where(Assessment.subject_id.in_(select(Subject.id).where(Subject.code == "mathematics")))
+                    .order_by(Assessment.assessment_date)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert [row.title for row in assessments] == [
+            "Quiz 1",
+            "Assignment 1",
+            "Quiz 2",
+            "Midterm exam",
+            "Final exam",
+        ]
+        assert [row.out_of for row in assessments] == [15, 20, 13, 30, 40]
+
+        section = (
+            await session.execute(
+                select(Section)
+                .join(GradeLevel, GradeLevel.id == Section.level_id)
+                .where(Section.year_id == year.id, GradeLevel.code == "g5", Section.code == "A")
+            )
+        ).scalar_one()
+
+        results = (
+            (
+                await session.execute(
+                    select(TermResult)
+                    .where(
+                        TermResult.section_id == section.id,
+                        TermResult.deleted_at.is_(None),
+                    )
+                    .order_by(TermResult.rank)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert len(results) == 3
+        assert {row.status for row in results} == {"published"}
+        assert [row.grade_label for row in results] == ["B", "C+", "F"]
+        assert [row.rank for row in results] == [1, 2, 3]
+        middle = results[1]
+        assert middle.percent == Decimal("79.85")
+        assert middle.is_pass is True
+        failing = results[2]
+        assert failing.percent == Decimal("48.92")
+        assert failing.is_pass is False
+
+        snapshot = (
+            await session.execute(
+                select(ResultSnapshot).where(
+                    ResultSnapshot.kind == "term",
+                    ResultSnapshot.section_id == section.id,
+                )
+            )
+        ).scalar_one()
+        top = next(row for row in snapshot.payload["students"] if row["rank"] == 1)
+        assert top["grade_label"] == "B"
+        assert snapshot.payload["snapshot"]["scale_version"] == 1
+
+        students = int(
+            (
+                await session.execute(
+                    select(func.count())
+                    .select_from(StudentProfile)
+                    .where(StudentProfile.deleted_at.is_(None))
+                )
+            ).scalar_one()
+        )
+        assert students == 60

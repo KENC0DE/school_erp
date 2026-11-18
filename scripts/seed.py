@@ -53,7 +53,15 @@ DEMO_API_BASE_URL = "http://localhost:8000"
 CANONICAL_ENROLLMENT_TOKEN = "dev-enroll-DEMO-2026"
 # Modules enabled on the demo school. The controller signs this list into the
 # license, so an addition here also proves the module gate end to end.
-DEMO_MODULES: tuple[str, ...] = ("academics", "students", "admissions", "staff", "attendance", "sample")
+DEMO_MODULES: tuple[str, ...] = (
+    "academics",
+    "students",
+    "admissions",
+    "staff",
+    "attendance",
+    "assessment",
+    "sample",
+)
 # School-layer translation overrides. They prove the default < central < school
 # precedence and give the activity history real i18n entries to show.
 SCHOOL_I18N_OVERRIDES: tuple[tuple[str, str, str, str], ...] = (
@@ -966,6 +974,14 @@ async def seed_demo_data(session, principal, *, users_by_email: dict | None = No
         year_id=year_id,
         section_ids=section_ids,
     )
+    # Phase 4 demo marks: one school-wide structure, two grade scales and a
+    # published term for Grade 5 A so the results screens have real data.
+    summary["assessment_demo"] = await seed_assessment_demo(
+        session,
+        principal,
+        year_id=year_id,
+        section_ids=section_ids,
+    )
     await session.commit()
     return summary
 
@@ -1245,6 +1261,501 @@ async def seed_staff_demo(
         if approve and row.status == "submitted":
             await leave_requests.approve_leave_request(session, principal, uuid.UUID(row.id), via="api")
 
+    return summary
+
+
+# ---------------------------------------------------------------------------
+# P4-SEED: mark structure, grade scales and a published term for one section
+# ---------------------------------------------------------------------------
+
+# The demo school records mathematics for Grade 5 Section A. The structure's
+# components add up to 100 so the term sheet reads like a real report card.
+DEMO_ASSESSMENT_SUBJECT = "mathematics"
+DEMO_ASSESSMENT_LEVEL = "g5"
+DEMO_ASSESSMENT_SECTION = "A"
+DEMO_ASSESSMENT_COMPONENTS: tuple[tuple[str, str, str, str, int], ...] = (
+    # key, name, Amharic name, max points, sort order
+    ("quizzes", "Quizzes", "ፈተናዎች", "10", 0),
+    ("assignments", "Assignments", "የቤት ስራዎች", "20", 1),
+    ("midterm", "Midterm exam", "የግማሽ ፈተና", "30", 2),
+    ("final", "Final exam", "የመጨረሻ ፈተና", "40", 3),
+)
+# (title, component key, out_of, date). The two quizzes use the guide's 15
+# and 13 example; 12/15 converts to 8.0/10 and 9/13 to 6.92/10. One assessment
+# per remaining component makes the published term total out of 100.
+DEMO_ASSESSMENTS: tuple[tuple[str, str, str, date], ...] = (
+    ("Quiz 1", "quizzes", "15", date(2026, 10, 5)),
+    ("Quiz 2", "quizzes", "13", date(2026, 11, 9)),
+    ("Assignment 1", "assignments", "20", date(2026, 10, 20)),
+    ("Midterm exam", "midterm", "30", date(2026, 11, 25)),
+    ("Final exam", "final", "40", date(2027, 1, 15)),
+)
+# Raw marks per roll number. Roll 1 lands in the custom C+ band (75–<85),
+# roll 2 in B and roll 3 fails, so the three demo bands are all visible.
+DEMO_ASSESSMENT_MARKS: dict[str, dict[str, str]] = {
+    "1": {
+        "Quiz 1": "12",
+        "Quiz 2": "10",
+        "Assignment 1": "16",
+        "Midterm exam": "24",
+        "Final exam": "32",
+    },
+    "2": {
+        "Quiz 1": "14",
+        "Quiz 2": "13",
+        "Assignment 1": "18",
+        "Midterm exam": "27",
+        "Final exam": "36",
+    },
+    "3": {
+        "Quiz 1": "6",
+        "Quiz 2": "5",
+        "Assignment 1": "10",
+        "Midterm exam": "15",
+        "Final exam": "20",
+    },
+}
+# Band tuples: min, max (exclusive except the top), label, GPA, pass.
+DEMO_DEFAULT_SCALE_BANDS: tuple[tuple[str, str, str, str, bool], ...] = (
+    ("0", "50", "F", "0", False),
+    ("50", "60", "D", "1", True),
+    ("60", "75", "C", "2", True),
+    ("75", "85", "C+", "3", True),
+    ("85", "95", "B", "3.5", True),
+    ("95", "100", "A", "4", True),
+)
+# The official Grade 8 exam uses wider bands and is attached to the level, so
+# the resolver demonstrates "most specific context wins" beside the default.
+DEMO_OFFICIAL_SCALE_BANDS: tuple[tuple[str, str, str, str, bool], ...] = (
+    ("0", "50", "F", "0", False),
+    ("50", "60", "D", "1", True),
+    ("60", "70", "C", "2", True),
+    ("70", "80", "B", "3", True),
+    ("80", "100", "A", "4", True),
+)
+
+
+async def _ensure_demo_scale(
+    session,
+    principal,
+    *,
+    name: str,
+    name_am: str,
+    description: str,
+    bands: tuple[tuple[str, str, str, str, bool], ...],
+    is_default: bool,
+):
+    """Create one grade scale with its bands; an existing scale is returned as is."""
+    from decimal import Decimal
+
+    from core.audit.service import record
+    from modules.assessment.models import GradeBand, GradeScale
+    from sqlalchemy import select
+
+    existing = (
+        (
+            await session.execute(
+                select(GradeScale).where(
+                    GradeScale.name == name,
+                    GradeScale.deleted_at.is_(None),
+                )
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if existing is not None:
+        return existing, False
+
+    if is_default:
+        other_default = (
+            (
+                await session.execute(
+                    select(GradeScale).where(
+                        GradeScale.is_default.is_(True),
+                        GradeScale.deleted_at.is_(None),
+                    )
+                )
+            )
+            .scalars()
+            .first()
+        )
+        # The partial unique index allows exactly one live default. On a database
+        # that already has one, keep this scale but leave the other in charge.
+        is_default = other_default is None
+
+    scale = GradeScale(
+        name=name,
+        name_am=name_am,
+        type="numeric_bands",
+        description=description,
+        is_default=is_default,
+    )
+    session.add(scale)
+    await session.flush()
+    for index, (low, high, label, gpa, is_pass) in enumerate(bands):
+        session.add(
+            GradeBand(
+                scale_id=scale.id,
+                min_value=Decimal(low),
+                max_value=Decimal(high),
+                label=label,
+                gpa_points=Decimal(gpa),
+                is_pass=is_pass,
+                sort_order=index * 10,
+            )
+        )
+    await session.flush()
+    await record(
+        session,
+        action="assessment.scale.create",
+        module="assessment",
+        entity_type="grade_scale",
+        entity_id=str(scale.id),
+        after={
+            "name": scale.name,
+            "is_default": scale.is_default,
+            "version": scale.version,
+            "bands": [
+                {"min": low, "max": high, "label": label, "is_pass": is_pass}
+                for low, high, label, _gpa, is_pass in bands
+            ],
+        },
+        actor=principal,
+        via="api",
+        reason="Demo seed grade scale",
+    )
+    return scale, True
+
+
+async def seed_assessment_demo(
+    session,
+    principal,
+    *,
+    year_id,
+    section_ids: dict[tuple[str, str], object],
+) -> dict:
+    """P4-SEED: structure, grade scales and a published term for Grade 5 A.
+
+    Every write goes through the audited assessment services where one exists
+    (structures, assessments, scores, submissions, results). Grade scales have
+    no CRUD service yet, so they are written directly and audited here. The
+    function matches the structure, scales, assessments, submission and
+    snapshot before creating anything, so a second pass is a no-op.
+    """
+    import uuid
+    from decimal import Decimal
+
+    from modules.academics.models import AcademicYear, GradeLevel, Subject, Term
+    from modules.assessment import common as assessment_common
+    from modules.assessment import results as assessment_results
+    from modules.assessment import service as assessment_service
+    from modules.assessment import workflow as assessment_workflow
+    from modules.assessment.models import (
+        Assessment,
+        AssessmentStructure,
+        GradeScale,
+        ResultSnapshot,
+        ScaleAssignment,
+        Score,
+        Submission,
+    )
+    from modules.assessment.schemas import (
+        AssessmentCreate,
+        ComponentInput,
+        ScoreBulkInput,
+        ScoreInput,
+        StructureCreate,
+        SubmissionAction,
+        SubmissionCreate,
+        TermResultPublish,
+    )
+    from sqlalchemy import func, select
+
+    summary: dict = {
+        "structure_created": 0,
+        "scales_created": 0,
+        "assessments_created": 0,
+        "scores_created": 0,
+        "published_terms": 0,
+    }
+
+    year = await session.get(AcademicYear, uuid.UUID(str(year_id)))
+    if year is None:
+        return summary
+    term = (
+        (
+            await session.execute(
+                select(Term).where(Term.year_id == year.id, Term.deleted_at.is_(None)).order_by(Term.number)
+            )
+        )
+        .scalars()
+        .first()
+    )
+    section_id = section_ids.get((DEMO_ASSESSMENT_LEVEL, DEMO_ASSESSMENT_SECTION))
+    if term is None or section_id is None:
+        return summary
+    subject = (
+        await session.execute(
+            select(Subject).where(
+                Subject.code == DEMO_ASSESSMENT_SUBJECT,
+                Subject.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if subject is None:
+        return summary
+
+    structure = (
+        await session.execute(
+            select(AssessmentStructure).where(
+                AssessmentStructure.year_id == year.id,
+                AssessmentStructure.scope_key == "school",
+                AssessmentStructure.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if structure is None:
+        await assessment_service.create_structure(
+            session,
+            principal,
+            StructureCreate(
+                year_id=year.id,
+                scope_type="school",
+                name="School mark structure",
+                name_am="የትምህርት ቤቱ የውጤት አወቃቀር",
+                year_mode="average",
+                intended_total=Decimal(100),
+                components=[
+                    ComponentInput(
+                        key=key,
+                        name=name,
+                        name_am=name_am,
+                        max_points=Decimal(max_points),
+                        sort_order=sort_order,
+                    )
+                    for key, name, name_am, max_points, sort_order in DEMO_ASSESSMENT_COMPONENTS
+                ],
+            ),
+            via="api",
+        )
+        summary["structure_created"] = 1
+
+    default_scale, created = await _ensure_demo_scale(
+        session,
+        principal,
+        name="School grading scale",
+        name_am="የትምህርት ቤቱ የደረጃ መለኪያ",
+        description="Default school scale with a custom C+ band (75–<85).",
+        bands=DEMO_DEFAULT_SCALE_BANDS,
+        is_default=True,
+    )
+    summary["scales_created"] += 1 if created else 0
+    if default_scale.is_default:
+        assignment = (
+            await session.execute(
+                select(ScaleAssignment).where(
+                    ScaleAssignment.context == "default",
+                    ScaleAssignment.scope_key == "default",
+                    ScaleAssignment.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        if assignment is None:
+            session.add(
+                ScaleAssignment(
+                    scale_id=default_scale.id,
+                    context="default",
+                    scope_key="default",
+                    notes="Demo default scale",
+                )
+            )
+            await session.flush()
+
+    official_scale, created = await _ensure_demo_scale(
+        session,
+        principal,
+        name="Official exam scale",
+        name_am="የመንግስት ፈተና ደረጃ",
+        description="Official Grade 8 exam bands; attached to the level context.",
+        bands=DEMO_OFFICIAL_SCALE_BANDS,
+        is_default=False,
+    )
+    summary["scales_created"] += 1 if created else 0
+    level = (
+        await session.execute(
+            select(GradeLevel).where(
+                GradeLevel.code == "g8",
+                GradeLevel.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if level is not None:
+        scope_key = f"level:{level.id}"
+        assignment = (
+            await session.execute(
+                select(ScaleAssignment).where(
+                    ScaleAssignment.context == "level",
+                    ScaleAssignment.scope_key == scope_key,
+                    ScaleAssignment.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        if assignment is None:
+            session.add(
+                ScaleAssignment(
+                    scale_id=official_scale.id,
+                    context="level",
+                    scope_key=scope_key,
+                    level_id=level.id,
+                    notes="Official Grade 8 exam",
+                )
+            )
+            await session.flush()
+
+    roster = await assessment_common.enrolled_roster(session, year.id, uuid.UUID(str(section_id)))
+    for title, component_key, out_of, assessment_date in DEMO_ASSESSMENTS:
+        assessment = (
+            await session.execute(
+                select(Assessment).where(
+                    Assessment.year_id == year.id,
+                    Assessment.term_id == term.id,
+                    Assessment.section_id == uuid.UUID(str(section_id)),
+                    Assessment.subject_id == subject.id,
+                    Assessment.title == title,
+                    Assessment.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        if assessment is None:
+            created_assessment = await assessment_service.create_assessment(
+                session,
+                principal,
+                AssessmentCreate(
+                    year_id=year.id,
+                    term_id=term.id,
+                    section_id=uuid.UUID(str(section_id)),
+                    subject_id=subject.id,
+                    component_key=component_key,
+                    title=title,
+                    title_am="ፈተና",
+                    assessment_date=assessment_date,
+                    out_of=Decimal(out_of),
+                ),
+                via="api",
+            )
+            assessment_id = uuid.UUID(created_assessment.id)
+            summary["assessments_created"] += 1
+        else:
+            assessment_id = assessment.id
+        already_entered = int(
+            (
+                await session.execute(
+                    select(func.count())
+                    .select_from(Score)
+                    .where(
+                        Score.assessment_id == assessment_id,
+                        Score.deleted_at.is_(None),
+                    )
+                )
+            ).scalar_one()
+        )
+        if already_entered:
+            continue
+        items = []
+        for index, (profile, _person, enrollment) in enumerate(roster):
+            marks = DEMO_ASSESSMENT_MARKS.get(enrollment.roll_number or "")
+            if marks is None:
+                marks = DEMO_ASSESSMENT_MARKS["1"] if index % 2 == 0 else DEMO_ASSESSMENT_MARKS["3"]
+            items.append(
+                ScoreInput(
+                    student_id=profile.id,
+                    raw_score=Decimal(marks[title]),
+                )
+            )
+        if not items:
+            continue
+        entered = await assessment_service.upsert_scores(
+            session,
+            principal,
+            assessment_id,
+            ScoreBulkInput(items=items),
+            via="api",
+        )
+        summary["scores_created"] += entered.created
+
+    submission = (
+        await session.execute(
+            select(Submission).where(
+                Submission.year_id == year.id,
+                Submission.term_id == term.id,
+                Submission.section_id == uuid.UUID(str(section_id)),
+                Submission.subject_id == subject.id,
+                Submission.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if submission is None:
+        ensured = await assessment_workflow.ensure_submission(
+            session,
+            principal,
+            SubmissionCreate(
+                year_id=year.id,
+                term_id=term.id,
+                section_id=uuid.UUID(str(section_id)),
+                subject_id=subject.id,
+            ),
+            via="api",
+        )
+        submission = await session.get(Submission, uuid.UUID(ensured.submission.id))
+    if submission is not None:
+        if submission.status == "draft":
+            await assessment_workflow.submit_marks(
+                session, principal, submission.id, SubmissionAction(note="Demo term marks"), via="api"
+            )
+            submission = await session.get(Submission, submission.id)
+        if submission.status == "submitted":
+            await assessment_workflow.approve_marks(
+                session, principal, submission.id, SubmissionAction(note="Demo approval"), via="api"
+            )
+            submission = await session.get(Submission, submission.id)
+        if submission.status == "approved":
+            await assessment_workflow.publish_marks(
+                session, principal, submission.id, SubmissionAction(note="Demo publication"), via="api"
+            )
+
+    snapshot = (
+        await session.execute(
+            select(ResultSnapshot).where(
+                ResultSnapshot.kind == "term",
+                ResultSnapshot.year_id == year.id,
+                ResultSnapshot.term_id == term.id,
+                ResultSnapshot.section_id == uuid.UUID(str(section_id)),
+                ResultSnapshot.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if snapshot is None:
+        await assessment_results.publish_term_results(
+            session,
+            principal,
+            TermResultPublish(
+                year_id=year.id,
+                term_id=term.id,
+                section_id=uuid.UUID(str(section_id)),
+                note="Demo term results",
+            ),
+            via="api",
+        )
+        summary["published_terms"] = 1
+
+    summary["subject"] = DEMO_ASSESSMENT_SUBJECT
+    summary["level"] = DEMO_ASSESSMENT_LEVEL
+    summary["section"] = DEMO_ASSESSMENT_SECTION
+    summary["term_id"] = str(term.id)
+    summary["scales"] = int(
+        (await session.execute(select(func.count()).select_from(GradeScale))).scalar_one()
+    )
     return summary
 
 

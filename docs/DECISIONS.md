@@ -2141,3 +2141,32 @@ and recorded here (date, decision, reason).
 - **The module manifests declare the events they emit** (`events=[...]`), so a
   future event-catalog check and the automation engine can discover them
   without importing every service module.
+
+## 2026-11-18 — P4-SEED demo marks
+
+- **One school-wide structure, four components totalling 100.** Quizzes 10,
+  assignments 20, midterm 30 and final 40. A single school scope keeps the demo
+  simple while still exercising the scope resolver; P4-05 already covers the
+  level, stage and subject scopes.
+- **Two grade scales ship with the demo.** The default "School grading scale"
+  has the custom C+ band (75–<85) the build guide asks for. "Official exam
+  scale" uses wider national-exam bands and is assigned at the Grade 8 level
+  context, so the most-specific-wins rule is visible in the demo without
+  affecting the Grade 5 term that is published.
+- **Grade scales are written directly, then audited.** There is no grade-scale
+  CRUD service until P4-11; the seed creates `GradeScale`, `GradeBand` and
+  `ScaleAssignment` rows and writes an `assessment.scale.create` audit entry,
+  while every other write goes through the audited assessment service.
+- **Marks are seeded for the whole structure, not only the two quizzes.** The
+  guide's sample assessments out of 15 and 13 remain the two quizzes (and they
+  reproduce the documented converted values), but without marks in the other
+  components the published term would read as 7.85/100. One assessment per
+  component makes the demo sheet total 100 and shows B, C+ and F.
+- **The published term is Grade 5 Section A, Mathematics, first term.** All
+  three students have marks; the submission goes to `published` and the term
+  sheet is published as a `kind="term"` snapshot. Re-running the seed matches
+  the structure, scales, assessments, scores, submission and snapshot instead
+  of creating a second copy.
+- **`assessment` joins `DEMO_MODULES`.** The demo school's signed license now
+  includes the assessment module, otherwise the seeded data would be unreachable
+  through the gated API and navigation.
