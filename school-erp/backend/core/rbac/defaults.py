@@ -184,8 +184,14 @@ DEFAULT_ROLES: tuple[DefaultRole, ...] = (
     DefaultRole(
         key="accountant",
         name="Accountant",
-        description="Fees, invoices, payments, receipts and arrears.",
-        permissions=("ai.use", "sample.notes.view"),
+        description="Fees, invoices, payments, receipts, arrears and payroll.",
+        permissions=(
+            "ai.use",
+            "sample.notes.view",
+            "payroll.view",
+            "payroll.manage",
+            "payroll.run",
+        ),
         scoped={"staff.leave.view": "self", "staff.leave.request": "self"},
     ),
     DefaultRole(
@@ -202,6 +208,8 @@ DEFAULT_ROLES: tuple[DefaultRole, ...] = (
             "staff.leave.request",
             "staff.leave.approve",
             "staff.leave.manage",
+            "payroll.view",
+            "payroll.manage",
             "ai.use",
             "sample.notes.view",
         ),

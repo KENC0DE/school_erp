@@ -89,6 +89,28 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         leave_request_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(staff_leave_requests)")
         }
+        payroll_component_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(payroll_components)")
+        }
+        payroll_staff_component_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(payroll_staff_components)")
+        }
+        payroll_rule_set_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(payroll_rule_sets)")
+        }
+        payroll_rule_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(payroll_rules)")
+        }
+        payroll_bracket_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(payroll_rule_brackets)")
+        }
+        payroll_run_columns = {row[1] for row in connection.execute("PRAGMA table_info(payroll_runs)")}
+        payroll_payslip_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(payroll_payslips)")
+        }
+        payroll_line_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(payroll_payslip_lines)")
+        }
     finally:
         connection.close()
 
@@ -137,9 +159,17 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "staff_leave_types",
         "staff_leave_balances",
         "staff_leave_requests",
+        "payroll_components",
+        "payroll_staff_components",
+        "payroll_rule_sets",
+        "payroll_rules",
+        "payroll_rule_brackets",
+        "payroll_runs",
+        "payroll_payslips",
+        "payroll_payslip_lines",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0024_leave"
+    assert version == "0025_payroll"
 
     assert {
         "failed_login_count",
@@ -232,6 +262,88 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "decided_by",
         "decision_note",
     } <= leave_request_columns
+    assert {
+        "code",
+        "name",
+        "name_am",
+        "kind",
+        "is_taxable",
+        "is_pensionable",
+        "is_active",
+        "sort_order",
+    } <= payroll_component_columns
+    assert {
+        "staff_id",
+        "component_id",
+        "amount_santim",
+        "rate_basis_points",
+        "starts_on",
+        "ends_on",
+    } <= payroll_staff_component_columns
+    assert {
+        "code",
+        "name",
+        "effective_from",
+        "effective_to",
+        "status",
+        "verified_by_accountant",
+    } <= payroll_rule_set_columns
+    assert {
+        "rule_set_id",
+        "key",
+        "name",
+        "kind",
+        "payer",
+        "method",
+        "base",
+        "rate_basis_points",
+        "is_active",
+    } <= payroll_rule_columns
+    assert {
+        "rule_id",
+        "lower_santim",
+        "upper_santim",
+        "rate_basis_points",
+        "sort_order",
+    } <= payroll_bracket_columns
+    assert {
+        "period_year",
+        "period_month",
+        "rule_set_id",
+        "status",
+        "payslip_count",
+        "skipped_count",
+        "gross_santim",
+        "deductions_santim",
+        "net_santim",
+        "employer_santim",
+    } <= payroll_run_columns
+    assert {
+        "run_id",
+        "staff_id",
+        "contract_id",
+        "staff_number",
+        "staff_name",
+        "base_salary_santim",
+        "gross_santim",
+        "taxable_santim",
+        "pensionable_santim",
+        "total_deductions_santim",
+        "net_santim",
+        "employer_contributions_santim",
+    } <= payroll_payslip_columns
+    assert {
+        "payslip_id",
+        "kind",
+        "code",
+        "name",
+        "source",
+        "rule_key",
+        "amount_santim",
+        "base_santim",
+        "rate_basis_points",
+        "sort_order",
+    } <= payroll_line_columns
     assert {
         "application_number",
         "person_id",

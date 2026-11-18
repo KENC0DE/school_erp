@@ -1763,3 +1763,53 @@ and recorded here (date, decision, reason).
   through the same session/token helpers as the student directory. No staff
   editing or leave workflow is exposed on mobile yet; those remain web-only
   until a later mobile task.
+
+## 2026-11-18 — P3-05 optional payroll sub-module
+
+- **Payroll is an installable module, not part of `staff`.** It has its own
+  manifest (`payroll`, `depends_on=["staff"]`, `default_enabled=False`) and its
+  own `payroll.view`/`payroll.manage`/`payroll.run` permissions. A school that
+  does not run payroll never sees the tables enabled, and the module gate
+  returns `MODULE_DISABLED` exactly like every other optional module.
+- **No tax or pension rates are shipped.** The engine, tables and API are
+  complete, but starter rules would look authoritative and could pay people
+  incorrectly. The accountant creates a draft rule set, enters the validated
+  rates, activates it, and only then can a run exist. Rule sets expose an
+  `accountant_notice` message key and a `verified_by_accountant` flag; the
+  notice is worded as "configuration, not law".
+- **Money and rates are integers end to end.** Payslip amounts are santim
+  (`BigInteger`), rates are basis points (`0…10000`), and the pure engine uses
+  `divmod` with an explicit rounding mode. No float ever touches pay. Each
+  bracket slice and each percentage is rounded before it is added, so a stored
+  payslip line can be recomputed exactly from its `base_santim` and
+  `rate_basis_points`.
+- **Brackets must be contiguous from zero.** A progressive rule either continues
+  upwards (open-ended last bracket) or stops early to express a contribution
+  cap. Gaps, overlaps, a non-zero first lower bound, a negative bound, or an
+  open-ended bracket that is not last are rejected at input time and again at
+  activation.
+- **Rule sets are versioned and frozen.** Rules can only be edited while the set
+  is a draft. Activation archives the previously active set in the same audited
+  transaction; a later rate change means a new version, so a finalized payslip
+  always points at the exact set that produced it. An active set cannot be
+  deleted, and a set used by a run cannot be deleted at all.
+- **Basic salary is always taxable and pensionable.** Allowances carry their own
+  `is_taxable`/`is_pensionable` flags; employer-paid rules are recorded on the
+  payslip but never add to gross or reduce net. Deductions that exceed gross
+  reject the whole calculation rather than paying a negative amount.
+- **A run is a month with a snapshotted result.** Creating a run needs an active
+  rule set and a unique live `(year, month)`. Calculation replaces previous
+  payslips for that run (soft-deleting them first so the live-unique
+  `(run_id, staff_id)` index never conflicts) and skips staff with no active
+  contract/salary. Finalizing is one-way: recalculation and deletion then
+  return 409, preserving the payroll history the accountant reviewed.
+- **Payslip PDF is deliberately out of scope.** This task builds the data model,
+  engine and API only. Document Studio will render the PDF from a finalized
+  payslip's stored lines, so pay history does not depend on a template that can
+  change later.
+- **Payroll permissions are seeded onto the accountant and HR roles.** The
+  accountant gets view/manage/run; the HR officer gets view/manage for salary
+  components but not the run permission, keeping the payroll-approval step with
+  finance. Existing instances keep local edits because default roles are only
+  created when missing; a reset restores the shipped matrix.
+
