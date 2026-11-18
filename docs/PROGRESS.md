@@ -118,6 +118,23 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P3-08 — Staff attendance, events, reports
 - [x] P3-SEED — Seed
 
+### Checkpoint P3
+- [x] All tests green, including the mobile offline outbox sync test and the attendance scope-isolation tests.
+- [x] UI quality gate and Playwright e2e green on a fresh seed.
+- [ ] Owner script on a physical phone (log in as each teacher, mark attendance with airplane mode on, reconnect and sync) — **not possible on this host**; see `docs/QUESTIONS.md` item 9.
+- [x] Tag `v0.3-staff-attendance`.
+
+### Phase 3 verification (2026-11-18)
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest school-erp/backend/tests` | 381 passed |
+| `pnpm -r --if-present typecheck` | all 11 workspace projects clean |
+| `pnpm -r --if-present test` | 205 passed (school 88, controller 13, mobile 62, shared 42) |
+| `pnpm -r --if-present build` | school and controller production builds OK |
+| `./e2e/run.sh` | 8 passed, 6 opt-in screenshot captures skipped; axe/UI gate and smoke green |
+| `ruff check` / `check-i18n` / `lint-imports` / `check-api-compat` | clean |
+
 ## Phase 4 — Assessment: marks, grade rules, results
 
 - [x] P4-01 — `assessment/engine.py`

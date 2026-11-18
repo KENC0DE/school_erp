@@ -66,6 +66,9 @@ else
   export VITE_API_URL="http://localhost:8000"
   export VITE_CONTROLLER_API_URL="http://localhost:8100"
   export VITE_SCHOOL_WEB_URL="http://localhost:5173"
+  # The demo seed writes several hundred audit rows. Ship them in one batch so
+  # the smoke test's three syncs always reach the newest entry it asserts on.
+  export AUDIT_SHIP_BATCH=1000
 
   echo "e2e: seeding demo data"
   if ! PYTHONPATH="$ROOT/school-erp/backend:$ROOT/owner/controller-api:$ROOT/shared/py" \

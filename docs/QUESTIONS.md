@@ -18,3 +18,7 @@ Written here when truly blocked; work continues on another task meanwhile.
    real delivery; a logging fake provider is used until then.
 8. **App store accounts** (Phase 12): Apple Developer and Google Play accounts are
    required for EAS production builds.
+9. **P3 owner script on a physical phone** (Phase 3): the offline outbox is covered
+   by Jest, and attendance scope isolation is covered by API tests, but the owner
+   script still needs a human with Expo Go and a real network toggle to mark a
+   register in airplane mode and reconnect. Not possible on this host.
