@@ -1659,3 +1659,30 @@ and recorded here (date, decision, reason).
   suite plus UI quality gate at the phase boundary.** No test is deleted,
   skipped or weakened by this policy; only the timing of the expensive run
   changes.
+
+## 2026-11-18 — P4-01 pure assessment engine
+
+- **The engine never accepts floats.** `score_percent`, `aggregate`, scores,
+  components and year rules take `Decimal`, `int` or numeric strings and raise
+  `TypeError` for floats, so binary rounding can never enter a mark. Rounding
+  happens only at the boundaries the caller chooses (`converted_score`,
+  `component_value`, `term_total`, `year_result`).
+- **Non-present statuses are not interchangeable zeros.** `excused`, `exempt`
+  and `not_taken` are always excluded. `absent` is excluded by default and
+  counts as zero only when the component sets `absent_counts_as_zero`, matching
+  ARCH §9.5.2. A component whose scores are all excluded returns `None` rather
+  than `0`, so callers can distinguish "nothing to count" from a real zero.
+- **Component aggregation matches the ARCH formula.** Percentages are
+  aggregated first and the result is multiplied by `max_points`, with one
+  rounding at the end. `best_n` keeps the highest included percents, `latest`
+  uses input order after excluded scores are removed, `sum_capped` caps the sum
+  of percents (default cap 1 = 100%), and `weighted_average` requires a weight
+  on every included score.
+- **Bonus marks are an assessment-level flag.** `raw > out_of` is rejected
+  unless that score sets `allow_bonus`, which then permits a component value
+  above its `max_points`. Negative raw scores and non-positive `out_of` values
+  are always rejected.
+- **Year rules are explicit.** `average`, `sum` and weighted average combine
+  term totals; missing (`None`) terms and their weights are skipped, and a year
+  with no present terms returns `None`. Precision is limited to 0–6 decimal
+  places with all standard Decimal rounding modes.

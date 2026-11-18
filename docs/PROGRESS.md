@@ -120,7 +120,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 
 ## Phase 4 — Assessment: marks, grade rules, results
 
-- [ ] P4-01 — `assessment/engine.py`
+- [x] P4-01 — `assessment/engine.py`
 - [ ] P4-02 — Grade rule engine
 - [ ] P4-03 — Rank and promotion rules
 - [ ] P4-04 — Models and migrations
