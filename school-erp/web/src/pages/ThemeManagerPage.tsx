@@ -105,7 +105,7 @@ function Palette({ tokens }: { tokens: Record<string, string> }) {
 function ContrastTable({ rows }: { rows: ContrastRow[] }) {
   const { t } = useI18n();
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("themes.contrast")}>
       <table className="ui-min-w-34 w-full text-left text-sm" data-testid="theme-contrast-table">
         <thead className="border-b border-border text-xs uppercase text-muted-foreground">
           <tr>
@@ -434,7 +434,12 @@ export function ThemeManagerPage() {
           <CardTitle>{t("themes.list")}</CardTitle>
           <CardDescription>{t("themes.list_hint")}</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent
+          className="overflow-x-auto"
+          tabIndex={0}
+          role="region"
+          aria-label={t("themes.list")}
+        >
           {themes.isLoading ? (
             <LoadingState label={t("themes.loading")} />
           ) : themes.isError ? (

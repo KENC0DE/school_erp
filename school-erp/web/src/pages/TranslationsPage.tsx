@@ -543,7 +543,12 @@ export function TranslationsPage() {
         </Card>
       ) : (
         <Card>
-          <CardContent className="overflow-x-auto p-0">
+          <CardContent
+            className="overflow-x-auto p-0"
+            tabIndex={0}
+            role="region"
+            aria-label={t("translations.title")}
+          >
             <table className="ui-min-w-40 w-full text-left text-sm">
               <thead className="border-b border-border text-xs uppercase text-muted-foreground">
                 <tr>

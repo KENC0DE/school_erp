@@ -161,7 +161,12 @@ export function JobsPage() {
       ) : null}
 
       {items.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-border">
+        <div
+          className="overflow-x-auto rounded-lg border border-border"
+          tabIndex={0}
+          role="region"
+          aria-label={t("jobs.title")}
+        >
           <table className="w-full border-collapse text-sm">
             <thead className="bg-secondary text-secondary-foreground">
               <tr>

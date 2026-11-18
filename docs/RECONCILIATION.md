@@ -139,7 +139,18 @@ and `scripts/check-api-compat.py` already point at the new paths.
 ## Open items
 
 - Design foundation (P0-19b/P0-21b) and UI gate automation (P1-27) are the real
-  new work; tracked in `docs/PROGRESS.md`.
-- Existing feature screens are migrated onto the shared kit as part of P0-19b.
+  new work. All three are implemented and ticked in `docs/PROGRESS.md`:
+  - P0-19b (`61c8f87`): `shared/ts/ui-web`, tokens, fonts, reference screens,
+    `docs/UI_CHECKLIST.md`, 52 web review screenshots.
+  - P0-21b (`f4fc82f`): `owner/mobile/src/ui`, tab shell + More sheet, three
+    native reference screens, 26 phone-size review screenshots.
+  - P1-27 (`9cc6e16`): axe sweep, source-level loading/empty/error check with a
+    failing fixture, theme low-contrast/injection rejection and a layout-
+    immunity check, plus 50 review captures in `docs/review/p1/`.
+- Existing feature screens now use the shared states kit (`LoadingState`,
+  `EmptyState`, `ErrorState`); the list is enforced by `e2e/lib/ui-gate.ts`.
+- The `P1-24` setup test compared two signed logo URLs including their expiring
+  signature, which failed when the two calls crossed a second boundary. It now
+  compares the stable file path; the rest of the assertion is unchanged.
 - No structural rollback was needed, so nothing is recorded in QUESTIONS.md for
   the restructure.

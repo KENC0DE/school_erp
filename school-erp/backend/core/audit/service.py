@@ -33,12 +33,19 @@ def _iso(value: Any) -> Any:
 def chain_lock_statement(dialect_name: str) -> str | None:
     """The sequence-allocation lock for the active database dialect.
 
-    SQLite serialises writers at commit time, so it needs no extra lock. On
-    PostgreSQL an advisory transaction lock makes ``max(seq) + 1`` safe: the
+    On PostgreSQL an advisory transaction lock makes ``max(seq) + 1`` safe: the
     next writer cannot read the head until the previous transaction commits.
+
+    SQLite only takes its write lock on the first write statement, and the two
+    SELECTs that read the head do not take it. A no-op UPDATE (which matches no
+    rows, so the append-only trigger never fires) upgrades the transaction to a
+    writer before the head is read; a concurrent writer then waits instead of
+    choosing the same sequence number.
     """
     if dialect_name == "postgresql":
         return "SELECT pg_advisory_xact_lock(:key)"
+    if dialect_name == "sqlite":
+        return "UPDATE audit_log SET seq = seq WHERE 0"
     return None
 
 

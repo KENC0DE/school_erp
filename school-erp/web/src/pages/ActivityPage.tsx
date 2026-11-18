@@ -118,7 +118,13 @@ function ChangesTable({ entry }: { entry: ActivityEntry }) {
   const { t } = useI18n();
   const fields = diffFields(entry);
   return (
-    <div className="mt-3 overflow-x-auto" data-testid={`activity-changes-${entry.seq}`}>
+    <div
+      className="mt-3 overflow-x-auto"
+      data-testid={`activity-changes-${entry.seq}`}
+      tabIndex={0}
+      role="region"
+      aria-label={t("activity.title")}
+    >
       {fields.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("activity.no_changes")}</p>
       ) : (

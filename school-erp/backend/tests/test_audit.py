@@ -219,9 +219,29 @@ def test_retry_backoff_is_exponential_and_capped():
     assert retry_delay(20, base_seconds=30, max_seconds=3_600) == timedelta(seconds=3_600)
 
 
-def test_sequence_lock_only_applies_to_postgresql():
+def test_sequence_lock_covers_both_shipped_databases():
     assert chain_lock_statement("postgresql") == "SELECT pg_advisory_xact_lock(:key)"
-    assert chain_lock_statement("sqlite") is None
+    # SQLite needs a write-lock statement, not a PostgreSQL advisory lock.
+    assert chain_lock_statement("sqlite") == "UPDATE audit_log SET seq = seq WHERE 0"
+    assert chain_lock_statement("mysql") is None
+
+
+async def test_concurrent_writers_get_unique_sequence_numbers(app):
+    import asyncio
+
+    async def write(index: int) -> int:
+        async with app.state.db.session() as session:
+            row = await record(session, action=f"concurrent.probe.{index}")
+            await session.commit()
+            return row.seq
+
+    # ``gather`` returns results in completion order, which differs from the
+    # order sequence numbers were allocated. What matters is that no two
+    # writers picked the same number and that the numbers form an unbroken run
+    # (no skipped sequence), which is only possible when allocation serialised.
+    sequences = sorted(await asyncio.gather(*(write(index) for index in range(6))))
+    assert len(set(sequences)) == 6
+    assert sequences == list(range(sequences[0], sequences[0] + 6))
 
 
 async def test_unshipped_skips_rows_waiting_for_a_retry(app):

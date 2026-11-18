@@ -229,7 +229,7 @@ export function UsersPage() {
             <CardTitle>{t("users.title")}</CardTitle>
             <CardDescription>{t("users.intro")}</CardDescription>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("users.title")}>
             {users.isLoading ? (
               <LoadingState label={t("common.loading")} />
             ) : users.isError ? (
