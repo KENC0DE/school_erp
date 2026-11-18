@@ -8,7 +8,7 @@ integer or a numeric string and are parsed to :class:`~decimal.Decimal`.
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -19,6 +19,8 @@ Aggregation = Literal["average", "weighted_average", "best_n", "sum_capped", "la
 YearMode = Literal["average", "sum", "weighted_average"]
 Rounding = Literal["half_up", "half_even", "half_down", "up", "down", "ceiling", "floor"]
 ScoreStatus = Literal["present", "absent", "excused", "exempt", "not_taken"]
+SubmissionStatus = Literal["draft", "submitted", "approved", "published", "locked"]
+CorrectionStatus = Literal["pending", "approved", "rejected"]
 AssessmentStatus = Literal["active", "archived"]
 
 Mark = Annotated[Decimal, Field(ge=0, max_digits=12, decimal_places=6)]
@@ -359,6 +361,185 @@ class ScoreBulkResult(BaseModel):
     unchanged: int
 
 
+class WindowCreate(BaseModel):
+    year_id: uuid.UUID
+    term_id: uuid.UUID
+    level_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    opens_at: datetime
+    closes_at: datetime
+    is_active: bool = True
+    note: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def _scope_and_times(self) -> WindowCreate:
+        if self.level_id is not None and self.section_id is not None:
+            raise ValueError("a window applies to a level or a section, not both")
+        if _as_utc(self.closes_at) <= _as_utc(self.opens_at):
+            raise ValueError("the closing time must be after the opening time")
+        return self
+
+
+class WindowUpdate(BaseModel):
+    row_version: int = Field(ge=1)
+    opens_at: datetime | None = None
+    closes_at: datetime | None = None
+    is_active: bool | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
+class WindowOut(BaseModel):
+    id: str
+    year_id: str
+    term_id: str
+    level_id: str | None = None
+    section_id: str | None = None
+    scope_key: str
+    opens_at: datetime
+    closes_at: datetime
+    is_active: bool
+    state: str
+    note: str | None = None
+    row_version: int
+
+
+class WindowQuery(BaseModel):
+    year_id: uuid.UUID | None = None
+    term_id: uuid.UUID | None = None
+    level_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    limit: int = Field(default=25, ge=1, le=200)
+    cursor: str | None = Field(default=None, max_length=1000)
+    sort: str | None = Field(default=None, max_length=60)
+    order: Literal["asc", "desc"] = "desc"
+
+
+class WindowList(BaseModel):
+    items: list[WindowOut]
+    next_cursor: str | None = None
+    total: int | None = None
+
+
+class SubmissionCreate(BaseModel):
+    year_id: uuid.UUID
+    term_id: uuid.UUID
+    section_id: uuid.UUID
+    subject_id: uuid.UUID
+
+
+class SubmissionOut(BaseModel):
+    id: str
+    year_id: str
+    year_code: str
+    term_id: str
+    section_id: str
+    section_code: str
+    subject_id: str
+    subject_name: str
+    status: str
+    submitted_at: datetime | None = None
+    submitted_by: str | None = None
+    approved_at: datetime | None = None
+    approved_by: str | None = None
+    published_at: datetime | None = None
+    published_by: str | None = None
+    locked_at: datetime | None = None
+    locked_by: str | None = None
+    note: str | None = None
+    assessments: int
+    scores: int
+    entered: int
+    row_version: int
+
+
+class SubmissionQuery(BaseModel):
+    year_id: uuid.UUID | None = None
+    term_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    subject_id: uuid.UUID | None = None
+    status: SubmissionStatus | None = None
+    limit: int = Field(default=25, ge=1, le=200)
+    cursor: str | None = Field(default=None, max_length=1000)
+    sort: str | None = Field(default=None, max_length=60)
+    order: Literal["asc", "desc"] = "desc"
+
+
+class SubmissionList(BaseModel):
+    items: list[SubmissionOut]
+    next_cursor: str | None = None
+    total: int | None = None
+
+
+class SubmissionAction(BaseModel):
+    row_version: int | None = Field(default=None, ge=1)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class SubmissionResult(BaseModel):
+    submission: SubmissionOut
+
+
+class CorrectionCreate(BaseModel):
+    score_id: uuid.UUID
+    new_raw: Mark | None = None
+    new_status: ScoreStatus = "present"
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class CorrectionDecision(BaseModel):
+    row_version: int | None = Field(default=None, ge=1)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class CorrectionOut(BaseModel):
+    id: str
+    score_id: str
+    assessment_id: str
+    student_id: str
+    student_number: str
+    student_name: str
+    year_id: str
+    term_id: str
+    section_id: str
+    subject_id: str
+    old_raw: str | None = None
+    new_raw: str | None = None
+    old_status: str | None = None
+    new_status: str | None = None
+    reason: str
+    status: str
+    requested_at: datetime | None = None
+    requested_by: str | None = None
+    decided_at: datetime | None = None
+    decided_by: str | None = None
+    decision_note: str | None = None
+    row_version: int
+
+
+class CorrectionQuery(BaseModel):
+    year_id: uuid.UUID | None = None
+    term_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    subject_id: uuid.UUID | None = None
+    score_id: uuid.UUID | None = None
+    status: CorrectionStatus | None = None
+    limit: int = Field(default=25, ge=1, le=200)
+    cursor: str | None = Field(default=None, max_length=1000)
+    sort: str | None = Field(default=None, max_length=60)
+    order: Literal["asc", "desc"] = "desc"
+
+
+class CorrectionList(BaseModel):
+    items: list[CorrectionOut]
+    next_cursor: str | None = None
+    total: int | None = None
+
+
+def _as_utc(value: datetime) -> datetime:
+    """Compare window timestamps even when a client sends a naive datetime."""
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
 def _check_scope(payload: StructureCreate | StructureUpdate) -> None:
     targets = {
         "level": payload.level_id,
@@ -391,6 +572,12 @@ __all__ = [
     "AssessmentUpdate",
     "ComponentInput",
     "ComponentOut",
+    "CorrectionCreate",
+    "CorrectionDecision",
+    "CorrectionList",
+    "CorrectionOut",
+    "CorrectionQuery",
+    "CorrectionStatus",
     "ImpactSample",
     "Mark",
     "PositiveMark",
@@ -412,5 +599,17 @@ __all__ = [
     "StructureQuery",
     "StructureUpdate",
     "StructureUpdateResult",
+    "SubmissionAction",
+    "SubmissionCreate",
+    "SubmissionList",
+    "SubmissionOut",
+    "SubmissionQuery",
+    "SubmissionResult",
+    "SubmissionStatus",
+    "WindowCreate",
+    "WindowList",
+    "WindowOut",
+    "WindowQuery",
+    "WindowUpdate",
     "YearMode",
 ]

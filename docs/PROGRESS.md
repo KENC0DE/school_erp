@@ -143,7 +143,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P4-04 — Models and migrations (marks as integer micro-units, partial live indexes)
 - [x] P4-05 — Structure management APIs and actions (impact preview, recalculation job)
 - [x] P4-06 — Assessment and score APIs
-- [ ] P4-07 — Workflow APIs
+- [x] P4-07 — Workflow APIs
 - [ ] P4-08 — Results
 - [ ] P4-09 — Events
 - [ ] P4-10 — Mark structure UI

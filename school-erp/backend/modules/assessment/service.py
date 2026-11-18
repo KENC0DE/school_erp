@@ -24,10 +24,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.academics.models import AcademicYear, GradeLevel, Section, Stage, Subject, Term
-from modules.assessment import common, scoping
+from modules.assessment import common, scoping, workflow
 from modules.assessment.common import MODULE, decimal_out, structure_state
-from modules.assessment.engine import Score as EngineScore
-from modules.assessment.engine import ScoreStatus, round_mark, score_percent
+from modules.assessment.engine import round_mark
 from modules.assessment.models import (
     Assessment,
     AssessmentComponent,
@@ -975,52 +974,13 @@ def _validate_mark(
     component: AssessmentComponent,
     item: ScoreInput,
 ) -> None:
-    """Reject an impossible mark before anything is written."""
-    if item.status == "present":
-        if item.raw_score is None:
-            raise ValidationFailed(
-                "A present score needs a raw value",
-                message_key="assessment.error.raw_required",
-                details={"student_id": str(item.student_id)},
-            )
-    elif item.raw_score is not None:
-        raise ValidationFailed(
-            "Only a present score can carry a raw value",
-            message_key="assessment.error.raw_not_allowed",
-            details={"student_id": str(item.student_id), "status": item.status},
-        )
-    if item.raw_score is not None:
-        if item.raw_score < 0:
-            raise ValidationFailed(
-                "A score cannot be negative",
-                message_key="assessment.error.raw_negative",
-                details={"student_id": str(item.student_id)},
-            )
-        if item.raw_score > assessment.out_of and not assessment.allow_bonus:
-            raise ValidationFailed(
-                "A score cannot exceed the assessment maximum unless bonus marks are allowed",
-                message_key="assessment.error.raw_over_out_of",
-                details={
-                    "student_id": str(item.student_id),
-                    "raw_score": decimal_out(item.raw_score),
-                    "out_of": decimal_out(assessment.out_of),
-                },
-            )
-    try:
-        score_percent(
-            EngineScore(
-                out_of=assessment.out_of,
-                raw=item.raw_score,
-                status=ScoreStatus(item.status),
-            ),
-            absent_counts_as_zero=component.absent_counts_as_zero,
-        )
-    except ValueError as exc:  # pragma: no cover - the checks above cover every case
-        raise ValidationFailed(
-            "That mark is not valid",
-            message_key="assessment.error.invalid_mark",
-            details={"student_id": str(item.student_id), "reason": str(exc)},
-        ) from exc
+    common.validate_mark(
+        assessment=assessment,
+        component=component,
+        raw=item.raw_score,
+        status=item.status,
+        student_id=item.student_id,
+    )
 
 
 async def _assessment_structure(session: AsyncSession, row: Assessment) -> AssessmentStructure:
@@ -1471,6 +1431,7 @@ async def upsert_scores(
             message_key="assessment.error.assessment_archived",
             details={"assessment_id": str(row.id)},
         )
+    await workflow.assert_entry_open(session, row)
     structure = await _assessment_structure(session, row)
     component = await common.live_component(session, row.component_id)
     roster = {

@@ -2016,3 +2016,50 @@ and recorded here (date, decision, reason).
   requires `assessment.enter_marks`, and the service narrows it to the assigned
   pair before resolving the structure, so a crafted `section_id` cannot reach
   another class.
+
+## 2026-11-18 — P4-07 mark workflow and corrections
+
+- **The submission state machine is explicit and forward-only.** The only
+  transitions are `draft → submitted → approved → published → locked`, plus a
+  rejection that returns `submitted → draft`. Any other change (for example
+  publishing a draft, approving twice or resubmitting) returns `409
+  assessment.error.submission_state` with the current and allowed states, rather
+  than silently coercing the row. A `row_version` on the action gives optimistic
+  concurrency when the client read a stale card on screen.
+- **Score entry stops at submission and resumes on rejection.** The service
+  checks the live submission before every score upsert and returns `409
+  assessment.error.marks_not_draft` once the marks moved past `draft`. Approving
+  a correction is the single deliberate exception: it writes the corrected
+  score directly because the correction is the authorised post-lock path.
+- **Marking windows are optional deadlines, not required configuration.** If no
+  active window exists for the term and scope, entry stays open. Once at least
+  one active window exists, entry and submit require one of them to be currently
+  open, otherwise `422 assessment.error.window_closed`. Windows can apply to the
+  whole school, a level or one section; a more specific window does not override
+  an open broader one, so a section can be reopened without clearing the term's
+  main window.
+- **A submission cannot be submitted without at least one raw mark.** The count
+  deliberately ignores absent/excused-only sheets: a teacher must have entered
+  at least one real value, otherwise the review queue would fill with empty
+  subjects (`422 assessment.error.no_marks`). Rejection keeps the teacher's note
+  and clears `submitted_at`/`submitted_by`, so the draft looks untouched while
+  the audit trail still records the return.
+- **Corrections exist only after lock.** Requesting one for a draft, submitted,
+  approved or published submission returns `409
+  assessment.error.not_locked`. Only one pending request is allowed per score
+  (`409 assessment.error.correction_pending`), and a request whose proposed value
+  equals the current mark is refused (`422
+  assessment.error.correction_unchanged`) so the queue stays meaningful.
+- **Accepting a correction rewrites the score through the normal validation
+  path.** It validates the proposed mark against the assessment and component,
+  recomputes `converted` with the stored structure rules, bumps the score's
+  `row_version`, and appends a `ScoreRevision` with `source="correction"` and
+  the request id. The old raw value remains in the revision and audit entry;
+  nothing is hard-deleted or overwritten without a trace. Rejecting records the
+  decision and leaves the score untouched.
+- **Correction and submission scopes reuse the mark scope.** Requesting a
+  correction requires `assessment.correct` (`assigned_subjects`), deciding it
+  requires `assessment.correct_approve` (`department`), and both point reads
+  and writes assert the same section/subject pair as score entry. A teacher
+  outside the pair gets `403 error.scope_denied` rather than a silent empty
+  result.

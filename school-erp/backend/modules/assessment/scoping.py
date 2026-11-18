@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 from app.errors import Forbidden
 from core.auth.principal import Principal
@@ -84,8 +85,15 @@ async def visible_access(
     return MarkAccess(pairs=frozenset(pairs), sections=frozenset(sections))
 
 
-def condition(access: MarkAccess | None) -> ColumnElement[bool] | None:
-    """A SQL condition that narrows assessment rows to a scope."""
+def condition(
+    access: MarkAccess | None,
+    model: Any = Assessment,
+) -> ColumnElement[bool] | None:
+    """A SQL condition that narrows mark rows to a scope.
+
+    ``model`` is the table to narrow; assessments, submissions and corrections
+    all carry ``section_id`` and ``subject_id``.
+    """
     if access is None:
         return None
     clauses = []
@@ -93,7 +101,7 @@ def condition(access: MarkAccess | None) -> ColumnElement[bool] | None:
         clauses.append(
             or_(
                 *(
-                    and_(Assessment.section_id == section_id, Assessment.subject_id == subject_id)
+                    and_(model.section_id == section_id, model.subject_id == subject_id)
                     for section_id, subject_id in sorted(
                         access.pairs, key=lambda pair: (str(pair[0]), str(pair[1]))
                     )
@@ -101,7 +109,7 @@ def condition(access: MarkAccess | None) -> ColumnElement[bool] | None:
             )
         )
     if access.sections:
-        clauses.append(Assessment.section_id.in_(sorted(access.sections)))
+        clauses.append(model.section_id.in_(sorted(access.sections)))
     if not clauses:
         return false()
     return or_(*clauses)

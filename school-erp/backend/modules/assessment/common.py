@@ -22,6 +22,7 @@ from modules.assessment.engine import (
     RoundingMode,
     ScoreStatus,
     converted_score,
+    score_percent,
 )
 from modules.assessment.engine import (
     Score as EngineScore,
@@ -30,8 +31,11 @@ from modules.assessment.models import (
     Assessment,
     AssessmentComponent,
     AssessmentStructure,
+    CorrectionRequest,
     GradeScale,
+    MarkingWindow,
     Score,
+    Submission,
 )
 from modules.students.models import StudentEnrollment, StudentProfile
 
@@ -368,6 +372,62 @@ def converted_for(
     )
 
 
+def validate_mark(
+    *,
+    assessment: Assessment,
+    component: AssessmentComponent,
+    raw: Decimal | None,
+    status: str,
+    student_id: uuid.UUID,
+) -> None:
+    """Reject an impossible mark before anything is written."""
+    if status == ScoreStatus.PRESENT:
+        if raw is None:
+            raise ValidationFailed(
+                "A present score needs a raw value",
+                message_key="assessment.error.raw_required",
+                details={"student_id": str(student_id)},
+            )
+    elif raw is not None:
+        raise ValidationFailed(
+            "Only a present score can carry a raw value",
+            message_key="assessment.error.raw_not_allowed",
+            details={"student_id": str(student_id), "status": status},
+        )
+    if raw is not None:
+        if raw < 0:
+            raise ValidationFailed(
+                "A score cannot be negative",
+                message_key="assessment.error.raw_negative",
+                details={"student_id": str(student_id)},
+            )
+        if raw > assessment.out_of and not assessment.allow_bonus:
+            raise ValidationFailed(
+                "A score cannot exceed the assessment maximum unless bonus marks are allowed",
+                message_key="assessment.error.raw_over_out_of",
+                details={
+                    "student_id": str(student_id),
+                    "raw_score": decimal_out(raw),
+                    "out_of": decimal_out(assessment.out_of),
+                },
+            )
+    try:
+        score_percent(
+            EngineScore(
+                out_of=assessment.out_of,
+                raw=raw,
+                status=score_status(status),
+            ),
+            absent_counts_as_zero=component.absent_counts_as_zero,
+        )
+    except ValueError as exc:  # pragma: no cover - the checks above cover every case
+        raise ValidationFailed(
+            "That mark is not valid",
+            message_key="assessment.error.invalid_mark",
+            details={"student_id": str(student_id), "reason": str(exc)},
+        ) from exc
+
+
 def decimal_out(value: Decimal | None) -> str | None:
     """Serialise an exact mark as a decimal string, never a JSON float.
 
@@ -465,6 +525,154 @@ def assessment_state(row: Assessment) -> dict[str, Any]:
     }
 
 
+async def live_submission(session: AsyncSession, submission_id: uuid.UUID) -> Submission:
+    row = (
+        await session.execute(
+            select(Submission).where(
+                Submission.id == submission_id,
+                Submission.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise NotFound(
+            "The mark submission does not exist",
+            message_key="assessment.error.submission_not_found",
+        )
+    return row
+
+
+async def submission_for(
+    session: AsyncSession,
+    *,
+    year_id: uuid.UUID,
+    term_id: uuid.UUID,
+    section_id: uuid.UUID,
+    subject_id: uuid.UUID,
+) -> Submission | None:
+    return (
+        await session.execute(
+            select(Submission).where(
+                Submission.year_id == year_id,
+                Submission.term_id == term_id,
+                Submission.section_id == section_id,
+                Submission.subject_id == subject_id,
+                Submission.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def live_window(session: AsyncSession, window_id: uuid.UUID) -> MarkingWindow:
+    row = (
+        await session.execute(
+            select(MarkingWindow).where(
+                MarkingWindow.id == window_id,
+                MarkingWindow.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise NotFound(
+            "The marking window does not exist",
+            message_key="assessment.error.window_not_found",
+        )
+    return row
+
+
+async def live_correction(session: AsyncSession, correction_id: uuid.UUID) -> CorrectionRequest:
+    row = (
+        await session.execute(
+            select(CorrectionRequest).where(
+                CorrectionRequest.id == correction_id,
+                CorrectionRequest.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise NotFound(
+            "The correction request does not exist",
+            message_key="assessment.error.correction_not_found",
+        )
+    return row
+
+
+def window_scope_key(
+    *,
+    level_id: uuid.UUID | None = None,
+    section_id: uuid.UUID | None = None,
+) -> str:
+    if section_id is not None:
+        return f"section:{section_id}"
+    if level_id is not None:
+        return f"level:{level_id}"
+    return "all"
+
+
+def as_utc(value: datetime) -> datetime:
+    """SQLite returns naive datetimes; compare every mark timestamp in UTC."""
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+async def active_windows(
+    session: AsyncSession,
+    *,
+    year_id: uuid.UUID,
+    term_id: uuid.UUID,
+    section_id: uuid.UUID,
+    level_id: uuid.UUID,
+) -> list[MarkingWindow]:
+    keys = ["all", f"level:{level_id}", f"section:{section_id}"]
+    rows = (
+        await session.execute(
+            select(MarkingWindow).where(
+                MarkingWindow.year_id == year_id,
+                MarkingWindow.term_id == term_id,
+                MarkingWindow.scope_key.in_(keys),
+                MarkingWindow.is_active.is_(True),
+                MarkingWindow.deleted_at.is_(None),
+            )
+        )
+    ).scalars()
+    return list(rows)
+
+
+async def assert_marking_open(
+    session: AsyncSession,
+    *,
+    year_id: uuid.UUID,
+    term_id: uuid.UUID,
+    section_id: uuid.UUID,
+    level_id: uuid.UUID,
+) -> None:
+    """Reject entry when a configured window is closed for this term/scope.
+
+    No window at all means the school has not set a deadline, so entry stays
+    open; this matches the "windows are optional control" rule in ARCH §9.5.
+    """
+    windows = await active_windows(
+        session,
+        year_id=year_id,
+        term_id=term_id,
+        section_id=section_id,
+        level_id=level_id,
+    )
+    if not windows:
+        return
+    now = utcnow()
+    if any(as_utc(row.opens_at) <= now <= as_utc(row.closes_at) for row in windows):
+        return
+    raise ValidationFailed(
+        "Marks cannot be entered outside the marking window",
+        message_key="assessment.error.window_closed",
+        details={
+            "year_id": str(year_id),
+            "term_id": str(term_id),
+            "section_id": str(section_id),
+        },
+    )
+
+
 def score_state(row: Score) -> dict[str, Any]:
     return {
         "assessment_id": str(row.assessment_id),
@@ -478,15 +686,77 @@ def score_state(row: Score) -> dict[str, Any]:
     }
 
 
+def submission_state(row: Submission) -> dict[str, Any]:
+    return {
+        "year_id": str(row.year_id),
+        "term_id": str(row.term_id),
+        "section_id": str(row.section_id),
+        "subject_id": str(row.subject_id),
+        "status": row.status,
+        "submitted_at": row.submitted_at.isoformat() if row.submitted_at else None,
+        "submitted_by": str(row.submitted_by) if row.submitted_by else None,
+        "approved_at": row.approved_at.isoformat() if row.approved_at else None,
+        "approved_by": str(row.approved_by) if row.approved_by else None,
+        "published_at": row.published_at.isoformat() if row.published_at else None,
+        "published_by": str(row.published_by) if row.published_by else None,
+        "locked_at": row.locked_at.isoformat() if row.locked_at else None,
+        "locked_by": str(row.locked_by) if row.locked_by else None,
+        "note": row.note,
+        "row_version": row.row_version,
+    }
+
+
+def window_state(row: MarkingWindow) -> dict[str, Any]:
+    return {
+        "year_id": str(row.year_id),
+        "term_id": str(row.term_id),
+        "level_id": str(row.level_id) if row.level_id else None,
+        "section_id": str(row.section_id) if row.section_id else None,
+        "scope_key": row.scope_key,
+        "opens_at": row.opens_at.isoformat(),
+        "closes_at": row.closes_at.isoformat(),
+        "is_active": row.is_active,
+        "note": row.note,
+        "row_version": row.row_version,
+    }
+
+
+def correction_state(row: CorrectionRequest) -> dict[str, Any]:
+    return {
+        "score_id": str(row.score_id),
+        "assessment_id": str(row.assessment_id),
+        "student_id": str(row.student_id),
+        "year_id": str(row.year_id),
+        "term_id": str(row.term_id),
+        "section_id": str(row.section_id),
+        "subject_id": str(row.subject_id),
+        "old_raw": decimal_out(row.old_raw),
+        "new_raw": decimal_out(row.new_raw),
+        "old_status": row.old_status,
+        "new_status": row.new_status,
+        "reason": row.reason,
+        "status": row.status,
+        "requested_by": str(row.requested_by) if row.requested_by else None,
+        "decided_by": str(row.decided_by) if row.decided_by else None,
+        "decision_note": row.decision_note,
+        "row_version": row.row_version,
+    }
+
+
 __all__ = [
     "MODULE",
+    "active_windows",
+    "as_utc",
+    "assert_marking_open",
     "assessment_state",
     "component_state",
     "converted_for",
+    "correction_state",
     "decimal_out",
     "enrolled_roster",
     "live_assessment",
     "live_component",
+    "live_correction",
     "live_level",
     "live_scale",
     "live_score",
@@ -494,7 +764,9 @@ __all__ = [
     "live_stage",
     "live_structure",
     "live_subject",
+    "live_submission",
     "live_term",
+    "live_window",
     "live_year",
     "person_name",
     "rounding_mode",
@@ -504,5 +776,10 @@ __all__ = [
     "structure_components",
     "structure_for",
     "structure_state",
+    "submission_for",
+    "submission_state",
     "utcnow",
+    "validate_mark",
+    "window_scope_key",
+    "window_state",
 ]
