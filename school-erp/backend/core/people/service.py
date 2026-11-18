@@ -47,6 +47,7 @@ def _apply(person: Person, data: dict[str, Any]) -> None:
         "phone",
         "email",
         "address",
+        "photo_file_id",
         "custom",
     ):
         if key in data:
@@ -148,6 +149,36 @@ async def duplicate_warnings(
     return warnings
 
 
+async def prepare_person(
+    session: AsyncSession,
+    data: dict[str, Any],
+    *,
+    person: Person | None = None,
+    partial: bool = False,
+) -> tuple[Person, list[dict[str, Any]]]:
+    """Apply validated input to a new or existing person without committing.
+
+    Registration flows need one transaction across the person and the module
+    record, so the caller decides when to commit. Duplicate warnings are only
+    computed for a new person.
+    """
+    target = person or Person()
+    payload = dict(data)
+    if payload.get("custom") is not None:
+        cleaned = await validate_entity_values(session, "person", payload["custom"], partial=partial)
+        payload["custom"] = merge_custom(target.custom, cleaned)
+    _apply(target, payload)
+    try:
+        validate_name_parts(target)
+        if target.phone:
+            target.phone = target.phone.strip()
+        target.search_name = build_search_name(target)
+    except ValueError as exc:
+        raise ValidationFailed(str(exc), message_key="error.invalid_name") from exc
+    warnings = [] if person is not None else await duplicate_warnings(session, target)
+    return target, warnings
+
+
 async def create_person(
     session: AsyncSession,
     principal: Principal | None,
@@ -155,21 +186,9 @@ async def create_person(
     *,
     via: str | None = None,
     reason: str | None = None,
+    commit: bool = True,
 ) -> tuple[Person, list[dict[str, Any]]]:
-    person = Person()
-    if data.get("custom") is not None:
-        cleaned = await validate_entity_values(session, "person", data["custom"])
-        data["custom"] = merge_custom(None, cleaned)
-    _apply(person, data)
-    try:
-        validate_name_parts(person)
-        if person.phone:
-            person.phone = person.phone.strip()
-        person.search_name = build_search_name(person)
-    except ValueError as exc:
-        raise ValidationFailed(str(exc), message_key="error.invalid_name") from exc
-    warnings = await duplicate_warnings(session, person)
-
+    person, warnings = await prepare_person(session, data)
     session.add(person)
     await session.flush()
     await record(
@@ -183,7 +202,8 @@ async def create_person(
         via=via,
         reason=reason,
     )
-    await session.commit()
+    if commit:
+        await session.commit()
     return person, warnings
 
 
@@ -194,18 +214,11 @@ async def update_person(
     data: dict[str, Any],
     *,
     via: str | None = None,
+    commit: bool = True,
 ) -> Person:
     person = await get_live(session, Person, person_id)
     before = person_view(person)
-    if data.get("custom") is not None:
-        cleaned = await validate_entity_values(session, "person", data["custom"], partial=True)
-        data["custom"] = merge_custom(person.custom, cleaned)
-    _apply(person, data)
-    try:
-        validate_name_parts(person)
-    except ValueError as exc:
-        raise ValidationFailed(str(exc), message_key="error.invalid_name") from exc
-    person.search_name = build_search_name(person)
+    await prepare_person(session, data, person=person, partial=True)
     person.row_version = (person.row_version or 0) + 1
     await session.flush()
     await record(
@@ -219,7 +232,8 @@ async def update_person(
         actor=principal,
         via=via,
     )
-    await session.commit()
+    if commit:
+        await session.commit()
     return person
 
 
@@ -270,6 +284,7 @@ __all__ = [
     "create_person",
     "duplicate_warnings",
     "person_view",
+    "prepare_person",
     "search_people",
     "update_person",
 ]

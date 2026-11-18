@@ -92,9 +92,13 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "academics_sections",
         "academics_curriculum_profiles",
         "academics_curriculum_level_subjects",
+        "student_profiles",
+        "student_enrollments",
+        "student_guardians",
+        "student_medical_records",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0018_curriculum_profiles"
+    assert version == "0019_students"
 
     assert {
         "failed_login_count",

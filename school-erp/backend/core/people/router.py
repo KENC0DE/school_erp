@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
-from typing import Any
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.deps import require
@@ -15,30 +12,10 @@ from core.auth.principal import Principal
 from core.db.deps import get_session
 from core.db.soft_delete import get_live
 from core.people.models import Person
+from core.people.schemas import PersonInput
 from core.people.service import create_person, person_view, search_people, update_person
 
 router = APIRouter(prefix="/people", tags=["people"])
-
-
-class PersonInput(BaseModel):
-    given_name_en: str | None = Field(default=None, max_length=120)
-    father_name_en: str | None = Field(default=None, max_length=120)
-    grandfather_name_en: str | None = Field(default=None, max_length=120)
-    given_name_am: str | None = Field(default=None, max_length=120)
-    father_name_am: str | None = Field(default=None, max_length=120)
-    grandfather_name_am: str | None = Field(default=None, max_length=120)
-    mother_name_en: str | None = Field(default=None, max_length=120)
-    mother_name_am: str | None = Field(default=None, max_length=120)
-    baptismal_name: str | None = Field(default=None, max_length=120)
-    nickname: str | None = Field(default=None, max_length=120)
-    sex: str | None = Field(default=None, max_length=20)
-    date_of_birth: date | None = None
-    place_of_birth: str | None = Field(default=None, max_length=200)
-    nationality: str | None = Field(default=None, max_length=80)
-    phone: str | None = Field(default=None, max_length=32)
-    email: str | None = Field(default=None, max_length=255)
-    address: str | None = None
-    custom: dict[str, Any] | None = None
 
 
 @router.get("/search", dependencies=[Depends(require("people.view"))])

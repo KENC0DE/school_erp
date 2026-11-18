@@ -1937,6 +1937,253 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Students Route */
+        get: operations["list_students_route_api_v1_students_get"];
+        put?: never;
+        /** Register Student Route */
+        post: operations["register_student_route_api_v1_students_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/duplicate-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Check Route */
+        post: operations["duplicate_check_route_api_v1_students_duplicate_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/register/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Preview Route */
+        post: operations["register_preview_route_api_v1_students_register_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Student Route */
+        get: operations["get_student_route_api_v1_students__student_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Student Route */
+        delete: operations["delete_student_route_api_v1_students__student_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Student Route */
+        patch: operations["update_student_route_api_v1_students__student_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents Route */
+        get: operations["list_documents_route_api_v1_students__student_id__documents_get"];
+        put?: never;
+        /** Upload Document Route */
+        post: operations["upload_document_route_api_v1_students__student_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/documents/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Document Route */
+        delete: operations["delete_document_route_api_v1_students__student_id__documents__file_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Enrollments Route */
+        get: operations["list_enrollments_route_api_v1_students__student_id__enrollments_get"];
+        put?: never;
+        /** Create Enrollment Route */
+        post: operations["create_enrollment_route_api_v1_students__student_id__enrollments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/enrollments/{enrollment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Enrollment Route */
+        delete: operations["delete_enrollment_route_api_v1_students__student_id__enrollments__enrollment_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Enrollment Route */
+        patch: operations["update_enrollment_route_api_v1_students__student_id__enrollments__enrollment_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/enrollments/{enrollment_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Enrollment Route */
+        post: operations["restore_enrollment_route_api_v1_students__student_id__enrollments__enrollment_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/guardians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Guardians Route */
+        get: operations["list_guardians_route_api_v1_students__student_id__guardians_get"];
+        put?: never;
+        /** Add Guardian Route */
+        post: operations["add_guardian_route_api_v1_students__student_id__guardians_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/guardians/{guardian_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Guardian Route */
+        delete: operations["remove_guardian_route_api_v1_students__student_id__guardians__guardian_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Guardian Route */
+        patch: operations["update_guardian_route_api_v1_students__student_id__guardians__guardian_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/guardians/{guardian_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Guardian Route */
+        post: operations["restore_guardian_route_api_v1_students__student_id__guardians__guardian_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/medical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Medical Route */
+        get: operations["get_medical_route_api_v1_students__student_id__medical_get"];
+        /** Update Medical Route */
+        put: operations["update_medical_route_api_v1_students__student_id__medical_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Student Route */
+        post: operations["restore_student_route_api_v1_students__student_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/capabilities": {
         parameters: {
             query?: never;
@@ -2228,6 +2475,11 @@ export interface components {
             /** Owner Entity Type */
             owner_entity_type?: string | null;
         };
+        /** Body_upload_document_route_api_v1_students__student_id__documents_post */
+        Body_upload_document_route_api_v1_students__student_id__documents_post: {
+            /** File */
+            file: string;
+        };
         /** ChatRequest */
         ChatRequest: {
             /** Message */
@@ -2495,6 +2747,86 @@ export interface components {
             /** Visible Roles */
             visible_roles?: string[] | null;
         };
+        /** DuplicateCheck */
+        DuplicateCheck: {
+            person: components["schemas"]["PersonInput"];
+        };
+        /** EnrollmentInput */
+        EnrollmentInput: {
+            /**
+             * Level Id
+             * Format: uuid
+             */
+            level_id: string;
+            /** Notes */
+            notes?: string | null;
+            /** Roll Number */
+            roll_number?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /**
+             * Status
+             * @default active
+             * @enum {string}
+             */
+            status: "applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni";
+            /**
+             * Year Id
+             * Format: uuid
+             */
+            year_id: string;
+        };
+        /** EnrollmentOut */
+        EnrollmentOut: {
+            /** Id */
+            id: string;
+            /** Level Code */
+            level_code?: string | null;
+            /** Level Id */
+            level_id: string;
+            /** Level Name */
+            level_name?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Roll Number */
+            roll_number?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Section Code */
+            section_code?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni";
+            /** Student Id */
+            student_id: string;
+            /** Year Code */
+            year_code?: string | null;
+            /** Year Id */
+            year_id: string;
+            /** Year Name */
+            year_name?: string | null;
+        };
+        /** EnrollmentUpdate */
+        EnrollmentUpdate: {
+            /** Level Id */
+            level_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Roll Number */
+            roll_number?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Section Id */
+            section_id?: string | null;
+            /** Status */
+            status?: ("applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni") | null;
+            /** Year Id */
+            year_id?: string | null;
+        };
         /** EntryUpdate */
         EntryUpdate: {
             /**
@@ -2512,6 +2844,62 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** GuardianInput */
+        GuardianInput: {
+            /**
+             * Can Pickup
+             * @default true
+             */
+            can_pickup: boolean;
+            /**
+             * Is Primary
+             * @default false
+             */
+            is_primary: boolean;
+            /** Notes */
+            notes?: string | null;
+            person?: components["schemas"]["PersonInput"] | null;
+            /** Person Id */
+            person_id?: string | null;
+            /**
+             * Relationship
+             * @default guardian
+             */
+            relationship: string;
+        };
+        /** GuardianOut */
+        GuardianOut: {
+            /** Can Pickup */
+            can_pickup: boolean;
+            /** Id */
+            id: string;
+            /** Is Primary */
+            is_primary: boolean;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonOut"];
+            /** Person Id */
+            person_id: string;
+            /** Relationship */
+            relationship: string;
+            /** Row Version */
+            row_version: number;
+            /** Student Id */
+            student_id: string;
+        };
+        /** GuardianUpdate */
+        GuardianUpdate: {
+            /** Can Pickup */
+            can_pickup?: boolean | null;
+            /** Is Primary */
+            is_primary?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /** Relationship */
+            relationship?: string | null;
+            /** Row Version */
+            row_version: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2679,6 +3067,53 @@ export interface components {
             tokens: components["schemas"]["TokenPair"];
             user: components["schemas"]["UserOut"];
         };
+        /** MedicalInput */
+        MedicalInput: {
+            /** Allergies */
+            allergies?: string | null;
+            /** Blood Type */
+            blood_type?: string | null;
+            /** Chronic Conditions */
+            chronic_conditions?: string | null;
+            /**
+             * Consent To Treat
+             * @default false
+             */
+            consent_to_treat: boolean;
+            /** Emergency Contact Name */
+            emergency_contact_name?: string | null;
+            /** Emergency Contact Phone */
+            emergency_contact_phone?: string | null;
+            /** Medications */
+            medications?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** MedicalOut */
+        MedicalOut: {
+            /** Allergies */
+            allergies?: string | null;
+            /** Blood Type */
+            blood_type?: string | null;
+            /** Chronic Conditions */
+            chronic_conditions?: string | null;
+            /** Consent To Treat */
+            consent_to_treat: boolean;
+            /** Emergency Contact Name */
+            emergency_contact_name?: string | null;
+            /** Emergency Contact Phone */
+            emergency_contact_phone?: string | null;
+            /** Id */
+            id: string;
+            /** Medications */
+            medications?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Student Id */
+            student_id: string;
+        };
         /** ModuleToggle */
         ModuleToggle: {
             /** Enabled */
@@ -2790,10 +3225,63 @@ export interface components {
             nickname?: string | null;
             /** Phone */
             phone?: string | null;
+            /** Photo File Id */
+            photo_file_id?: string | null;
             /** Place Of Birth */
             place_of_birth?: string | null;
             /** Sex */
             sex?: string | null;
+        };
+        /** PersonOut */
+        PersonOut: {
+            /** Address */
+            address?: string | null;
+            /** Baptismal Name */
+            baptismal_name?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            };
+            /** Date Of Birth */
+            date_of_birth?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Father Name Am */
+            father_name_am?: string | null;
+            /** Father Name En */
+            father_name_en?: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Given Name Am */
+            given_name_am?: string | null;
+            /** Given Name En */
+            given_name_en?: string | null;
+            /** Grandfather Name Am */
+            grandfather_name_am?: string | null;
+            /** Grandfather Name En */
+            grandfather_name_en?: string | null;
+            /** Id */
+            id: string;
+            /** Mother Name Am */
+            mother_name_am?: string | null;
+            /** Mother Name En */
+            mother_name_en?: string | null;
+            /** Nationality */
+            nationality?: string | null;
+            /** Nickname */
+            nickname?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Photo File Id */
+            photo_file_id?: string | null;
+            /** Place Of Birth */
+            place_of_birth?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Sex */
+            sex?: string | null;
+            /** Short Name */
+            short_name: string;
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -3099,6 +3587,145 @@ export interface components {
             row_version: number;
             /** Sort Order */
             sort_order?: number | null;
+        };
+        /** StudentList */
+        StudentList: {
+            /** Items */
+            items: components["schemas"]["StudentSummary"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+            /** Total */
+            total: number;
+        };
+        /** StudentOut */
+        StudentOut: {
+            /** Admission Date */
+            admission_date?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            };
+            enrollment?: components["schemas"]["EnrollmentOut"] | null;
+            /** Enrollments */
+            enrollments?: components["schemas"]["EnrollmentOut"][];
+            /** Exit Date */
+            exit_date?: string | null;
+            /** Exit Reason */
+            exit_reason?: string | null;
+            /** Guardians */
+            guardians?: components["schemas"]["GuardianOut"][];
+            /** Id */
+            id: string;
+            medical?: components["schemas"]["MedicalOut"] | null;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonOut"];
+            /** Row Version */
+            row_version: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni";
+            /** Student Number */
+            student_number: string;
+        };
+        /** StudentRegister */
+        StudentRegister: {
+            /** Admission Date */
+            admission_date?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            } | null;
+            enrollment?: components["schemas"]["EnrollmentInput"] | null;
+            /** Guardians */
+            guardians?: components["schemas"]["GuardianInput"][];
+            medical?: components["schemas"]["MedicalInput"] | null;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonInput"];
+            /** Status */
+            status?: ("applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni") | null;
+            /** Student Number */
+            student_number: string;
+        };
+        /** StudentRegisterOut */
+        StudentRegisterOut: {
+            /** Admission Date */
+            admission_date?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            };
+            /** Duplicate Warnings */
+            duplicate_warnings?: {
+                [key: string]: unknown;
+            }[];
+            enrollment?: components["schemas"]["EnrollmentOut"] | null;
+            /** Enrollments */
+            enrollments?: components["schemas"]["EnrollmentOut"][];
+            /** Exit Date */
+            exit_date?: string | null;
+            /** Exit Reason */
+            exit_reason?: string | null;
+            /** Guardians */
+            guardians?: components["schemas"]["GuardianOut"][];
+            /** Id */
+            id: string;
+            medical?: components["schemas"]["MedicalOut"] | null;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonOut"];
+            /** Row Version */
+            row_version: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni";
+            /** Student Number */
+            student_number: string;
+        };
+        /** StudentSummary */
+        StudentSummary: {
+            /** Admission Date */
+            admission_date?: string | null;
+            enrollment?: components["schemas"]["EnrollmentOut"] | null;
+            /** Id */
+            id: string;
+            person: components["schemas"]["PersonOut"];
+            /** Row Version */
+            row_version: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni";
+            /** Student Number */
+            student_number: string;
+        };
+        /** StudentUpdate */
+        StudentUpdate: {
+            /** Admission Date */
+            admission_date?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            } | null;
+            /** Exit Date */
+            exit_date?: string | null;
+            /** Exit Reason */
+            exit_reason?: string | null;
+            /** Notes */
+            notes?: string | null;
+            person?: components["schemas"]["PersonInput"] | null;
+            /** Row Version */
+            row_version: number;
+            /** Status */
+            status?: ("applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni") | null;
+            /** Student Number */
+            student_number?: string | null;
         };
         /** SubjectCreate */
         SubjectCreate: {
@@ -8517,6 +9144,807 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    list_students_route_api_v1_students_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                status?: ("applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni") | null;
+                year_id?: string | null;
+                level_id?: string | null;
+                section_id?: string | null;
+                limit?: number;
+                cursor?: string | null;
+                sort?: string | null;
+                order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_student_route_api_v1_students_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentRegister"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentRegisterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_check_route_api_v1_students_duplicate_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateCheck"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_preview_route_api_v1_students_register_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentRegister"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_student_route_api_v1_students__student_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_student_route_api_v1_students__student_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_student_route_api_v1_students__student_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_route_api_v1_students__student_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_document_route_api_v1_students__student_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_route_api_v1_students__student_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_route_api_v1_students__student_id__documents__file_id__delete: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                student_id: string;
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_enrollments_route_api_v1_students__student_id__enrollments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_enrollment_route_api_v1_students__student_id__enrollments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_enrollment_route_api_v1_students__student_id__enrollments__enrollment_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                student_id: string;
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_enrollment_route_api_v1_students__student_id__enrollments__enrollment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_enrollment_route_api_v1_students__student_id__enrollments__enrollment_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                student_id: string;
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_guardians_route_api_v1_students__student_id__guardians_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_guardian_route_api_v1_students__student_id__guardians_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardianInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_guardian_route_api_v1_students__student_id__guardians__guardian_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                student_id: string;
+                guardian_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_guardian_route_api_v1_students__student_id__guardians__guardian_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+                guardian_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardianUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_guardian_route_api_v1_students__student_id__guardians__guardian_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                student_id: string;
+                guardian_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_medical_route_api_v1_students__student_id__medical_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_medical_route_api_v1_students__student_id__medical_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MedicalInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_student_route_api_v1_students__student_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

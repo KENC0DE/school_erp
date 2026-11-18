@@ -1050,3 +1050,60 @@ and recorded here (date, decision, reason).
   the real routes with a shared mock-session/route helper, asserting request
   paths and bodies for scope, year, subject assignment, section and curriculum
   mutations rather than mocking React Query internals.
+
+## 2026-11-18 — P2-06 students module
+
+- **A student is a shared person plus a profile.** Names, date of birth, phone,
+  photo and person-level custom fields stay on `persons`; the students module
+  adds `student_profiles` keyed by `person_id`. One live profile per person, and
+  one live student number, are enforced by partial unique indexes. Deleted
+  numbers can be reused; restoring a student therefore re-checks the number and
+  returns `409` if another live student took it.
+- **Registration is one transaction.** `register_student` creates the person,
+  profile, optional enrollment, guardians and medical record, flushes them
+  together and commits once. `create_person`/`update_person` accept
+  `commit=False` for this flow; `prepare_person` exposes the validation and
+  duplicate-warning step without writing.
+- **The person input model moved to `core.people.schemas`.** Students, guardians
+  and later admissions/staff screens all need the same three-part-name payload,
+  so `PersonInput` is shared rather than re-declared per module. It now carries
+  `photo_file_id`.
+- **Academic placement is referenced, not duplicated.** Enrollments store
+  `year_id`, `level_id` and `section_id` as plain UUID columns without
+  cross-module foreign keys. The students module `depends_on = ["academics"]`
+  and resolves labels through academics service functions; it never imports
+  academics tables. A closed year, an inactive level/section, and a section that
+  does not belong to the chosen year+level are rejected at write time.
+- **Statuses are an explicit vocabulary.** `applicant`, `active`, `promoted`,
+  `repeating`, `transferred_out`, `withdrawn`, `graduated`, `alumni`.
+  Registration defaults to `active` when an enrollment is supplied and
+  `applicant` otherwise; promotion rules arrive in P2-11. Status values are
+  validated in the schema and again in the service for action/API parity.
+- **Guardians are a many-to-many link to persons.** A guardian can be an
+  existing person (`person_id`) or created inline (`person`), never both. One
+  live link per student+person, at most one primary contact per student (the
+  service clears the previous primary in the same audited operation), and a
+  student cannot be their own guardian. Links are soft-deleted and restorable.
+- **Medical data has its own permission pair.** Reading requires
+  `students.medical.view`; writing requires `students.medical.manage`. The
+  student detail endpoint only includes medical data when the caller can view
+  it, so `students.view` alone cannot leak health information. Separate routes
+  and actions (`students.medical.get` / `students.medical.update`) make the
+  boundary explicit in the route × role matrix. Registration accepts a medical
+  block only when the caller also holds `students.medical.manage`, so
+  `students.manage` alone cannot create health records through the front door.
+- **Student documents are scoped by ownership.** Files uploaded through
+  `POST /students/{id}/documents` are stored with
+  `owner_entity_type="student"` and the student id. Listing and deleting go
+  through the students API and require `students.view`/`students.manage`; a file
+  owned by another student returns `404` rather than revealing its existence.
+  The general file list now excludes soft-deleted rows.
+- **Search folds both scripts.** Free-text search normalizes Geez homophones and
+  matches every term against the person's normalized search name, plus a
+  substring match on the student number. List filters (`status`, `year_id`,
+  `level_id`, `section_id`) use an enrollment `EXISTS` subquery so a student is
+  returned once even with several enrollments.
+- **Default role grants.** Registrar gets students view/manage and medical
+  view/manage; director gets students view/manage and medical view; academic
+  head gets students view; homeroom teacher gets students view. These are
+  starting points and remain editable through RBAC.

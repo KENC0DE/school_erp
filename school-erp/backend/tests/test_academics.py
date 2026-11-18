@@ -341,6 +341,23 @@ async def test_academics_permissions_and_module_gate(client, app, seeded, supera
         response = await getattr(client, method)(path, **kwargs)
         assert response.status_code == 403, (method, path, response.text)
 
+    # Students depends on academics, so its dependants block the toggle first.
+    guarded = await client.put(
+        "/api/v1/system/modules/academics",
+        headers=superadmin_headers,
+        json={"enabled": False},
+    )
+    assert guarded.status_code == 409, guarded.text
+    assert guarded.json()["error"]["message_key"] == "modules.dependants_enabled"
+    assert "students" in guarded.json()["error"]["details"]["dependants"]
+
+    off_students = await client.put(
+        "/api/v1/system/modules/students",
+        headers=superadmin_headers,
+        json={"enabled": False},
+    )
+    assert off_students.status_code == 200, off_students.text
+
     disabled = await client.put(
         "/api/v1/system/modules/academics",
         headers=superadmin_headers,

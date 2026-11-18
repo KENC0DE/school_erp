@@ -219,7 +219,12 @@ async def list_files(
     owner_entity_id: str | None = None,
     limit: int = 50,
 ) -> list[dict[str, Any]]:
-    stmt = select(StoredFile).order_by(StoredFile.created_at.desc()).limit(max(1, min(limit, 200)))
+    stmt = (
+        select(StoredFile)
+        .where(StoredFile.deleted_at.is_(None))
+        .order_by(StoredFile.created_at.desc())
+        .limit(max(1, min(limit, 200)))
+    )
     if owner_entity_type:
         stmt = stmt.where(StoredFile.owner_entity_type == owner_entity_type)
     if owner_entity_id:

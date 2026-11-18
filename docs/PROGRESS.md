@@ -124,7 +124,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P2-03 — Sections (per level per year, homeroom teacher, capacity), subjects, level-subject assignment, subject groups
 - [x] P2-04 — Curriculum profiles (starter templates, duplicate and edit, apply from a chosen year)
 - [x] P2-05 — Academics UI (web)
-- [ ] P2-06 — Module `students`
+- [x] P2-06 — Module `students`
 - [ ] P2-07 — Student ID generator with configurable format, atomic sequence
 - [ ] P2-08 — Students UI (web)
 - [ ] P2-09 — Module `admissions`
