@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class SchoolProfile(BaseModel):
@@ -21,6 +21,12 @@ class SchoolProfile(BaseModel):
 class AcademicScope(BaseModel):
     first_level: int = Field(0, ge=0, le=12)
     last_level: int = Field(12, ge=0, le=12)
+
+    @model_validator(mode="after")
+    def _ordered(self) -> AcademicScope:
+        if self.first_level > self.last_level:
+            raise ValueError("first_level cannot be above last_level")
+        return self
 
 
 class Branding(BaseModel):

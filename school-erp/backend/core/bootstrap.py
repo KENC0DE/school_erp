@@ -17,4 +17,7 @@ async def bootstrap(app: FastAPI) -> None:
         await ensure_default_roles(session, app.state.registry)
         await ensure_default_theme(session)
         await ensure_default_templates(session)
+        for manifest in app.state.registry.all():
+            if manifest.bootstrap is not None:
+                await manifest.bootstrap(session)
         await session.commit()

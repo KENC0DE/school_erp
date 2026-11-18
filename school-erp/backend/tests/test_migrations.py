@@ -43,6 +43,11 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         notification_columns = {row[1] for row in connection.execute("PRAGMA table_info(notifications)")}
         template_columns = {row[1] for row in connection.execute("PRAGMA table_info(notification_templates)")}
         delivery_columns = {row[1] for row in connection.execute("PRAGMA table_info(delivery_logs)")}
+        level_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_grade_levels)")}
+        stage_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_stages)")}
+        membership_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(academics_stage_levels)")
+        }
     finally:
         connection.close()
 
@@ -61,9 +66,12 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "notification_templates",
         "notifications",
         "delivery_logs",
+        "academics_grade_levels",
+        "academics_stages",
+        "academics_stage_levels",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0014_notifications"
+    assert version == "0015_academics"
 
     assert {
         "failed_login_count",
@@ -127,3 +135,25 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "provider",
         "sent_at",
     } <= delivery_columns
+    assert {
+        "code",
+        "name",
+        "name_am",
+        "scope_level",
+        "sort_order",
+        "is_active",
+        "is_starter",
+        "is_verified",
+        "row_version",
+        "deleted_at",
+    } <= level_columns
+    assert {
+        "code",
+        "name",
+        "name_am",
+        "sort_order",
+        "is_active",
+        "is_starter",
+        "is_verified",
+    } <= stage_columns
+    assert {"stage_id", "level_id"} <= membership_columns

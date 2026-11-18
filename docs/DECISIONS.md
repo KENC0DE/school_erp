@@ -898,3 +898,35 @@ and recorded here (date, decision, reason).
   `Database.create_all()`, so the demo database has `notification_templates`,
   `jobs`, `files` and the rest. Without this, the seed succeeded but the first
   request that touched notifications failed with "no such table".
+
+## 2026-11-18 — P2-01 academic structure and scope
+
+- **Scope keeps the published numeric contract.** `academic_scope.first_level`
+  and `last_level` remain integers 0–12 (already part of the released OpenAPI
+  via the setup request): `0` is the kindergarten bucket and `1`–`12` are the
+  matching grades. Grade levels therefore carry a `scope_level` used only for
+  filtering. A school that runs `KG1`–`KG3` selects `0`; a Grade 1–5 school
+  selects `1`–`5`, and every listing endpoint (levels and stage membership)
+  filters on it. Changing the settings type to level keys would have been a
+  breaking API change.
+- **Catalog editing is additive and reversible.** The shipped `KG1`–`Grade 12`
+  levels and five stages are created once by a new module bootstrap hook and
+  marked `is_starter=True`, `is_verified=False` so setup screens can ask the
+  school to verify them. They are ordinary rows: renameable, re-scopable,
+  deactivatable and soft-deletable. A deleted starter row is not recreated on
+  the next boot because the bootstrap lookup includes soft-deleted rows.
+- **Deleting a stage or level keeps membership links.** Soft-deleting a stage
+  leaves its `academics_stage_levels` rows in place, so restoring it brings its
+  levels back intact. Soft-deleting a level hides it from stage listings (the
+  join only sees live levels) and restoring it makes it reappear. Hard deletion
+  is still never used; replacing a stage's level list is the only place where
+  association rows are deleted (the same pattern as role permissions).
+- **Module starter data uses a manifest hook.** `ModuleManifest.bootstrap` lets
+  a module provide an idempotent seed callable that core bootstrap (and the demo
+  seed) runs inside the shared session. This avoids `core` importing `modules`,
+  keeps the zone boundaries intact, and gives later modules (curricula,
+  templates) a supported place for starter data.
+- **Scope changes are atomic and audited.** `PUT /academics/scope` validates the
+  order and that at least one active level exists in the range, writes the two
+  core settings in an order that never leaves the model invalid, and writes one
+  `academics.scope.update` audit entry. Repeating the same scope is a no-op.

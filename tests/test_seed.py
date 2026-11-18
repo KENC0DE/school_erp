@@ -216,7 +216,20 @@ def test_seed_creates_the_documented_demo_and_is_idempotent(tmp_path: Path) -> N
         "jobs",
         "themes",
         "audit_log",
+        "academics_grade_levels",
+        "academics_stages",
+        "academics_stage_levels",
     } <= tables
+    assert _query(school, "select count(*) as total from academics_grade_levels")[0]["total"] == 15
+    assert _query(school, "select count(*) as total from academics_stages")[0]["total"] == 5
+    enabled_modules = {
+        row["module_key"]
+        for row in _query(school, "select module_key from instance_modules where enabled = 1")
+    }
+    assert {"academics", "sample"} <= enabled_modules
+    licensed_modules = {row["modules"] for row in _query(controller, "select modules from schools limit 1")}
+    assert len(licensed_modules) == 1
+    assert '"academics"' in licensed_modules.pop()
 
     before = _counts(school)
     _run_seed(tmp_path)

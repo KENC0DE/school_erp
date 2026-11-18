@@ -4,6 +4,132 @@
  */
 
 export interface paths {
+    "/api/v1/academics/levels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Levels */
+        get: operations["get_levels_api_v1_academics_levels_get"];
+        put?: never;
+        /** Post Level */
+        post: operations["post_level_api_v1_academics_levels_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/levels/{level_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Level Detail */
+        get: operations["get_level_detail_api_v1_academics_levels__level_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Level Route */
+        delete: operations["delete_level_route_api_v1_academics_levels__level_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Level */
+        patch: operations["patch_level_api_v1_academics_levels__level_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/academics/levels/{level_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Level Route */
+        post: operations["restore_level_route_api_v1_academics_levels__level_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/scope": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Academic Scope */
+        get: operations["get_academic_scope_api_v1_academics_scope_get"];
+        /** Put Academic Scope */
+        put: operations["put_academic_scope_api_v1_academics_scope_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/stages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Stages */
+        get: operations["get_stages_api_v1_academics_stages_get"];
+        put?: never;
+        /** Post Stage */
+        post: operations["post_stage_api_v1_academics_stages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/stages/{stage_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Stage Detail */
+        get: operations["get_stage_detail_api_v1_academics_stages__stage_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Stage Route */
+        delete: operations["delete_stage_route_api_v1_academics_stages__stage_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Stage */
+        patch: operations["patch_stage_api_v1_academics_stages__stage_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/academics/stages/{stage_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Stage Route */
+        post: operations["restore_stage_route_api_v1_academics_stages__stage_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ai/actions/{key}/preview": {
         parameters: {
             query?: never;
@@ -1803,6 +1929,81 @@ export interface components {
              */
             status: string;
         };
+        /** LevelCreate */
+        LevelCreate: {
+            /** Code */
+            code: string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /**
+             * Is Verified
+             * @default true
+             */
+            is_verified: boolean;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Scope Level */
+            scope_level: number;
+            /** Sort Order */
+            sort_order?: number | null;
+        };
+        /** LevelList */
+        LevelList: {
+            /** Items */
+            items: components["schemas"]["LevelOut"][];
+            /** Next Cursor */
+            next_cursor?: null;
+            scope: components["schemas"]["ScopeOut"];
+            /** Total */
+            total: number;
+        };
+        /** LevelOut */
+        LevelOut: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /** In Scope */
+            in_scope: boolean;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Starter */
+            is_starter: boolean;
+            /** Is Verified */
+            is_verified: boolean;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Scope Level */
+            scope_level: number;
+            /** Sort Order */
+            sort_order: number;
+        };
+        /** LevelUpdate */
+        LevelUpdate: {
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Is Verified */
+            is_verified?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Scope Level */
+            scope_level?: number | null;
+            /** Sort Order */
+            sort_order?: number | null;
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -2033,6 +2234,28 @@ export interface components {
              */
             timezone: string;
         };
+        /** ScopeOut */
+        ScopeOut: {
+            /** First Level */
+            first_level: number;
+            /** Last Level */
+            last_level: number;
+            /** Level Count */
+            level_count: number;
+            /** Scope Levels */
+            scope_levels: number[];
+            /** Stage Count */
+            stage_count: number;
+        };
+        /** ScopeUpdate */
+        ScopeUpdate: {
+            /** First Level */
+            first_level: number;
+            /** Last Level */
+            last_level: number;
+            /** Reason */
+            reason?: string | null;
+        };
         /** SendRequest */
         SendRequest: {
             /** Channels */
@@ -2057,6 +2280,81 @@ export interface components {
         SetupRequest: {
             admin: components["schemas"]["AdminSetup"];
             school: components["schemas"]["SchoolSetup"];
+        };
+        /** StageCreate */
+        StageCreate: {
+            /** Code */
+            code: string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /**
+             * Is Verified
+             * @default true
+             */
+            is_verified: boolean;
+            /** Level Ids */
+            level_ids: string[];
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+        };
+        /** StageList */
+        StageList: {
+            /** Items */
+            items: components["schemas"]["StageOut"][];
+            /** Next Cursor */
+            next_cursor?: null;
+            scope: components["schemas"]["ScopeOut"];
+            /** Total */
+            total: number;
+        };
+        /** StageOut */
+        StageOut: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /** In Scope */
+            in_scope: boolean;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Starter */
+            is_starter: boolean;
+            /** Is Verified */
+            is_verified: boolean;
+            /** Levels */
+            levels: components["schemas"]["LevelOut"][];
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Sort Order */
+            sort_order: number;
+        };
+        /** StageUpdate */
+        StageUpdate: {
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Is Verified */
+            is_verified?: boolean | null;
+            /** Level Ids */
+            level_ids?: string[] | null;
+            /** Name */
+            name?: string | null;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Sort Order */
+            sort_order?: number | null;
         };
         /** SuggestInput */
         SuggestInput: {
@@ -2320,6 +2618,463 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_levels_api_v1_academics_levels_get: {
+        parameters: {
+            query?: {
+                scope?: "school" | "all";
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LevelList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_level_api_v1_academics_levels_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LevelCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LevelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_level_detail_api_v1_academics_levels__level_id__get: {
+        parameters: {
+            query?: {
+                scope?: "school" | "all";
+            };
+            header?: never;
+            path: {
+                level_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LevelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_level_route_api_v1_academics_levels__level_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                level_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LevelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_level_api_v1_academics_levels__level_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                level_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LevelUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LevelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_level_route_api_v1_academics_levels__level_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                level_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LevelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_academic_scope_api_v1_academics_scope_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopeOut"];
+                };
+            };
+        };
+    };
+    put_academic_scope_api_v1_academics_scope_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScopeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScopeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stages_api_v1_academics_stages_get: {
+        parameters: {
+            query?: {
+                scope?: "school" | "all";
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_stage_api_v1_academics_stages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stage_detail_api_v1_academics_stages__stage_id__get: {
+        parameters: {
+            query?: {
+                scope?: "school" | "all";
+            };
+            header?: never;
+            path: {
+                stage_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_stage_route_api_v1_academics_stages__stage_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                stage_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_stage_api_v1_academics_stages__stage_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                stage_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_stage_route_api_v1_academics_stages__stage_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                stage_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     preview_action_api_v1_ai_actions__key__preview_post: {
         parameters: {
             query?: never;

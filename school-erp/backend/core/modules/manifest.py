@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,9 @@ class ModuleManifest:
     i18n_namespaces: list[str] = field(default_factory=list)
     document_fields: list[Any] = field(default_factory=list)
     settings_schema: type | None = None
+    # Modules may ship starter data (grade levels, templates, ...). The hook is
+    # idempotent and runs on startup after the module rows exist.
+    bootstrap: Callable[[AsyncSession], Awaitable[None]] | None = None
     licensable: bool = True
     default_enabled: bool = False
     core: bool = False

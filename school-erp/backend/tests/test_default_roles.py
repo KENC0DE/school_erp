@@ -69,6 +69,7 @@ async def test_all_default_roles_are_seeded_with_declared_permissions(
     assert roles["super_admin"]["require_totp"] is False
     assert roles["super_admin"]["permissions"] == [{"permission": "*", "scope": "all"}]
     assert roles["teacher"]["permissions"] == [
+        {"permission": "academics.view", "scope": "all"},
         {"permission": "ai.use", "scope": "all"},
         {"permission": "sample.notes.create", "scope": "all"},
         {"permission": "sample.notes.view", "scope": "all"},
@@ -152,6 +153,7 @@ async def test_reset_permissions_restores_the_shipped_matrix(client, app, supera
 
     roles = await _roles(client, superadmin_headers)
     assert roles["teacher"]["permissions"] == [
+        {"permission": "academics.view", "scope": "all"},
         {"permission": "ai.use", "scope": "all"},
         {"permission": "sample.notes.create", "scope": "all"},
         {"permission": "sample.notes.view", "scope": "all"},

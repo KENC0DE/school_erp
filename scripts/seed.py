@@ -51,6 +51,9 @@ DEMO_SCHOOL_CODE = "DEMO"
 DEMO_SCHOOL_NAME = "Demo Academy"
 DEMO_API_BASE_URL = "http://localhost:8000"
 CANONICAL_ENROLLMENT_TOKEN = "dev-enroll-DEMO-2026"
+# Modules enabled on the demo school. The controller signs this list into the
+# license, so an addition here also proves the module gate end to end.
+DEMO_MODULES: tuple[str, ...] = ("academics", "sample")
 # School-layer translation overrides. They prove the default < central < school
 # precedence and give the activity history real i18n entries to show.
 SCHOOL_I18N_OVERRIDES: tuple[tuple[str, str, str, str], ...] = (
@@ -196,14 +199,14 @@ async def seed_controller(controller_settings) -> dict:
                     api_base_url=DEMO_API_BASE_URL,
                     status="active",
                     plan="standard",
-                    modules=["sample"],
+                    modules=list(DEMO_MODULES),
                 )
                 session.add(school)
                 await session.flush()
             school.name = DEMO_SCHOOL_NAME
             school.api_base_url = DEMO_API_BASE_URL
             school.status = "active"
-            school.modules = sorted(set(school.modules or []) | {"sample"})
+            school.modules = sorted(set(school.modules or []) | set(DEMO_MODULES))
 
             license_key, directory_key = await ensure_signing_keys(session, controller_settings)
 
@@ -362,14 +365,18 @@ async def seed_school(school_settings, controller_summary: dict) -> dict:
             await ensure_module_rows(session, registry)
             await load_defaults(session, registry)
             await ensure_default_theme(session)
+            for manifest in registry.all():
+                if manifest.bootstrap is not None:
+                    await manifest.bootstrap(session)
 
             # The license module list is authoritative once a license exists.
-            school_module = await session.get(InstanceModule, "sample")
-            if school_module is None:
-                school_module = InstanceModule(module_key="sample", enabled=True)
-                session.add(school_module)
-            else:
-                school_module.enabled = True
+            for module_key in DEMO_MODULES:
+                school_module = await session.get(InstanceModule, module_key)
+                if school_module is None:
+                    school_module = InstanceModule(module_key=module_key, enabled=True)
+                    session.add(school_module)
+                else:
+                    school_module.enabled = True
             await session.flush()
 
             # Restore the documented default matrix on every demo reset. Local

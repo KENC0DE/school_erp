@@ -44,17 +44,18 @@ the tracked process tree only.
 an upsert pass; re-running is safe. It creates:
 
 - Controller: `owner@controller.local` (owner), `support@controller.local`
-  (support), school code `DEMO` ("Demo Academy", modules include `sample`),
-  signing keys, and one canonical enrollment token
+  (support), school code `DEMO` ("Demo Academy", modules include `academics`
+  and `sample`), signing keys, and one canonical enrollment token
   `dev-enroll-DEMO-2026` (printed once when created).
 - School: all Phase 0 demo accounts from the build guide §1 (each assigned its
   documented role), every shipped default role plus the demo-only `limited`
-  role, four school-layer Amharic translation overrides, the builtin theme plus
-  two importable example themes (`highlands`, `sunset`), one sample note, one
-  instance setting, and a controller-signed license. Role assignments, the
-  limited role's permissions, translation overrides, imported themes, the
-  setting and the note are written through the normal audited service paths, so
-  a fresh instance has ready-made activity history.
+  role, the shipped grade-level and stage catalog (KG 1–Grade 12, five stages,
+  flagged as starter data), four school-layer Amharic translation overrides,
+  the builtin theme plus two importable example themes (`highlands`, `sunset`),
+  one sample note, one instance setting, and a controller-signed license. Role
+  assignments, the limited role's permissions, translation overrides, imported
+  themes, the setting and the note are written through the normal audited
+  service paths, so a fresh instance has ready-made activity history.
 
 The seed signs the license with the controller's own license key and applies it
 with the normal license-verification path instead of calling
