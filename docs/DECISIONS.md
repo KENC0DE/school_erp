@@ -1294,3 +1294,97 @@ and recorded here (date, decision, reason).
   = True`, but the demo license is an explicit signed list, so the seeded school
   would otherwise not show the students menu. `tests/test_seed.py` asserts the
   licensed and enabled lists still match the constant.
+
+## 2026-11-18 — P2-09 admissions module
+
+- **A draft academic year can take applications; only a closed year is
+  refused.** `AcademicYear.status` starts as `draft` and becomes `open` through
+  an explicit office step, so requiring `open` made intake impossible in the
+  normal setup flow and contradicted how student enrollment already behaves.
+  `_resolve_year` prefers the open year when the caller omits `year_id`, then
+  falls back to any non-closed year, and refuses `closed` with
+  `admissions.error.year_closed`.
+- **Conversion writes the auto-assigned section back onto the application.**
+  The applicant may arrive without a section and be placed by the capacity
+  rule at conversion time. Storing `row.section_id = enrollment.section_id`
+  means the application and the student record agree afterwards, and a second
+  conversion attempt cannot silently choose a different section.
+- **Required admission custom fields are enforced even when `custom` is
+  omitted.** Passing `{}` to the custom-field validator on create means a
+  required field always fails with `error.custom_field.invalid`, instead of
+  being skipped when the client simply leaves the object out. Unknown keys are
+  still rejected because the same validator runs.
+- **Guardian accounts may only receive the configured low-privilege role.**
+  Accounts use `form.guardian_role_key` (default `parent`), never a role
+  supplied by the caller. A missing role is reported as
+  `guardian_role_missing`, and a guardian without an email as
+  `guardian_email_missing`, rather than creating a half-working account. The
+  generated password is random, `must_change_password` is set, and the
+  invitation is a normal single-use reset link.
+- **An existing user with the guardian's email is linked, not duplicated.**
+  The application guardian stores `account_user_id` and the conversion returns
+  the `existing_guardian_account` warning. Creating a second account for the
+  same email would either fail the unique constraint or give one person two
+  logins, so linking is the only coherent choice.
+- **`ActionContext` gained optional `request` and `settings`.** Conversion sends
+  the guardian invitation through the same recovery path as the auth router,
+  which needs the request for the client IP and the guest settings for the
+  reset lifetime and base URL. The AI layer constructs an `ActionContext`
+  without them, so those best-effort emails are skipped there while every
+  database effect still happens.
+- **Conversion goes through students' public helpers.** `student_id_for_person`,
+  `student_number_for`, `create_profile_for_person` and `section_occupancy`
+  live in `modules/students` so admissions never imports the students tables or
+  writes a profile directly. The helpers keep the profile audit entry
+  (`students.profile.create`) and the number allocation in the students module.
+- **Admissions is a licensed, default-enabled module that depends on
+  `academics` and `students`.** The module gate therefore refuses to disable
+  students or academics while admissions is on; the existing module-gate tests
+  now switch admissions off first. `DEMO_MODULES` includes `admissions` so the
+  seeded demo license exposes the menu.
+
+## 2026-11-18 — P2-10 admissions UI and public application page
+
+- **The public page is a separate route at `/apply`, outside the signed-in
+  shell.** A guardian without an account must be able to reach it, so it is
+  registered next to `/login` and `/reset-password` instead of under
+  `RequireAuth`. The server still gates it on the `admissions` module being
+  licensed and on `form.public_enabled`, and the page renders a "closed" state
+  when either is false rather than an error.
+- **A signed, short-lived form token carries the submit window.** `GET
+  /admissions/public/form` issues a JWT (`type=admissions_public_form`, 60
+  minutes) carrying its issue time. The submit route requires it, so the
+  server can enforce `form.public_min_seconds` without trusting a client
+  timestamp, and a form scraped once cannot be replayed forever. The token is
+  signed with the instance secret and is not tied to a session.
+- **Bot defence is layered and independent of the UI.** A hidden `website`
+  honeypot field rejects naive form fillers before any database work, a
+  per-IP `SlidingWindowLimiter` (`form.public_rate_limit`, default 5/hour)
+  blunts scripted repeats, and the minimum fill time blocks instant posts. The
+  honeypot input is `aria-hidden` and `tabIndex={-1}` so it never appears in the
+  accessibility tree or the tab order.
+- **Public submissions are ordinary applications with a system actor.** They go
+  through `service.create_application` with `source="public"` and a
+  `Principal(actor_id="public", actor_type="system", via="web")`, so numbering,
+  audit entries, custom-field validation and duplicate warnings behave exactly
+  as for the office. The response is only `PublicApplicationOut`
+  (number, name, status, year and level): returning guardians or duplicate
+  warnings would leak personal data to an unauthenticated caller.
+- **The public page only exposes fields a guardian may see.** The form calls
+  `definitions_for` with a permission-less principal, which drops definitions
+  that set `visible_roles`. The client passes those definitions into
+  `CustomFieldsForm` directly (new optional `definitions` prop) so the public
+  page never calls the authenticated `/custom-fields` endpoint.
+- **Public guardians are always new people.** `PublicGuardianInput` carries a
+  person description only, never `person_id`, so a public post cannot link an
+  existing person or account. Account creation stays an office decision made at
+  conversion.
+- **The office UI keeps one page per step.** `/admissions` lists and filters;
+  `/admissions/new` and `/admissions/:id/edit` share the form; `/admissions/:id`
+  holds the decision, conversion and documents. Duplicate warnings come from
+  `POST /admissions/preview` before the create call, so the office sees "save
+  anyway" without a second dialog component. Editing is offered only in the
+  statuses the service accepts (`applied`, `reviewed`, `test`, `offered`).
+- **Guardians are editable only while taking the application.** The service has
+  no guardian update route, so the edit form explains that guardians are managed
+  from the student record after enrolment instead of pretending to edit them.

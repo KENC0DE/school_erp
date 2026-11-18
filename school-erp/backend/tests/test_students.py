@@ -763,6 +763,12 @@ async def test_students_permissions_module_gate_and_tools(app, client, superadmi
     assert "students" in [item["key"] for item in nav.json()["items"]]
 
     disabled = await client.put(
+        "/api/v1/system/modules/admissions",
+        headers=superadmin_headers,
+        json={"enabled": False},
+    )
+    assert disabled.status_code == 200, disabled.text
+    disabled = await client.put(
         "/api/v1/system/modules/students",
         headers=superadmin_headers,
         json={"enabled": False},

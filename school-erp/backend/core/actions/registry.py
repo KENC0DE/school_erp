@@ -17,6 +17,10 @@ class ActionContext:
     via: str = "api"
     request_id: str | None = None
     ai_session_id: str | None = None
+    # Optional HTTP context for actions that send mail or sign links. The AI
+    # layer leaves these unset and those best-effort side effects are skipped.
+    request: Any | None = None
+    settings: Any | None = None
 
 
 @dataclass

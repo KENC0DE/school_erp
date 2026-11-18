@@ -351,6 +351,12 @@ async def test_academics_permissions_and_module_gate(client, app, seeded, supera
     assert guarded.json()["error"]["message_key"] == "modules.dependants_enabled"
     assert "students" in guarded.json()["error"]["details"]["dependants"]
 
+    off_admissions = await client.put(
+        "/api/v1/system/modules/admissions",
+        headers=superadmin_headers,
+        json={"enabled": False},
+    )
+    assert off_admissions.status_code == 200, off_admissions.text
     off_students = await client.put(
         "/api/v1/system/modules/students",
         headers=superadmin_headers,

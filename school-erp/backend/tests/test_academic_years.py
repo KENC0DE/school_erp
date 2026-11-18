@@ -396,6 +396,12 @@ async def test_academic_years_permissions_and_module_gate(client, app, seeded, s
     )
     assert denied_patch.status_code == 403
 
+    off_admissions = await client.put(
+        "/api/v1/system/modules/admissions",
+        headers=superadmin_headers,
+        json={"enabled": False},
+    )
+    assert off_admissions.status_code == 200, off_admissions.text
     off_students = await client.put(
         "/api/v1/system/modules/students",
         headers=superadmin_headers,

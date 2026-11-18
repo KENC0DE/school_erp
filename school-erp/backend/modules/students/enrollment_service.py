@@ -10,7 +10,7 @@ from core.api.concurrency import ensure_row_version
 from core.audit.service import record
 from core.auth.principal import Principal
 from core.db.soft_delete import get_including_deleted, restore, soft_delete
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.academics import section_service
@@ -119,6 +119,32 @@ async def list_enrollments(
         .scalars()
         .all()
     )
+
+
+async def section_occupancy(
+    session: AsyncSession,
+    *,
+    year_id: uuid.UUID,
+    level_id: uuid.UUID,
+) -> dict[uuid.UUID, int]:
+    """Live enrollments per section, for capacity-aware assignment.
+
+    Admissions needs this to pick a section without reading the students
+    tables; every module goes through this public helper instead.
+    """
+    rows = (
+        await session.execute(
+            select(StudentEnrollment.section_id, func.count())
+            .where(
+                StudentEnrollment.year_id == year_id,
+                StudentEnrollment.level_id == level_id,
+                StudentEnrollment.section_id.is_not(None),
+                StudentEnrollment.deleted_at.is_(None),
+            )
+            .group_by(StudentEnrollment.section_id)
+        )
+    ).all()
+    return {section_id: int(count) for section_id, count in rows if section_id is not None}
 
 
 async def create_enrollment(
@@ -279,5 +305,6 @@ __all__ = [
     "enrollment_view",
     "list_enrollments",
     "restore_enrollment",
+    "section_occupancy",
     "update_enrollment",
 ]

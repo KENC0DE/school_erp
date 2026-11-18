@@ -554,6 +554,220 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Applications Route */
+        get: operations["list_applications_route_api_v1_admissions_get"];
+        put?: never;
+        /** Create Application Route */
+        post: operations["create_application_route_api_v1_admissions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Form Route */
+        get: operations["form_route_api_v1_admissions_form_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Route */
+        post: operations["preview_route_api_v1_admissions_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/public/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Public Application Route
+         * @description Accept a public submission after the token, honeypot and rate checks.
+         */
+        post: operations["submit_public_application_route_api_v1_admissions_public_applications_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/public/form": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public Form Route
+         * @description The optional public page. No account is required to read the form.
+         */
+        get: operations["public_form_route_api_v1_admissions_public_form_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/{application_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Application Route */
+        get: operations["get_application_route_api_v1_admissions__application_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Application Route */
+        delete: operations["delete_application_route_api_v1_admissions__application_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Application Route */
+        patch: operations["update_application_route_api_v1_admissions__application_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/admissions/{application_id}/conversion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conversion Preview Route */
+        get: operations["conversion_preview_route_api_v1_admissions__application_id__conversion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/{application_id}/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Convert Application Route */
+        post: operations["convert_application_route_api_v1_admissions__application_id__convert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/{application_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Application Route */
+        post: operations["decide_application_route_api_v1_admissions__application_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/{application_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents Route */
+        get: operations["list_documents_route_api_v1_admissions__application_id__documents_get"];
+        put?: never;
+        /** Upload Document Route */
+        post: operations["upload_document_route_api_v1_admissions__application_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/{application_id}/documents/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Document Route */
+        delete: operations["delete_document_route_api_v1_admissions__application_id__documents__file_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admissions/{application_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Application Route */
+        post: operations["restore_application_route_api_v1_admissions__application_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ai/actions/{key}/preview": {
         parameters: {
             query?: never;
@@ -2512,6 +2726,365 @@ export interface components {
             /** Phone */
             phone?: string | null;
         };
+        /** AdmissionFormOut */
+        AdmissionFormOut: {
+            /**
+             * Entity Type
+             * @default admission_application
+             */
+            entity_type: string;
+            /**
+             * Entrance Test Enabled
+             * @default true
+             */
+            entrance_test_enabled: boolean;
+            /**
+             * Entrance Test Max Score
+             * @default 100
+             */
+            entrance_test_max_score: number;
+            /** Entrance Test Pass Score */
+            entrance_test_pass_score?: number | null;
+            /** Fields */
+            fields?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Public Form Enabled
+             * @default false
+             */
+            public_form_enabled: boolean;
+            /**
+             * Require Guardian
+             * @default true
+             */
+            require_guardian: boolean;
+        };
+        /** AdmissionGuardianInput */
+        AdmissionGuardianInput: {
+            /**
+             * Can Pickup
+             * @default true
+             */
+            can_pickup: boolean;
+            /**
+             * Is Primary
+             * @default false
+             */
+            is_primary: boolean;
+            /** Notes */
+            notes?: string | null;
+            person?: components["schemas"]["PersonInput"] | null;
+            /** Person Id */
+            person_id?: string | null;
+            /**
+             * Relationship
+             * @default guardian
+             */
+            relationship: string;
+            /**
+             * Wants Account
+             * @default false
+             */
+            wants_account: boolean;
+        };
+        /** AdmissionGuardianOut */
+        AdmissionGuardianOut: {
+            /** Account User Id */
+            account_user_id?: string | null;
+            /** Application Id */
+            application_id: string;
+            /** Can Pickup */
+            can_pickup: boolean;
+            /** Id */
+            id: string;
+            /** Is Primary */
+            is_primary: boolean;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonOut"];
+            /** Person Id */
+            person_id: string;
+            /** Relationship */
+            relationship: string;
+            /** Row Version */
+            row_version: number;
+            /** Wants Account */
+            wants_account: boolean;
+        };
+        /** ApplicationCreate */
+        ApplicationCreate: {
+            /** Applied On */
+            applied_on?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            } | null;
+            /** Entrance Test Score */
+            entrance_test_score?: number | null;
+            /** Guardians */
+            guardians?: components["schemas"]["AdmissionGuardianInput"][];
+            /**
+             * Level Id
+             * Format: uuid
+             */
+            level_id: string;
+            /** Notes */
+            notes?: string | null;
+            person?: components["schemas"]["PersonInput"] | null;
+            /** Person Id */
+            person_id?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /**
+             * Source
+             * @default office
+             * @enum {string}
+             */
+            source: "office" | "phone" | "walk_in" | "public";
+            /** Year Id */
+            year_id?: string | null;
+        };
+        /** ApplicationCreateOut */
+        ApplicationCreateOut: {
+            /** Application Number */
+            application_number: string;
+            /** Applied On */
+            applied_on?: string | null;
+            /** Converted At */
+            converted_at?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            };
+            /** Decided At */
+            decided_at?: string | null;
+            /** Decided By */
+            decided_by?: string | null;
+            /** Decision Notes */
+            decision_notes?: string | null;
+            /** Duplicate Warnings */
+            duplicate_warnings?: {
+                [key: string]: unknown;
+            }[];
+            /** Entrance Test Score */
+            entrance_test_score?: number | null;
+            /** Guardians */
+            guardians?: components["schemas"]["AdmissionGuardianOut"][];
+            /** Id */
+            id: string;
+            /** Level Code */
+            level_code?: string | null;
+            /** Level Id */
+            level_id: string;
+            /** Level Name */
+            level_name?: string | null;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonOut"];
+            /** Row Version */
+            row_version: number;
+            /** Section Code */
+            section_code?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Source */
+            source: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applied" | "reviewed" | "test" | "offered" | "accepted" | "enrolled" | "rejected" | "withdrawn";
+            /** Student Id */
+            student_id?: string | null;
+            /** Student Number */
+            student_number?: string | null;
+            /**
+             * Test Max Score
+             * @default 0
+             */
+            test_max_score: number;
+            /** Test Pass Score */
+            test_pass_score?: number | null;
+            /** Test Passed */
+            test_passed?: boolean | null;
+            /** Year Code */
+            year_code?: string | null;
+            /** Year Id */
+            year_id: string;
+            /** Year Name */
+            year_name?: string | null;
+        };
+        /** ApplicationList */
+        ApplicationList: {
+            /** Items */
+            items?: components["schemas"]["ApplicationSummary"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+            /** Total */
+            total?: number | null;
+        };
+        /** ApplicationOut */
+        ApplicationOut: {
+            /** Application Number */
+            application_number: string;
+            /** Applied On */
+            applied_on?: string | null;
+            /** Converted At */
+            converted_at?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            };
+            /** Decided At */
+            decided_at?: string | null;
+            /** Decided By */
+            decided_by?: string | null;
+            /** Decision Notes */
+            decision_notes?: string | null;
+            /** Entrance Test Score */
+            entrance_test_score?: number | null;
+            /** Guardians */
+            guardians?: components["schemas"]["AdmissionGuardianOut"][];
+            /** Id */
+            id: string;
+            /** Level Code */
+            level_code?: string | null;
+            /** Level Id */
+            level_id: string;
+            /** Level Name */
+            level_name?: string | null;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonOut"];
+            /** Row Version */
+            row_version: number;
+            /** Section Code */
+            section_code?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Source */
+            source: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applied" | "reviewed" | "test" | "offered" | "accepted" | "enrolled" | "rejected" | "withdrawn";
+            /** Student Id */
+            student_id?: string | null;
+            /** Student Number */
+            student_number?: string | null;
+            /**
+             * Test Max Score
+             * @default 0
+             */
+            test_max_score: number;
+            /** Test Pass Score */
+            test_pass_score?: number | null;
+            /** Test Passed */
+            test_passed?: boolean | null;
+            /** Year Code */
+            year_code?: string | null;
+            /** Year Id */
+            year_id: string;
+            /** Year Name */
+            year_name?: string | null;
+        };
+        /** ApplicationPreview */
+        ApplicationPreview: {
+            /** Application Number */
+            application_number: string;
+            /**
+             * Custom Field Count
+             * @default 0
+             */
+            custom_field_count: number;
+            /** Duplicate Warnings */
+            duplicate_warnings?: {
+                [key: string]: unknown;
+            }[];
+            /** Full Name */
+            full_name: string;
+            /**
+             * Guardian Count
+             * @default 0
+             */
+            guardian_count: number;
+            /** Level Code */
+            level_code?: string | null;
+            /** Section Code */
+            section_code?: string | null;
+            /**
+             * Will Create
+             * @default admission_application
+             */
+            will_create: string;
+            /** Year Code */
+            year_code?: string | null;
+        };
+        /** ApplicationSummary */
+        ApplicationSummary: {
+            /** Application Number */
+            application_number: string;
+            /** Applied On */
+            applied_on?: string | null;
+            /** Entrance Test Score */
+            entrance_test_score?: number | null;
+            /** Id */
+            id: string;
+            /** Level Code */
+            level_code?: string | null;
+            /** Level Id */
+            level_id: string;
+            /** Level Name */
+            level_name?: string | null;
+            person: components["schemas"]["PersonOut"];
+            /** Row Version */
+            row_version: number;
+            /** Section Code */
+            section_code?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Source */
+            source: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applied" | "reviewed" | "test" | "offered" | "accepted" | "enrolled" | "rejected" | "withdrawn";
+            /** Student Id */
+            student_id?: string | null;
+            /** Student Number */
+            student_number?: string | null;
+            /** Year Code */
+            year_code?: string | null;
+            /** Year Id */
+            year_id: string;
+            /** Year Name */
+            year_name?: string | null;
+        };
+        /** ApplicationUpdate */
+        ApplicationUpdate: {
+            /** Applied On */
+            applied_on?: string | null;
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            } | null;
+            /** Entrance Test Score */
+            entrance_test_score?: number | null;
+            /** Level Id */
+            level_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            person?: components["schemas"]["PersonInput"] | null;
+            /** Row Version */
+            row_version: number;
+            /** Section Id */
+            section_id?: string | null;
+            /** Year Id */
+            year_id?: string | null;
+        };
         /** Body_upload_api_v1_files_post */
         Body_upload_api_v1_files_post: {
             /** File */
@@ -2525,6 +3098,11 @@ export interface components {
             owner_entity_id?: string | null;
             /** Owner Entity Type */
             owner_entity_type?: string | null;
+        };
+        /** Body_upload_document_route_api_v1_admissions__application_id__documents_post */
+        Body_upload_document_route_api_v1_admissions__application_id__documents_post: {
+            /** File */
+            file: string;
         };
         /** Body_upload_document_route_api_v1_students__student_id__documents_post */
         Body_upload_document_route_api_v1_students__student_id__documents_post: {
@@ -2545,6 +3123,68 @@ export interface components {
         ControllerSessionRequest: {
             /** Token */
             token: string;
+        };
+        /** ConversionInput */
+        ConversionInput: {
+            /** Admission Date */
+            admission_date?: string | null;
+            /** Create Guardian Accounts */
+            create_guardian_accounts?: boolean | null;
+            /** Roll Number */
+            roll_number?: string | null;
+            /** Row Version */
+            row_version: number;
+        };
+        /** ConversionOut */
+        ConversionOut: {
+            /** Accounts */
+            accounts?: components["schemas"]["GuardianAccountPlan"][];
+            application: components["schemas"]["ApplicationOut"];
+            /** Enrollment Id */
+            enrollment_id: string;
+            /** Guardian Ids */
+            guardian_ids?: string[];
+            /** Student Id */
+            student_id: string;
+            /** Student Number */
+            student_number: string;
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** ConversionPreview */
+        ConversionPreview: {
+            /** Accounts */
+            accounts?: components["schemas"]["GuardianAccountPlan"][];
+            /** Can Convert */
+            can_convert: boolean;
+            /**
+             * Guardian Count
+             * @default 0
+             */
+            guardian_count: number;
+            /** Level Code */
+            level_code?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Section Code */
+            section_code?: string | null;
+            /**
+             * Section Source
+             * @default none
+             * @enum {string}
+             */
+            section_source: "application" | "auto" | "none";
+            /** Student Number */
+            student_number?: string | null;
+            /**
+             * Student Number Generated
+             * @default true
+             */
+            student_number_generated: boolean;
+            /** Warnings */
+            warnings?: string[];
+            /** Year Code */
+            year_code?: string | null;
         };
         /** CurriculumApply */
         CurriculumApply: {
@@ -2732,6 +3372,34 @@ export interface components {
              */
             subject_id: string;
         };
+        /** DecisionInput */
+        DecisionInput: {
+            /** Entrance Test Score */
+            entrance_test_score?: number | null;
+            /** Notes */
+            notes?: string | null;
+            /** Row Version */
+            row_version: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "reviewed" | "test" | "offered" | "accepted" | "rejected" | "withdrawn";
+        };
+        /** DecisionOut */
+        DecisionOut: {
+            application: components["schemas"]["ApplicationOut"];
+            /**
+             * Previous Status
+             * @enum {string}
+             */
+            previous_status: "applied" | "reviewed" | "test" | "offered" | "accepted" | "enrolled" | "rejected" | "withdrawn";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applied" | "reviewed" | "test" | "offered" | "accepted" | "enrolled" | "rejected" | "withdrawn";
+        };
         /** DefinitionInput */
         DefinitionInput: {
             /**
@@ -2900,6 +3568,20 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** GuardianAccountPlan */
+        GuardianAccountPlan: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create" | "existing_user" | "no_email" | "role_missing";
+            /** Email */
+            email?: string | null;
+            /** Name */
+            name: string;
+            /** Person Id */
+            person_id: string;
         };
         /** GuardianInput */
         GuardianInput: {
@@ -3338,6 +4020,120 @@ export interface components {
             sex?: string | null;
             /** Short Name */
             short_name: string;
+        };
+        /** PublicApplicationCreate */
+        PublicApplicationCreate: {
+            /** Custom */
+            custom?: {
+                [key: string]: unknown;
+            } | null;
+            /** Form Token */
+            form_token: string;
+            /** Guardians */
+            guardians?: components["schemas"]["PublicGuardianInput"][];
+            /**
+             * Level Id
+             * Format: uuid
+             */
+            level_id: string;
+            person: components["schemas"]["PersonInput"];
+            /** Website */
+            website?: string | null;
+            /** Year Id */
+            year_id?: string | null;
+        };
+        /** PublicApplicationOut */
+        PublicApplicationOut: {
+            /** Application Number */
+            application_number: string;
+            /** Full Name */
+            full_name: string;
+            /** Level Code */
+            level_code?: string | null;
+            /**
+             * Status
+             * @constant
+             */
+            status: "applied";
+            /** Year Code */
+            year_code?: string | null;
+        };
+        /** PublicFormOut */
+        PublicFormOut: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Entrance Test Enabled
+             * @default true
+             */
+            entrance_test_enabled: boolean;
+            /**
+             * Entrance Test Max Score
+             * @default 100
+             */
+            entrance_test_max_score: number;
+            /** Entrance Test Pass Score */
+            entrance_test_pass_score?: number | null;
+            /** Fields */
+            fields?: {
+                [key: string]: unknown;
+            }[];
+            /** Form Token */
+            form_token?: string | null;
+            /** Levels */
+            levels?: components["schemas"]["PublicOption"][];
+            /**
+             * Min Seconds
+             * @default 0
+             */
+            min_seconds: number;
+            /**
+             * Require Guardian
+             * @default true
+             */
+            require_guardian: boolean;
+            /** School Name */
+            school_name: string;
+            /** Years */
+            years?: components["schemas"]["PublicOption"][];
+        };
+        /**
+         * PublicGuardianInput
+         * @description Public applicants may only describe a new guardian, never link one.
+         */
+        PublicGuardianInput: {
+            /**
+             * Can Pickup
+             * @default true
+             */
+            can_pickup: boolean;
+            /**
+             * Is Primary
+             * @default false
+             */
+            is_primary: boolean;
+            /** Notes */
+            notes?: string | null;
+            person: components["schemas"]["PersonInput"];
+            /**
+             * Relationship
+             * @default guardian
+             */
+            relationship: string;
+            /**
+             * Wants Account
+             * @default false
+             */
+            wants_account: boolean;
+        };
+        /** PublicOption */
+        PublicOption: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -6134,6 +6930,528 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_applications_route_api_v1_admissions_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                status?: ("applied" | "reviewed" | "test" | "offered" | "accepted" | "enrolled" | "rejected" | "withdrawn") | null;
+                year_id?: string | null;
+                level_id?: string | null;
+                section_id?: string | null;
+                limit?: number;
+                cursor?: string | null;
+                sort?: string | null;
+                order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_application_route_api_v1_admissions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationCreateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    form_route_api_v1_admissions_form_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdmissionFormOut"];
+                };
+            };
+        };
+    };
+    preview_route_api_v1_admissions_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_public_application_route_api_v1_admissions_public_applications_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicApplicationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicApplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_form_route_api_v1_admissions_public_form_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicFormOut"];
+                };
+            };
+        };
+    };
+    get_application_route_api_v1_admissions__application_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_application_route_api_v1_admissions__application_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_application_route_api_v1_admissions__application_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversion_preview_route_api_v1_admissions__application_id__conversion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversionPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    convert_application_route_api_v1_admissions__application_id__convert_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_application_route_api_v1_admissions__application_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_route_api_v1_admissions__application_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_document_route_api_v1_admissions__application_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_route_api_v1_admissions__application_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_route_api_v1_admissions__application_id__documents__file_id__delete: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                application_id: string;
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_application_route_api_v1_admissions__application_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                application_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationOut"];
                 };
             };
             /** @description Validation Error */

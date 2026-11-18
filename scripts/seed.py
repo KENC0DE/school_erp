@@ -53,7 +53,7 @@ DEMO_API_BASE_URL = "http://localhost:8000"
 CANONICAL_ENROLLMENT_TOKEN = "dev-enroll-DEMO-2026"
 # Modules enabled on the demo school. The controller signs this list into the
 # license, so an addition here also proves the module gate end to end.
-DEMO_MODULES: tuple[str, ...] = ("academics", "students", "sample")
+DEMO_MODULES: tuple[str, ...] = ("academics", "students", "admissions", "sample")
 # School-layer translation overrides. They prove the default < central < school
 # precedence and give the activity history real i18n entries to show.
 SCHOOL_I18N_OVERRIDES: tuple[tuple[str, str, str, str], ...] = (

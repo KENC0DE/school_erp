@@ -65,6 +65,15 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         sequence_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(student_number_sequences)")
         }
+        application_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(admission_applications)")
+        }
+        admission_guardian_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(admission_guardians)")
+        }
+        admission_sequence_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(admission_number_sequences)")
+        }
     finally:
         connection.close()
 
@@ -100,9 +109,12 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "student_guardians",
         "student_medical_records",
         "student_number_sequences",
+        "admission_applications",
+        "admission_guardians",
+        "admission_number_sequences",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0020_student_numbering"
+    assert version == "0021_admissions"
 
     assert {
         "failed_login_count",
@@ -134,6 +146,39 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
     } <= curriculum_columns
     assert {"profile_id", "level_id", "subject_id", "credit"} <= curriculum_subject_columns
     assert {"scope", "value", "created_at", "updated_at"} <= sequence_columns
+    assert {
+        "application_number",
+        "person_id",
+        "year_id",
+        "level_id",
+        "section_id",
+        "status",
+        "entrance_test_score",
+        "decision_notes",
+        "decided_by",
+        "decided_at",
+        "student_id",
+        "converted_at",
+        "applied_on",
+        "source",
+        "notes",
+        "custom",
+        "row_version",
+        "deleted_at",
+    } <= application_columns
+    assert {
+        "application_id",
+        "person_id",
+        "relationship",
+        "is_primary",
+        "can_pickup",
+        "wants_account",
+        "account_user_id",
+        "notes",
+        "row_version",
+        "deleted_at",
+    } <= admission_guardian_columns
+    assert {"scope", "value", "created_at", "updated_at"} <= admission_sequence_columns
     assert {"reason", "granted_by"} <= override_columns
     assert {"available_at", "last_attempt_at", "last_error"} <= outbox_columns
 

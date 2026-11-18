@@ -307,16 +307,44 @@ async def preview_registration(session: AsyncSession, data: StudentRegister) -> 
     }
 
 
-async def _resolve_student_number(
-    session: AsyncSession,
-    data: StudentRegister,
-) -> str:
-    """Return the explicit number or allocate and reserve a generated one."""
-    if data.student_number is not None:
-        await _assert_number_free(session, data.student_number)
-        return data.student_number
+async def student_id_for_person(session: AsyncSession, person_id: uuid.UUID) -> uuid.UUID | None:
+    """Return the live student record for a person, if one exists.
 
-    year_id = data.enrollment.year_id if data.enrollment is not None else None
+    Admissions conversion uses this public helper instead of reading the
+    students table directly.
+    """
+    return (
+        await session.execute(
+            select(StudentProfile.id).where(
+                StudentProfile.person_id == person_id,
+                StudentProfile.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def student_number_for(session: AsyncSession, student_id: uuid.UUID) -> str | None:
+    """Return a student's number for display without exposing the table."""
+    return (
+        await session.execute(
+            select(StudentProfile.student_number).where(
+                StudentProfile.id == student_id,
+                StudentProfile.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+
+
+async def allocate_student_number(
+    session: AsyncSession,
+    *,
+    year_id: uuid.UUID | None = None,
+) -> str:
+    """Reserve a generated number that is not already typed into a record.
+
+    Admissions conversion reuses this instead of writing its own sequence
+    handling, so both entry points share the same retry and numbering rules.
+    """
     # A school may also type numbers by hand, so a generated candidate can
     # already be in use. Skip those candidates; every reservation is atomic.
     for _ in range(10):
@@ -328,6 +356,63 @@ async def _resolve_student_number(
         message_key="students.error.numbering_exhausted",
         details={"format": (await numbering.load_settings(session)).numbering.format},
     )
+
+
+async def create_profile_for_person(
+    session: AsyncSession,
+    principal: Principal,
+    person_id: uuid.UUID,
+    *,
+    admission_date: date | None = None,
+    status: str = "active",
+    via: str = "api",
+) -> StudentProfile:
+    """Create a student profile for an existing person without committing.
+
+    Admissions conversion calls this instead of writing the profile table
+    itself. The generated number is reserved atomically first, then the profile
+    joins the caller's transaction.
+    """
+    person = await live_person(session, person_id)
+    if await student_id_for_person(session, person.id) is not None:
+        raise Conflict(
+            "That person already has a student record",
+            message_key="students.error.person_exists",
+            details={"person_id": str(person.id)},
+        )
+    _assert_status(status)
+    student_number = await allocate_student_number(session)
+    profile = StudentProfile(
+        person_id=person.id,
+        student_number=student_number,
+        status=status,
+        admission_date=admission_date or date.today(),
+    )
+    session.add(profile)
+    await session.flush()
+    await record(
+        session,
+        action="students.profile.create",
+        module=MODULE,
+        entity_type="student",
+        entity_id=str(profile.id),
+        after=student_state(profile),
+        actor=principal,
+        via=via,
+    )
+    return profile
+
+
+async def _resolve_student_number(
+    session: AsyncSession,
+    data: StudentRegister,
+) -> str:
+    """Return the explicit number or allocate and reserve a generated one."""
+    if data.student_number is not None:
+        await _assert_number_free(session, data.student_number)
+        return data.student_number
+    year_id = data.enrollment.year_id if data.enrollment is not None else None
+    return await allocate_student_number(session, year_id=year_id)
 
 
 async def register_student(
@@ -550,6 +635,8 @@ async def enroll_student(
 
 
 __all__ = [
+    "allocate_student_number",
+    "create_profile_for_person",
     "delete_student",
     "duplicate_warnings",
     "enroll_student",
@@ -559,5 +646,7 @@ __all__ = [
     "register_student",
     "restore_student",
     "student_detail",
+    "student_id_for_person",
+    "student_number_for",
     "update_student",
 ]
