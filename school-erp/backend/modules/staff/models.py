@@ -152,6 +152,49 @@ class StaffQualification(BusinessModel):
     notes: Mapped[str | None] = mapped_column(Text)
 
 
+class StaffTeachingAssignment(BusinessModel):
+    """A teacher's subject in a section for one academic year."""
+
+    __tablename__ = "staff_teaching_assignments"
+    __table_args__ = (
+        Index(
+            "uq_staff_teaching_assignment_live",
+            "staff_id",
+            "year_id",
+            "section_id",
+            "subject_id",
+            unique=True,
+            **LIVE_INDEX,
+        ),
+        Index("ix_staff_teaching_assignment_year", "year_id"),
+        Index("ix_staff_teaching_assignment_section", "section_id"),
+        Index("ix_staff_teaching_assignment_subject", "subject_id"),
+        Index("ix_staff_teaching_assignment_staff", "staff_id"),
+    )
+
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("staff_profiles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    year_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_academic_years.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    section_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_sections.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_subjects.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
 class StaffNumberSequence(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """The last staff number issued for one numbering scope (atomic counter)."""
 
@@ -169,4 +212,5 @@ __all__ = [
     "StaffPosition",
     "StaffProfile",
     "StaffQualification",
+    "StaffTeachingAssignment",
 ]

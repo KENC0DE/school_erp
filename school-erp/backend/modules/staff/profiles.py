@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.errors import Conflict, NotFound, ValidationFailed
+from app.errors import Conflict, Forbidden, NotFound, ValidationFailed
 from core.api.concurrency import ensure_row_version
 from core.api.pagination import PageParams, contains, paginate
 from core.audit.service import record
@@ -18,7 +18,7 @@ from core.people.service import create_person, prepare_person, update_person
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.staff import numbering
+from modules.staff import numbering, scopes
 from modules.staff.common import (
     MODULE,
     live_department,
@@ -223,6 +223,10 @@ async def list_staff(
         if terms:
             matches.append(and_(*[Person.search_name.like(f"%{term}%") for term in terms]))
         stmt = stmt.where(or_(*matches))
+    if principal is not None:
+        visible = await scopes.visible_staff_ids(session, principal)
+        if visible is not None:
+            stmt = stmt.where(StaffProfile.id.in_(visible))
 
     total = int((await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one())
     rows, next_cursor = await paginate(
@@ -316,10 +320,19 @@ async def get_staff(
     *,
     include_contracts: bool = False,
 ) -> StaffOut:
+    profile = await live_staff(session, staff_id)
+    if principal is not None:
+        visible = await scopes.visible_staff_ids(session, principal)
+        if visible is not None and profile.id not in visible:
+            raise Forbidden(
+                "This staff record is outside your department",
+                message_key="error.scope_denied",
+                details={"staff_id": str(profile.id)},
+            )
     return await staff_detail(
         session,
         principal,
-        await live_staff(session, staff_id),
+        profile,
         include_contracts=include_contracts,
     )
 

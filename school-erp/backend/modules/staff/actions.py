@@ -10,7 +10,7 @@ import uuid
 
 from core.actions.registry import ActionContext, action
 
-from modules.staff import contracts, profiles, qualifications, structure
+from modules.staff import contracts, profiles, qualifications, structure, teaching
 from modules.staff.schemas import (
     AccountLink,
     ContractInput,
@@ -34,11 +34,20 @@ from modules.staff.schemas import (
     StaffOut,
     StaffQuery,
     StaffUpdate,
+    TeachingAssignmentInput,
+    TeachingAssignmentList,
+    TeachingAssignmentOut,
+    TeachingAssignmentUpdate,
 )
 
 
 def _id(payload: dict, key: str) -> uuid.UUID:
     return uuid.UUID(str(payload[key]))
+
+
+def _optional_id(payload: dict, key: str) -> uuid.UUID | None:
+    value = payload.get(key)
+    return uuid.UUID(str(value)) if value else None
 
 
 def _body(payload: dict, *path_keys: str) -> dict:
@@ -299,6 +308,104 @@ async def unlink_account(ctx: ActionContext, payload: dict) -> StaffOut:
     return await profiles.unlink_account(ctx.session, ctx.principal, _id(payload, "staff_id"), via=ctx.via)
 
 
+# ------------------------------------------------------------------- teaching
+
+
+@action(
+    key="staff.teaching.search",
+    module="staff",
+    permission="staff.view",
+    risk="read",
+    describe="List teaching assignments by staff member, year, section or subject",
+    output=TeachingAssignmentList,
+)
+async def search_teaching_assignments(
+    ctx: ActionContext, payload: dict | None = None
+) -> TeachingAssignmentList:
+    values = payload or {}
+    return await teaching.list_assignments(
+        ctx.session,
+        staff_id=_optional_id(values, "staff_id"),
+        year_id=_optional_id(values, "year_id"),
+        section_id=_optional_id(values, "section_id"),
+        subject_id=_optional_id(values, "subject_id"),
+    )
+
+
+@action(
+    key="staff.teaching.create",
+    module="staff",
+    permission="staff.manage",
+    risk="write",
+    describe="Assign a teacher to a subject in a section for an academic year",
+    input=TeachingAssignmentInput,
+    output=TeachingAssignmentOut,
+)
+async def create_teaching_assignment(ctx: ActionContext, payload: dict) -> TeachingAssignmentOut:
+    data = TeachingAssignmentInput.model_validate(_body(payload, "staff_id", "assignment_id"))
+    return await teaching.create_assignment(
+        ctx.session, ctx.principal, _id(payload, "staff_id"), data, via=ctx.via
+    )
+
+
+@action(
+    key="staff.teaching.update",
+    module="staff",
+    permission="staff.manage",
+    risk="write",
+    describe="Update a teaching assignment",
+    input=TeachingAssignmentUpdate,
+    output=TeachingAssignmentOut,
+)
+async def update_teaching_assignment(ctx: ActionContext, payload: dict) -> TeachingAssignmentOut:
+    data = TeachingAssignmentUpdate.model_validate(payload)
+    return await teaching.update_assignment(
+        ctx.session,
+        ctx.principal,
+        _id(payload, "staff_id"),
+        _id(payload, "assignment_id"),
+        data,
+        via=ctx.via,
+    )
+
+
+@action(
+    key="staff.teaching.delete",
+    module="staff",
+    permission="staff.manage",
+    risk="write",
+    describe="Soft-delete a teaching assignment",
+)
+async def delete_teaching_assignment(ctx: ActionContext, payload: dict) -> dict:
+    return await teaching.delete_assignment(
+        ctx.session,
+        ctx.principal,
+        _id(payload, "staff_id"),
+        _id(payload, "assignment_id"),
+        reason=payload.get("reason"),
+        via=ctx.via,
+    )
+
+
+@action(
+    key="staff.teaching.restore",
+    module="staff",
+    permission="staff.manage",
+    risk="write",
+    describe="Restore a soft-deleted teaching assignment",
+    output=TeachingAssignmentOut,
+)
+async def restore_teaching_assignment(ctx: ActionContext, payload: dict) -> TeachingAssignmentOut:
+    return await teaching.restore_assignment(
+        ctx.session,
+        ctx.principal,
+        _id(payload, "staff_id"),
+        _id(payload, "assignment_id"),
+        reason=payload.get("reason"),
+        via=ctx.via,
+    )
+
+
 # ------------------------------------------------------------------- contracts
 
 
@@ -483,9 +590,11 @@ __all__ = [
     "create_position",
     "create_qualification",
     "create_staff",
+    "create_teaching_assignment",
     "delete_contract",
     "delete_qualification",
     "delete_staff",
+    "delete_teaching_assignment",
     "get_department",
     "get_position",
     "get_staff",
@@ -493,15 +602,18 @@ __all__ = [
     "restore_contract",
     "restore_qualification",
     "restore_staff",
+    "restore_teaching_assignment",
     "search_contracts",
     "search_departments",
     "search_positions",
     "search_qualifications",
     "search_staff",
+    "search_teaching_assignments",
     "unlink_account",
     "update_contract",
     "update_department",
     "update_position",
     "update_qualification",
     "update_staff",
+    "update_teaching_assignment",
 ]

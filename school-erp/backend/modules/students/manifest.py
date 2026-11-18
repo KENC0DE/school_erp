@@ -15,7 +15,11 @@ MANIFEST = ModuleManifest(
     description="Student records, enrollment, guardians, medical data and documents.",
     depends_on=["academics"],
     permissions=[
-        Perm("students.view", "students.perm.view"),
+        Perm(
+            "students.view",
+            "students.perm.view",
+            scopes=("all", "assigned_subjects", "own_class"),
+        ),
         Perm("students.manage", "students.perm.manage"),
         Perm("students.medical.view", "students.perm.medical_view"),
         Perm("students.medical.manage", "students.perm.medical_manage"),

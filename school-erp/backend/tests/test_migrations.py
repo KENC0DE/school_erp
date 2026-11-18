@@ -79,6 +79,9 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         staff_qualification_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(staff_qualifications)")
         }
+        teaching_assignment_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(staff_teaching_assignments)")
+        }
     finally:
         connection.close()
 
@@ -123,9 +126,10 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "staff_contracts",
         "staff_qualifications",
         "staff_number_sequences",
+        "staff_teaching_assignments",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0022_staff"
+    assert version == "0023_teaching_assignments"
 
     assert {
         "failed_login_count",
@@ -182,6 +186,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "end_date",
         "result",
     } <= staff_qualification_columns
+    assert {"staff_id", "year_id", "section_id", "subject_id", "notes"} <= (teaching_assignment_columns)
     assert {
         "application_number",
         "person_id",

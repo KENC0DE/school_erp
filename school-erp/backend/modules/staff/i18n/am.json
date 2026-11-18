@@ -74,6 +74,15 @@
   "qualification.kind.training": "ሥልጠና",
   "qualification.kind.certification": "ምስክርነት",
   "qualification.kind.experience": "ልምድ",
+  "teaching.title": "የማስተማሪያ ምደባዎች",
+  "teaching.staff": "መምህር",
+  "teaching.year": "የትምህርት ዓመት",
+  "teaching.section": "ክፍል",
+  "teaching.subject": "ትምህርት",
+  "teaching.level": "የክፍል ደረጃ",
+  "teaching.notes": "ማስታወሻዎች",
+  "teaching.add": "ትምህርት መድብ",
+  "teaching.empty": "እስካሁን የማስተማሪያ ምደባዎች የሉም",
   "documents": "ሰነዶች",
   "documents.upload": "ሰነድ ስቀል",
   "documents.empty": "እስካሁን ሰነዶች የሉም",
@@ -85,5 +94,10 @@
   "error.contract_active": "ይህ ሠራተኛ አስቀድሞ ንቁ የሥራ ውል አለው",
   "error.dates_invalid": "የማብቂያ ቀን ከመጀመሪያ ቀን በፊት መሆን አይችልም",
   "error.department_code_taken": "በዚህ ኮድ የተመዘገበ ክፍል አስቀድሞ አለ",
-  "error.position_code_taken": "በዚህ ኮድ የተመዘገበ ሥራ መደብ አስቀድሞ አለ"
+  "error.position_code_taken": "በዚህ ኮድ የተመዘገበ ሥራ መደብ አስቀድሞ አለ",
+  "error.assignment_not_found": "የማስተማሪያ ምደባው አይገኝም",
+  "error.assignment_exists": "ይህ መምህር አስቀድሞ ለዚህ ትምህርትና ክፍል ተመድቧል",
+  "error.assignment_section_year": "ክፍሉ የዚህ የትምህርት ዓመት አይደለም",
+  "error.assignment_subject_inactive": "የተከለከለ ትምህርት ማስተማር አይቻልም",
+  "error.assignment_staff_terminated": "ሥራው የተቋረጠ ሠራተኛ የማስተማሪያ ምደባ ሊያገኝ አይችልም"
 }

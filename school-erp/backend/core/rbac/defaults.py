@@ -110,11 +110,11 @@ DEFAULT_ROLES: tuple[DefaultRole, ...] = (
         permissions=(
             "users.view",
             "audit.activity.view",
-            "staff.view",
             "ai.use",
             "sample.notes.view",
             "sample.notes.create",
         ),
+        scoped={"staff.view": "department"},
     ),
     DefaultRole(
         key="registrar",
@@ -146,6 +146,7 @@ DEFAULT_ROLES: tuple[DefaultRole, ...] = (
         name="Teacher",
         description="Teaches assigned subjects and sections; enters marks and attendance.",
         permissions=("academics.view", "ai.use", "sample.notes.view", "sample.notes.create"),
+        scoped={"students.view": "assigned_subjects"},
     ),
     DefaultRole(
         key="homeroom_teacher",
@@ -154,11 +155,11 @@ DEFAULT_ROLES: tuple[DefaultRole, ...] = (
         permissions=(
             "users.view",
             "academics.view",
-            "students.view",
             "ai.use",
             "sample.notes.view",
             "sample.notes.create",
         ),
+        scoped={"students.view": "own_class"},
     ),
     DefaultRole(
         key="accountant",

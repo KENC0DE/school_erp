@@ -12,7 +12,7 @@ MANIFEST = ModuleManifest(
     version="0.1.0",
     description="Staff profiles on persons, departments, positions, contracts, qualifications, documents and user-account links.",
     permissions=[
-        Perm("staff.view", "staff.perm.view"),
+        Perm("staff.view", "staff.perm.view", scopes=("all", "department")),
         Perm("staff.manage", "staff.perm.manage"),
         Perm("staff.contracts.view", "staff.perm.contracts_view"),
         Perm("staff.contracts.manage", "staff.perm.contracts_manage"),

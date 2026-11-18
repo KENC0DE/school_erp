@@ -17,7 +17,7 @@ from core.files.storage import Storage
 from fastapi import APIRouter, Depends, File, Header, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.students import documents_service
+from modules.students import documents_service, scoping
 from modules.students.actions import (
     add_guardian,
     apply_promotion,
@@ -174,7 +174,10 @@ async def upload_photo_route(
     )
 
 
-@router.get("/{student_id}/photo")
+@router.get(
+    "/{student_id}/photo",
+    dependencies=[Depends(scoping.student_scope_guard)],
+)
 async def get_photo_route(
     student_id: uuid.UUID,
     principal: Principal = Depends(require("students.view")),
@@ -217,7 +220,11 @@ async def change_student_status_route(
     return await change_student_status(_context(principal, session), body)
 
 
-@router.get("/{student_id}", response_model=StudentOut)
+@router.get(
+    "/{student_id}",
+    response_model=StudentOut,
+    dependencies=[Depends(scoping.student_scope_guard)],
+)
 async def get_student_route(
     student_id: uuid.UUID,
     principal: Principal = Depends(require("students.view")),
@@ -264,7 +271,11 @@ async def restore_student_route(
 # ------------------------------------------------------------------ enrollment
 
 
-@router.get("/{student_id}/enrollments", response_model=list[EnrollmentOut])
+@router.get(
+    "/{student_id}/enrollments",
+    response_model=list[EnrollmentOut],
+    dependencies=[Depends(scoping.student_scope_guard)],
+)
 async def list_enrollments_route(
     student_id: uuid.UUID,
     principal: Principal = Depends(require("students.view")),
@@ -340,7 +351,11 @@ async def restore_enrollment_route(
 # -------------------------------------------------------------------- guardians
 
 
-@router.get("/{student_id}/guardians", response_model=list[GuardianOut])
+@router.get(
+    "/{student_id}/guardians",
+    response_model=list[GuardianOut],
+    dependencies=[Depends(scoping.student_scope_guard)],
+)
 async def list_guardians_route(
     student_id: uuid.UUID,
     principal: Principal = Depends(require("students.view")),
@@ -414,7 +429,11 @@ async def restore_guardian_route(
 # ---------------------------------------------------------------------- medical
 
 
-@router.get("/{student_id}/medical", response_model=MedicalOut | None)
+@router.get(
+    "/{student_id}/medical",
+    response_model=MedicalOut | None,
+    dependencies=[Depends(scoping.student_scope_guard)],
+)
 async def get_medical_route(
     student_id: uuid.UUID,
     principal: Principal = Depends(require("students.medical.view")),
@@ -436,7 +455,10 @@ async def update_medical_route(
 # -------------------------------------------------------------------- documents
 
 
-@router.get("/{student_id}/documents")
+@router.get(
+    "/{student_id}/documents",
+    dependencies=[Depends(scoping.student_scope_guard)],
+)
 async def list_documents_route(
     student_id: uuid.UUID,
     principal: Principal = Depends(require("students.view")),

@@ -39,6 +39,7 @@
   "common.error": "የተሳሳተ ነገር ተከስቷል",
   "error.module_disabled": "ይህ ሞጁል ለትምህርት ቤትዎ ጠፍቷል",
   "error.permission_denied": "ይህን ለማድረግ ፈቃድ የለዎትም",
+  "error.scope_denied": "ይህ መዝገብ ከተሰጠዎት የተግባር ወሰን ውጭ ነው",
   "error.internal_error": "ያልተጠበቀ ስህተት ተከስቷል",
   "error.account_locked": "መለያው ለጊዜው ተቆልፏል",
   "error.totp_required": "የማረጋገጫ ኮድ ያስፈልጋል",

@@ -25,7 +25,7 @@ class Principal:
         matching = {
             granted
             for granted in self.permissions
-            if granted == "*" or _permission_matches(granted, permission)
+            if granted == "*" or permission_matches(granted, permission)
         }
         if not matching:
             return False
@@ -39,10 +39,14 @@ class Principal:
         return self.actor_id
 
 
-def _permission_matches(granted: str, permission: str) -> bool:
+def permission_matches(granted: str, permission: str) -> bool:
     if granted == permission or granted == "*":
         return True
     if granted.endswith(".*"):
         prefix = granted[:-2]
         return permission == prefix or permission.startswith(f"{prefix}.")
     return False
+
+
+# Retained for the existing internal imports (rbac service, tests).
+_permission_matches = permission_matches

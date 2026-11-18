@@ -15,11 +15,17 @@ from core.custom_fields.service import merge_custom, validate_entity_values
 from core.db.soft_delete import get_including_deleted, restore, soft_delete
 from core.people.models import Person, full_name, normalize_name
 from core.people.service import create_person, prepare_person, update_person
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, false, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.academics import years as year_service
-from modules.students import enrollment_service, guardian_service, medical_service, numbering
+from modules.students import (
+    enrollment_service,
+    guardian_service,
+    medical_service,
+    numbering,
+    scoping,
+)
 from modules.students.common import live_person, live_student, student_state
 from modules.students.events import emit_admitted
 from modules.students.lookups import AcademicLabels
@@ -155,6 +161,21 @@ async def list_students(
         stmt = stmt.where(or_(*matches))
     if query.year_id or query.level_id or query.section_id:
         stmt = stmt.where(_enrollment_filter(query))
+    if principal is not None:
+        allowed_sections = await scoping.visible_section_ids(session, principal)
+        if allowed_sections is not None:
+            if not allowed_sections:
+                stmt = stmt.where(false())
+            else:
+                stmt = stmt.where(
+                    select(StudentEnrollment.id)
+                    .where(
+                        StudentEnrollment.student_id == StudentProfile.id,
+                        StudentEnrollment.deleted_at.is_(None),
+                        StudentEnrollment.section_id.in_(allowed_sections),
+                    )
+                    .exists()
+                )
 
     total = int((await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one())
     params = PageParams(
@@ -277,6 +298,8 @@ async def get_student(
     include_medical: bool = False,
 ) -> StudentOut:
     profile = await live_student(session, student_id)
+    if principal is not None:
+        await scoping.assert_student_visible(session, principal, profile.id)
     return await student_detail(session, principal, profile, include_medical=include_medical)
 
 

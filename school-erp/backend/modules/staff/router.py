@@ -24,9 +24,11 @@ from modules.staff.actions import (
     create_position,
     create_qualification,
     create_staff,
+    create_teaching_assignment,
     delete_contract,
     delete_qualification,
     delete_staff,
+    delete_teaching_assignment,
     get_department,
     get_position,
     get_staff,
@@ -34,17 +36,20 @@ from modules.staff.actions import (
     restore_contract,
     restore_qualification,
     restore_staff,
+    restore_teaching_assignment,
     search_contracts,
     search_departments,
     search_positions,
     search_qualifications,
     search_staff,
+    search_teaching_assignments,
     unlink_account,
     update_contract,
     update_department,
     update_position,
     update_qualification,
     update_staff,
+    update_teaching_assignment,
 )
 from modules.staff.schemas import (
     AccountLink,
@@ -70,6 +75,10 @@ from modules.staff.schemas import (
     StaffQuery,
     StaffStatus,
     StaffUpdate,
+    TeachingAssignmentInput,
+    TeachingAssignmentList,
+    TeachingAssignmentOut,
+    TeachingAssignmentUpdate,
 )
 
 router = APIRouter(tags=["staff"])
@@ -178,6 +187,27 @@ async def update_position_route(
     )
 
 
+# -------------------------------------------------------------------- teaching
+
+
+@router.get("/teaching-assignments", response_model=TeachingAssignmentList)
+async def list_teaching_assignments_route(
+    staff_id: uuid.UUID | None = Query(None),
+    year_id: uuid.UUID | None = Query(None),
+    section_id: uuid.UUID | None = Query(None),
+    subject_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("staff.view")),
+    session: AsyncSession = Depends(get_session),
+) -> TeachingAssignmentList:
+    payload = {
+        "staff_id": str(staff_id) if staff_id else None,
+        "year_id": str(year_id) if year_id else None,
+        "section_id": str(section_id) if section_id else None,
+        "subject_id": str(subject_id) if subject_id else None,
+    }
+    return await search_teaching_assignments(_context(principal, session), payload)
+
+
 # ------------------------------------------------------------------------ staff
 
 
@@ -283,6 +313,106 @@ async def unlink_account_route(
     session: AsyncSession = Depends(get_session),
 ) -> StaffOut:
     return await unlink_account(_context(principal, session), {"staff_id": str(staff_id)})
+
+
+# -------------------------------------------------------------------- teaching
+
+
+@router.get(
+    "/{staff_id}/teaching-assignments",
+    response_model=TeachingAssignmentList,
+)
+async def list_staff_teaching_assignments_route(
+    staff_id: uuid.UUID,
+    year_id: uuid.UUID | None = Query(None),
+    section_id: uuid.UUID | None = Query(None),
+    subject_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("staff.view")),
+    session: AsyncSession = Depends(get_session),
+) -> TeachingAssignmentList:
+    payload = {
+        "staff_id": str(staff_id),
+        "year_id": str(year_id) if year_id else None,
+        "section_id": str(section_id) if section_id else None,
+        "subject_id": str(subject_id) if subject_id else None,
+    }
+    return await search_teaching_assignments(_context(principal, session), payload)
+
+
+@router.post(
+    "/{staff_id}/teaching-assignments",
+    response_model=TeachingAssignmentOut,
+    status_code=201,
+)
+async def create_teaching_assignment_route(
+    staff_id: uuid.UUID,
+    payload: TeachingAssignmentInput,
+    principal: Principal = Depends(require("staff.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> TeachingAssignmentOut:
+    return await create_teaching_assignment(
+        _context(principal, session), _with(payload.model_dump(), staff_id=staff_id)
+    )
+
+
+@router.patch(
+    "/{staff_id}/teaching-assignments/{assignment_id}",
+    response_model=TeachingAssignmentOut,
+)
+async def update_teaching_assignment_route(
+    staff_id: uuid.UUID,
+    assignment_id: uuid.UUID,
+    payload: TeachingAssignmentUpdate,
+    principal: Principal = Depends(require("staff.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> TeachingAssignmentOut:
+    return await update_teaching_assignment(
+        _context(principal, session),
+        _with(
+            payload.model_dump(exclude_unset=True),
+            staff_id=staff_id,
+            assignment_id=assignment_id,
+        ),
+    )
+
+
+@router.delete("/{staff_id}/teaching-assignments/{assignment_id}")
+async def delete_teaching_assignment_route(
+    staff_id: uuid.UUID,
+    assignment_id: uuid.UUID,
+    reason: str | None = Query(None, max_length=500),
+    principal: Principal = Depends(require("staff.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    return await delete_teaching_assignment(
+        _context(principal, session),
+        _with(
+            {"reason": reason},
+            staff_id=staff_id,
+            assignment_id=assignment_id,
+        ),
+    )
+
+
+@router.post(
+    "/{staff_id}/teaching-assignments/{assignment_id}/restore",
+    response_model=TeachingAssignmentOut,
+)
+async def restore_teaching_assignment_route(
+    staff_id: uuid.UUID,
+    assignment_id: uuid.UUID,
+    reason: str | None = Query(None, max_length=500),
+    principal: Principal = Depends(require("staff.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> TeachingAssignmentOut:
+    return await restore_teaching_assignment(
+        _context(principal, session),
+        _with(
+            {"reason": reason},
+            staff_id=staff_id,
+            assignment_id=assignment_id,
+        ),
+    )
 
 
 # -------------------------------------------------------------------- contracts

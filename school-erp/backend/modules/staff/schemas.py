@@ -278,6 +278,47 @@ class QualificationList(BaseModel):
     total: int
 
 
+class TeachingAssignmentInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    year_id: uuid.UUID
+    section_id: uuid.UUID
+    subject_id: uuid.UUID
+    notes: str | None = Field(default=None, max_length=2000)
+
+
+class TeachingAssignmentUpdate(BaseModel):
+    year_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    subject_id: uuid.UUID | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+    row_version: int = Field(ge=1)
+
+
+class TeachingAssignmentOut(BaseModel):
+    id: str
+    staff_id: str
+    staff_number: str
+    year_id: str
+    year_code: str
+    section_id: str
+    section_code: str
+    section_name: str | None = None
+    level_id: str
+    level_code: str
+    level_name: str
+    subject_id: str
+    subject_code: str
+    subject_name: str
+    notes: str | None = None
+    row_version: int
+
+
+class TeachingAssignmentList(BaseModel):
+    items: list[TeachingAssignmentOut]
+    total: int
+
+
 class StaffSummary(BaseModel):
     id: str
     staff_number: str
@@ -338,4 +379,8 @@ __all__ = [
     "StaffStatus",
     "StaffSummary",
     "StaffUpdate",
+    "TeachingAssignmentInput",
+    "TeachingAssignmentList",
+    "TeachingAssignmentOut",
+    "TeachingAssignmentUpdate",
 ]

@@ -74,6 +74,15 @@
   "qualification.kind.training": "Training",
   "qualification.kind.certification": "Certification",
   "qualification.kind.experience": "Experience",
+  "teaching.title": "Teaching assignments",
+  "teaching.staff": "Teacher",
+  "teaching.year": "Academic year",
+  "teaching.section": "Section",
+  "teaching.subject": "Subject",
+  "teaching.level": "Grade level",
+  "teaching.notes": "Notes",
+  "teaching.add": "Assign a subject",
+  "teaching.empty": "No teaching assignments yet",
   "documents": "Documents",
   "documents.upload": "Upload document",
   "documents.empty": "No documents yet",
@@ -85,5 +94,10 @@
   "error.contract_active": "This staff member already has an active contract",
   "error.dates_invalid": "The end date cannot be before the start date",
   "error.department_code_taken": "A department with that code already exists",
-  "error.position_code_taken": "A position with that code already exists"
+  "error.position_code_taken": "A position with that code already exists",
+  "error.assignment_not_found": "The teaching assignment does not exist",
+  "error.assignment_exists": "That teacher is already assigned to this subject and section",
+  "error.assignment_section_year": "The section does not belong to that academic year",
+  "error.assignment_subject_inactive": "An inactive subject cannot be assigned",
+  "error.assignment_staff_terminated": "A terminated staff member cannot receive teaching assignments"
 }

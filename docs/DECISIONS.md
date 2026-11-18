@@ -1564,3 +1564,35 @@ and recorded here (date, decision, reason).
   Every mutation takes `row_version` and writes an audit entry through the
   shared `record` helper, matching the rest of the API rather than inventing a
   staff-specific concurrency model.
+
+## 2026-11-18 — P3-02 teaching assignments and data scopes
+
+- **A teaching assignment is one live `(staff, year, section, subject)` row.**
+  The composite uniqueness rule is enforced with a partial index over
+  `deleted_at IS NULL`, so a soft-deleted assignment can be recreated or
+  restored without colliding with itself. The section must belong to the named
+  academic year and the subject must be active; both checks run on create,
+  update and restore. A terminated staff member cannot receive new assignments.
+- **The module manifest declares the scopes a permission accepts.** `staff.view`
+  accepts `all` and `department`; `students.view` accepts `all`,
+  `assigned_subjects` and `own_class`. The RBAC editor validates grants against
+  those declarations, so a school cannot store a scope the module will not
+  interpret.
+- **Default roles carry the narrow grants.** A plain `teacher` gets
+  `students.view` with `assigned_subjects`; a `homeroom_teacher` gets it with
+  `own_class`; a `department_head` gets `staff.view` with `department`. These
+  are starting points and remain editable like every other default role.
+- **`assigned_subjects` and `own_class` resolve to sections for student data.**
+  Both scopes narrow *which student rows* a caller can read, using the live
+  enrollment section. Student list queries filter by the visible section set;
+  direct detail and read subresources (enrollments, guardians, medical,
+  documents, photo) return 403 `error.scope_denied` when the student is outside
+  the set. An empty set means no rows, never all rows.
+- **`department` narrows staff records, not student records.** A department head
+  sees only live staff whose primary department is their own. It deliberately
+  does not widen access to students: student visibility comes only from the
+  explicit `assigned_subjects` and `own_class` scopes.
+- **Scope checks run in the service layer as well as the route guard.** The
+  route dependency covers the HTTP surface, while the action entry points repeat
+  the check so AI or CLI callers cannot bypass visibility by invoking an action
+  directly.

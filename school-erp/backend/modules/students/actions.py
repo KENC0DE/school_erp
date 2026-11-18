@@ -17,6 +17,7 @@ from modules.students import (
     medical_service,
     numbering,
     progression_service,
+    scoping,
     service,
 )
 from modules.students.progression_schemas import (
@@ -210,7 +211,9 @@ async def restore_student(ctx: ActionContext, payload: dict) -> StudentOut:
     output=list[EnrollmentOut],
 )
 async def list_enrollments(ctx: ActionContext, payload: dict) -> list[EnrollmentOut]:
-    rows = await enrollment_service.list_enrollments(ctx.session, _student_id(payload))
+    student_id = _student_id(payload)
+    await scoping.assert_student_visible(ctx.session, ctx.principal, student_id)
+    rows = await enrollment_service.list_enrollments(ctx.session, student_id)
     return [await enrollment_service.enrollment_view(ctx.session, row) for row in rows]
 
 
@@ -306,7 +309,9 @@ async def restore_enrollment(ctx: ActionContext, payload: dict) -> EnrollmentOut
     output=list[GuardianOut],
 )
 async def list_guardians(ctx: ActionContext, payload: dict) -> list[GuardianOut]:
-    rows = await guardian_service.list_guardians(ctx.session, _student_id(payload))
+    student_id = _student_id(payload)
+    await scoping.assert_student_visible(ctx.session, ctx.principal, student_id)
+    rows = await guardian_service.list_guardians(ctx.session, student_id)
     return [
         await guardian_service.guardian_view(ctx.session, row, locale=ctx.principal.locale)
         for row, _person in rows
@@ -458,7 +463,9 @@ async def change_student_status(ctx: ActionContext, payload: dict) -> StudentSta
     output=MedicalOut,
 )
 async def get_medical(ctx: ActionContext, payload: dict) -> MedicalOut | None:
-    return await medical_service.get_medical(ctx.session, _student_id(payload))
+    student_id = _student_id(payload)
+    await scoping.assert_student_visible(ctx.session, ctx.principal, student_id)
+    return await medical_service.get_medical(ctx.session, student_id)
 
 
 @action(
