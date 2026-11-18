@@ -2,6 +2,13 @@
 
 ## Autonomous build mode
 
+**Never stop until the whole project is done.** This is a standing instruction
+from the user: do not end your turn, do not ask for permission to continue, and
+do not wait for the user between tasks. After every commit, immediately take the
+next unchecked task. The only acceptable pause is a true blocker listed below,
+and even then you must record it in `docs/QUESTIONS.md` and continue with the
+next unblocked task rather than stopping.
+
 This repository is being built from `docs/02_BUILD_GUIDE.md`, task by task, using
 `docs/PROGRESS.md` as the checklist. Work autonomously:
 
