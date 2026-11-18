@@ -249,5 +249,19 @@
   "error.year_weights_unused": "Year weights only apply to a weighted year result",
   "error.year_weights_required": "A weighted year result needs one weight per term",
   "error.rounding": "Unknown rounding mode",
-  "error.score_status": "Unknown score status"
+  "error.score_status": "Unknown score status",
+  "error.raw_negative": "A score cannot be negative",
+  "error.invalid_mark": "That mark is not valid",
+  "error.duplicate_score_entry": "That student appears twice in this request",
+  "error.out_of_locked": "The maximum cannot change after marks are entered",
+  "error.assessment_in_use": "An assessment with marks cannot be removed",
+  "error.assessment_archived": "This assessment is archived and cannot change",
+  "error.weight_required": "A weighted component needs a weight on every assessment",
+  "error.weight_unused": "A weight only applies when the component uses weighted averaging",
+  "error.no_structure": "No mark structure applies to this year, level and subject",
+  "error.structure_inactive": "That mark structure is not active",
+  "error.structure_mismatch": "The mark structure does not apply to this section and subject",
+  "error.term_year": "The term does not belong to that academic year",
+  "error.section_year": "The section does not belong to that academic year",
+  "error.component_inactive": "That component is not active in the mark structure"
 }

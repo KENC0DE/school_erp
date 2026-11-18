@@ -249,5 +249,19 @@
   "error.year_weights_unused": "የዓመት ክብደቶች የሚሠሩት ክብደት ላለው የዓመት ውጤት ብቻ ነው",
   "error.year_weights_required": "ክብደት ያለው የዓመት ውጤት ለእያንዳንዱ ሴሚስተር አንድ ክብደት ይፈልጋል",
   "error.rounding": "የማጠጋጋት ዘዴው አይታወቅም",
-  "error.score_status": "የነጥብ ሁኔታው አይታወቅም"
+  "error.score_status": "የነጥብ ሁኔታው አይታወቅም",
+  "error.raw_negative": "ነጥብ አሉታዊ ሊሆን አይችልም",
+  "error.invalid_mark": "ያ ነጥብ ትክክል አይደለም",
+  "error.duplicate_score_entry": "ያ ተማሪ በዚህ ጥያቄ ውስጥ ሁለት ጊዜ ተገልጿል",
+  "error.out_of_locked": "ነጥቦች ከተመዘገቡ በኋላ ከፍተኛው መጠን ሊቀየር አይችልም",
+  "error.assessment_in_use": "ነጥቦች ያሉት ግምገማ ሊወገድ አይችልም",
+  "error.assessment_archived": "ይህ ግምገማ ተቀምጧል፤ ሊቀየር አይችልም",
+  "error.weight_required": "ክብደት ያለው ክፍል ለእያንዳንዱ ግምገማ ክብደት ይፈልጋል",
+  "error.weight_unused": "ክብደት የሚሠራው ክፍሉ ክብደት ያለው አማካይ ሲጠቀም ብቻ ነው",
+  "error.no_structure": "ለዚህ ዓመት፣ ደረጃ እና ትምህርት የሚሠራ የነጥብ መዋቅር የለም",
+  "error.structure_inactive": "ያ የነጥብ መዋቅር ንቁ አይደለም",
+  "error.structure_mismatch": "ያ የነጥብ መዋቅር ለዚህ ክፍልና ትምህርት አይሠራም",
+  "error.term_year": "ሴሚስተሩ የዚያ ትምህርት ዓመት አይደለም",
+  "error.section_year": "ክፍሉ የዚያ ትምህርት ዓመት አይደለም",
+  "error.component_inactive": "ያ ክፍል በነጥብ መዋቅሩ ውስጥ ንቁ አይደለም"
 }

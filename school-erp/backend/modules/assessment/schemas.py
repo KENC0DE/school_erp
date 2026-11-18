@@ -8,6 +8,7 @@ integer or a numeric string and are parsed to :class:`~decimal.Decimal`.
 from __future__ import annotations
 
 import uuid
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -17,8 +18,11 @@ ScopeType = Literal["school", "stage", "level", "subject"]
 Aggregation = Literal["average", "weighted_average", "best_n", "sum_capped", "latest"]
 YearMode = Literal["average", "sum", "weighted_average"]
 Rounding = Literal["half_up", "half_even", "half_down", "up", "down", "ceiling", "floor"]
+ScoreStatus = Literal["present", "absent", "excused", "exempt", "not_taken"]
+AssessmentStatus = Literal["active", "archived"]
 
 Mark = Annotated[Decimal, Field(ge=0, max_digits=12, decimal_places=6)]
+PositiveMark = Annotated[Decimal, Field(gt=0, max_digits=12, decimal_places=6)]
 
 
 class ComponentInput(BaseModel):
@@ -204,6 +208,157 @@ class StructureUpdateResult(BaseModel):
     changed_scores: int = 0
 
 
+class AssessmentCreate(BaseModel):
+    """One test, quiz or exam inside a structure component."""
+
+    year_id: uuid.UUID
+    term_id: uuid.UUID
+    section_id: uuid.UUID
+    subject_id: uuid.UUID
+    structure_id: uuid.UUID | None = None
+    component_key: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9][a-z0-9_-]*$")
+    title: str = Field(min_length=1, max_length=160)
+    title_am: str | None = Field(default=None, max_length=160)
+    assessment_date: date
+    out_of: PositiveMark
+    weight: PositiveMark | None = None
+    allow_bonus: bool = False
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class AssessmentUpdate(BaseModel):
+    row_version: int = Field(ge=1)
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    title_am: str | None = Field(default=None, max_length=160)
+    assessment_date: date | None = None
+    # ``out_of`` may only change while no student has a score: the value is
+    # copied onto every score, so editing it later would reinterpret history.
+    out_of: PositiveMark | None = None
+    weight: PositiveMark | None = None
+    allow_bonus: bool | None = None
+    status: AssessmentStatus | None = None
+    notes: str | None = Field(default=None, max_length=1000)
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class AssessmentOut(BaseModel):
+    id: str
+    year_id: str
+    year_code: str
+    term_id: str
+    term_name: str
+    section_id: str
+    section_code: str
+    level_id: str
+    level_name: str
+    subject_id: str
+    subject_name: str
+    structure_id: str | None = None
+    component_id: str
+    component_key: str
+    component_name: str
+    component_max_points: str
+    title: str
+    title_am: str | None = None
+    assessment_date: date
+    out_of: str
+    weight: str | None = None
+    allow_bonus: bool
+    status: str
+    notes: str | None = None
+    scores: int
+    entered: int
+    row_version: int
+
+
+class AssessmentQuery(BaseModel):
+    year_id: uuid.UUID | None = None
+    term_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    subject_id: uuid.UUID | None = None
+    component_id: uuid.UUID | None = None
+    status: AssessmentStatus | None = None
+    limit: int = Field(default=25, ge=1, le=200)
+    cursor: str | None = Field(default=None, max_length=1000)
+    sort: str | None = Field(default=None, max_length=60)
+    order: Literal["asc", "desc"] = "desc"
+
+
+class AssessmentList(BaseModel):
+    items: list[AssessmentOut]
+    next_cursor: str | None = None
+    total: int | None = None
+
+
+class ScoreInput(BaseModel):
+    """One student's raw score in a bulk entry request."""
+
+    student_id: uuid.UUID
+    raw_score: Mark | None = None
+    status: ScoreStatus = "present"
+    note: str | None = Field(default=None, max_length=500)
+    # Optional optimistic-concurrency guard for a row the grid already read.
+    row_version: int | None = Field(default=None, ge=1)
+
+
+class ScoreBulkInput(BaseModel):
+    items: list[ScoreInput] = Field(min_length=1, max_length=500)
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class ScoreOut(BaseModel):
+    score_id: str | None = None
+    student_id: str
+    student_number: str
+    student_name: str
+    student_name_am: str | None = None
+    roll_number: str | None = None
+    enrolled: bool = True
+    raw_score: str | None = None
+    out_of: str
+    status: str
+    converted: str | None = None
+    note: str | None = None
+    row_version: int | None = None
+    entered_at: datetime | None = None
+
+
+class ScoreStats(BaseModel):
+    total: int
+    entered: int
+    missing: int
+    present: int
+    absent: int
+    excused: int
+    exempt: int
+    not_taken: int
+    out_of: str
+    component_max_points: str
+    average_converted: str | None = None
+    average_percent: str | None = None
+    highest_converted: str | None = None
+    lowest_converted: str | None = None
+
+
+class ScoreSheet(BaseModel):
+    assessment_id: str
+    title: str
+    component_key: str
+    component_max_points: str
+    out_of: str
+    allow_bonus: bool
+    editable: bool
+    items: list[ScoreOut] = Field(default_factory=list)
+    stats: ScoreStats
+
+
+class ScoreBulkResult(BaseModel):
+    sheet: ScoreSheet
+    created: int
+    updated: int
+    unchanged: int
+
+
 def _check_scope(payload: StructureCreate | StructureUpdate) -> None:
     targets = {
         "level": payload.level_id,
@@ -228,13 +383,27 @@ def _check_year_mode(mode: str, weights: list[Decimal] | None) -> None:
 
 __all__ = [
     "Aggregation",
+    "AssessmentCreate",
+    "AssessmentList",
+    "AssessmentOut",
+    "AssessmentQuery",
+    "AssessmentStatus",
+    "AssessmentUpdate",
     "ComponentInput",
     "ComponentOut",
     "ImpactSample",
     "Mark",
+    "PositiveMark",
     "RecalculationResult",
     "Rounding",
     "ScopeType",
+    "ScoreBulkInput",
+    "ScoreBulkResult",
+    "ScoreInput",
+    "ScoreOut",
+    "ScoreSheet",
+    "ScoreStats",
+    "ScoreStatus",
     "StructureCreate",
     "StructureImpact",
     "StructureImpactRequest",

@@ -19,23 +19,37 @@ from core.audit.service import record
 from core.auth.principal import Principal
 from core.db.soft_delete import mark_deleted, soft_delete
 from core.events import service as events
+from core.people.models import Person
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.academics.models import AcademicYear, GradeLevel, Stage, Subject, Term
-from modules.assessment import common
+from modules.academics.models import AcademicYear, GradeLevel, Section, Stage, Subject, Term
+from modules.assessment import common, scoping
 from modules.assessment.common import MODULE, decimal_out, structure_state
+from modules.assessment.engine import Score as EngineScore
+from modules.assessment.engine import ScoreStatus, round_mark, score_percent
 from modules.assessment.models import (
     Assessment,
     AssessmentComponent,
     AssessmentStructure,
     Score,
+    ScoreRevision,
 )
 from modules.assessment.schemas import (
+    AssessmentCreate,
+    AssessmentOut,
+    AssessmentQuery,
+    AssessmentUpdate,
     ComponentInput,
     ComponentOut,
     ImpactSample,
     RecalculationResult,
+    ScoreBulkInput,
+    ScoreBulkResult,
+    ScoreInput,
+    ScoreOut,
+    ScoreSheet,
+    ScoreStats,
     StructureCreate,
     StructureImpact,
     StructureOut,
@@ -43,6 +57,7 @@ from modules.assessment.schemas import (
     StructureUpdate,
     StructureUpdateResult,
 )
+from modules.students.models import StudentProfile
 
 SORT_COLUMNS = {
     "created_at": AssessmentStructure.created_at,
@@ -836,12 +851,802 @@ async def recalculate_structure(
     )
 
 
+SORT_COLUMNS_ASSESSMENT = {
+    "created_at": Assessment.created_at,
+    "assessment_date": Assessment.assessment_date,
+    "title": Assessment.title,
+}
+
+
+async def _score_counts(session: AsyncSession, assessment_id: uuid.UUID) -> tuple[int, int]:
+    raw_values = (
+        (
+            await session.execute(
+                select(Score.raw_score).where(
+                    Score.assessment_id == assessment_id,
+                    Score.deleted_at.is_(None),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return len(raw_values), sum(1 for value in raw_values if value is not None)
+
+
+async def _assessment_out(
+    session: AsyncSession,
+    row: Assessment,
+    cache: dict[tuple[type, uuid.UUID], Any],
+    *,
+    counts: tuple[int, int] | None = None,
+) -> AssessmentOut:
+    async def get(model: type, ident: uuid.UUID | None) -> Any:
+        if ident is None:
+            return None
+        key = (model, ident)
+        if key not in cache:
+            cache[key] = await session.get(model, ident)
+        return cache[key]
+
+    year = await get(AcademicYear, row.year_id)
+    term = await get(Term, row.term_id)
+    section = await get(Section, row.section_id)
+    level = await get(GradeLevel, section.level_id) if section is not None else None
+    subject = await get(Subject, row.subject_id)
+    component = await get(AssessmentComponent, row.component_id)
+    scores, entered = counts if counts is not None else await _score_counts(session, row.id)
+    return AssessmentOut(
+        id=str(row.id),
+        year_id=str(row.year_id),
+        year_code=year.code if year is not None else "",
+        term_id=str(row.term_id),
+        term_name=term.name if term is not None else "",
+        section_id=str(row.section_id),
+        section_code=section.code if section is not None else "",
+        level_id=str(section.level_id) if section is not None else "",
+        level_name=level.name if level is not None else "",
+        subject_id=str(row.subject_id),
+        subject_name=subject.name if subject is not None else "",
+        structure_id=str(row.structure_id) if row.structure_id else None,
+        component_id=str(row.component_id),
+        component_key=component.key if component is not None else "",
+        component_name=component.name if component is not None else "",
+        component_max_points=decimal_out(component.max_points) if component is not None else "0",
+        title=row.title,
+        title_am=row.title_am,
+        assessment_date=row.assessment_date,
+        out_of=decimal_out(row.out_of) or "0",
+        weight=decimal_out(row.weight),
+        allow_bonus=row.allow_bonus,
+        status=row.status,
+        notes=row.notes,
+        scores=scores,
+        entered=entered,
+        row_version=row.row_version,
+    )
+
+
+async def _detail_assessment(session: AsyncSession, row: Assessment) -> AssessmentOut:
+    return await _assessment_out(session, row, {})
+
+
+async def _component_for(
+    session: AsyncSession,
+    structure: AssessmentStructure,
+    key: str,
+) -> AssessmentComponent:
+    components = await common.structure_components(session, structure.id)
+    match = next((component for component in components if component.key == key), None)
+    if match is None:
+        raise NotFound(
+            "The component does not exist",
+            message_key="assessment.error.component_not_found",
+            details={"key": key},
+        )
+    if not match.is_active:
+        raise ValidationFailed(
+            "That component is not active in the mark structure",
+            message_key="assessment.error.component_inactive",
+            details={"key": key},
+        )
+    return match
+
+
+def _check_weight(component: AssessmentComponent, weight: Decimal | None) -> None:
+    if component.aggregation == "weighted_average":
+        if weight is None or weight <= 0:
+            raise ValidationFailed(
+                "A weighted component needs a weight on every assessment",
+                message_key="assessment.error.weight_required",
+                details={"component": component.key},
+            )
+        return
+    if weight is not None:
+        raise ValidationFailed(
+            "A weight only applies when the component uses weighted averaging",
+            message_key="assessment.error.weight_unused",
+            details={"component": component.key},
+        )
+
+
+def _validate_mark(
+    assessment: Assessment,
+    component: AssessmentComponent,
+    item: ScoreInput,
+) -> None:
+    """Reject an impossible mark before anything is written."""
+    if item.status == "present":
+        if item.raw_score is None:
+            raise ValidationFailed(
+                "A present score needs a raw value",
+                message_key="assessment.error.raw_required",
+                details={"student_id": str(item.student_id)},
+            )
+    elif item.raw_score is not None:
+        raise ValidationFailed(
+            "Only a present score can carry a raw value",
+            message_key="assessment.error.raw_not_allowed",
+            details={"student_id": str(item.student_id), "status": item.status},
+        )
+    if item.raw_score is not None:
+        if item.raw_score < 0:
+            raise ValidationFailed(
+                "A score cannot be negative",
+                message_key="assessment.error.raw_negative",
+                details={"student_id": str(item.student_id)},
+            )
+        if item.raw_score > assessment.out_of and not assessment.allow_bonus:
+            raise ValidationFailed(
+                "A score cannot exceed the assessment maximum unless bonus marks are allowed",
+                message_key="assessment.error.raw_over_out_of",
+                details={
+                    "student_id": str(item.student_id),
+                    "raw_score": decimal_out(item.raw_score),
+                    "out_of": decimal_out(assessment.out_of),
+                },
+            )
+    try:
+        score_percent(
+            EngineScore(
+                out_of=assessment.out_of,
+                raw=item.raw_score,
+                status=ScoreStatus(item.status),
+            ),
+            absent_counts_as_zero=component.absent_counts_as_zero,
+        )
+    except ValueError as exc:  # pragma: no cover - the checks above cover every case
+        raise ValidationFailed(
+            "That mark is not valid",
+            message_key="assessment.error.invalid_mark",
+            details={"student_id": str(item.student_id), "reason": str(exc)},
+        ) from exc
+
+
+async def _assessment_structure(session: AsyncSession, row: Assessment) -> AssessmentStructure:
+    if row.structure_id is None:
+        raise ValidationFailed(
+            "No mark structure applies to this year, level and subject",
+            message_key="assessment.error.no_structure",
+            details={"assessment_id": str(row.id)},
+        )
+    return await common.live_structure(session, row.structure_id)
+
+
+async def create_assessment(
+    session: AsyncSession,
+    principal: Principal,
+    data: AssessmentCreate,
+    *,
+    via: str = "api",
+) -> AssessmentOut:
+    year = await common.live_year(session, data.year_id)
+    term = await common.live_term(session, data.term_id)
+    if term.year_id != year.id:
+        raise ValidationFailed(
+            "The term does not belong to that academic year",
+            message_key="assessment.error.term_year",
+            details={"term_id": str(term.id), "year_id": str(year.id)},
+        )
+    section = await common.live_section(session, data.section_id)
+    if section.year_id != year.id:
+        raise ValidationFailed(
+            "The section does not belong to that academic year",
+            message_key="assessment.error.section_year",
+            details={"section_id": str(section.id), "year_id": str(year.id)},
+        )
+    subject = await common.live_subject(session, data.subject_id)
+    await scoping.assert_visible(
+        session,
+        principal,
+        "assessment.enter_marks",
+        section_id=section.id,
+        subject_id=subject.id,
+    )
+    structure = await common.structure_for(
+        session,
+        year_id=year.id,
+        level_id=section.level_id,
+        subject_id=subject.id,
+        structure_id=data.structure_id,
+    )
+    component = await _component_for(session, structure, data.component_key)
+    _check_weight(component, data.weight)
+    actor_id = uuid.UUID(principal.user_id) if principal.actor_type == "user" else None
+    row = Assessment(
+        year_id=year.id,
+        term_id=term.id,
+        section_id=section.id,
+        subject_id=subject.id,
+        structure_id=structure.id,
+        component_id=component.id,
+        title=data.title,
+        title_am=data.title_am,
+        assessment_date=data.assessment_date,
+        out_of=data.out_of,
+        weight=data.weight,
+        allow_bonus=data.allow_bonus,
+        status="active",
+        notes=data.notes,
+        created_by=actor_id,
+        updated_by=actor_id,
+    )
+    session.add(row)
+    await session.flush()
+    await record(
+        session,
+        action="assessment.assessment.create",
+        module=MODULE,
+        entity_type="assessment",
+        entity_id=str(row.id),
+        after=common.assessment_state(row),
+        actor=principal,
+        via=via,
+    )
+    await session.commit()
+    return await _detail_assessment(session, row)
+
+
+async def update_assessment(
+    session: AsyncSession,
+    principal: Principal,
+    assessment_id: uuid.UUID,
+    data: AssessmentUpdate,
+    *,
+    via: str = "api",
+) -> AssessmentOut:
+    row = await common.live_assessment(session, assessment_id)
+    before = common.assessment_state(row)
+    ensure_row_version(row, data.row_version, current_state=before)
+    await _assessment_structure(session, row)
+    component = await common.live_component(session, row.component_id)
+    await scoping.assert_visible(
+        session,
+        principal,
+        "assessment.enter_marks",
+        section_id=row.section_id,
+        subject_id=row.subject_id,
+    )
+    if row.status == "archived" and data.status != "active":
+        raise Conflict(
+            "This assessment is archived and cannot change",
+            message_key="assessment.error.assessment_archived",
+            details={"assessment_id": str(row.id)},
+        )
+
+    changes: dict[str, Any] = {}
+    if data.out_of is not None and data.out_of != row.out_of:
+        scores, _entered = await _score_counts(session, row.id)
+        if scores:
+            raise Conflict(
+                "The maximum cannot change after marks are entered",
+                message_key="assessment.error.out_of_locked",
+                details={"assessment_id": str(row.id), "scores": scores},
+            )
+        changes["out_of"] = data.out_of
+    for field in ("title", "title_am", "assessment_date", "allow_bonus", "status", "notes"):
+        value = getattr(data, field)
+        if value is not None and getattr(row, field) != value:
+            changes[field] = value
+    if "weight" in data.model_fields_set:
+        _check_weight(component, data.weight)
+        if row.weight != data.weight:
+            changes["weight"] = data.weight
+
+    if changes.get("allow_bonus") is False and row.allow_bonus:
+        over = (
+            await session.execute(
+                select(func.count())
+                .select_from(Score)
+                .where(
+                    Score.assessment_id == row.id,
+                    Score.deleted_at.is_(None),
+                    Score.raw_score.is_not(None),
+                    Score.raw_score > row.out_of,
+                )
+            )
+        ).scalar_one()
+        if int(over):
+            raise ValidationFailed(
+                "A score cannot exceed the assessment maximum unless bonus marks are allowed",
+                message_key="assessment.error.raw_over_out_of",
+                details={"assessment_id": str(row.id), "scores": int(over)},
+            )
+
+    if not changes:
+        return await _detail_assessment(session, row)
+
+    for field, value in changes.items():
+        setattr(row, field, value)
+    row.row_version = (row.row_version or 0) + 1
+    row.updated_by = uuid.UUID(principal.user_id) if principal.actor_type == "user" else None
+    await record(
+        session,
+        action="assessment.assessment.update",
+        module=MODULE,
+        entity_type="assessment",
+        entity_id=str(row.id),
+        before=before,
+        after=common.assessment_state(row),
+        actor=principal,
+        reason=data.reason,
+        via=via,
+    )
+    await session.commit()
+    return await _detail_assessment(session, row)
+
+
+async def delete_assessment(
+    session: AsyncSession,
+    principal: Principal,
+    assessment_id: uuid.UUID,
+    *,
+    reason: str | None = None,
+    via: str = "api",
+) -> dict[str, Any]:
+    row = await common.live_assessment(session, assessment_id)
+    await scoping.assert_visible(
+        session,
+        principal,
+        "assessment.enter_marks",
+        section_id=row.section_id,
+        subject_id=row.subject_id,
+    )
+    scores, _entered = await _score_counts(session, row.id)
+    if scores:
+        raise Conflict(
+            "An assessment with marks cannot be removed",
+            message_key="assessment.error.assessment_in_use",
+            details={"assessment_id": str(row.id), "scores": scores},
+        )
+    await soft_delete(
+        session,
+        row,
+        action="assessment.assessment.delete",
+        module=MODULE,
+        actor=principal,
+        reason=reason,
+        via=via,
+        entity_type="assessment",
+    )
+    await session.commit()
+    return {"id": str(row.id), "deleted": True}
+
+
+async def get_assessment(
+    session: AsyncSession,
+    principal: Principal,
+    assessment_id: uuid.UUID,
+) -> AssessmentOut:
+    row = await common.live_assessment(session, assessment_id)
+    await scoping.assert_visible(
+        session,
+        principal,
+        "assessment.view",
+        section_id=row.section_id,
+        subject_id=row.subject_id,
+    )
+    return await _detail_assessment(session, row)
+
+
+async def list_assessments(
+    session: AsyncSession,
+    principal: Principal,
+    query: AssessmentQuery,
+) -> Page[AssessmentOut]:
+    stmt = select(Assessment).where(Assessment.deleted_at.is_(None))
+    access = await scoping.visible_access(session, principal, "assessment.view")
+    narrowed = scoping.condition(access)
+    if narrowed is not None:
+        stmt = stmt.where(narrowed)
+    if query.year_id is not None:
+        stmt = stmt.where(Assessment.year_id == query.year_id)
+    if query.term_id is not None:
+        stmt = stmt.where(Assessment.term_id == query.term_id)
+    if query.section_id is not None:
+        stmt = stmt.where(Assessment.section_id == query.section_id)
+    if query.subject_id is not None:
+        stmt = stmt.where(Assessment.subject_id == query.subject_id)
+    if query.component_id is not None:
+        stmt = stmt.where(Assessment.component_id == query.component_id)
+    if query.status is not None:
+        stmt = stmt.where(Assessment.status == query.status)
+    total = int((await session.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one())
+    rows, next_cursor = await paginate(
+        session,
+        stmt,
+        PageParams(
+            limit=query.limit,
+            cursor=query.cursor,
+            sort=query.sort,
+            order=query.order,
+        ),
+        sort_columns=SORT_COLUMNS_ASSESSMENT,
+        default_sort="created_at",
+        id_column=Assessment.id,
+    )
+    cache: dict[tuple[type, uuid.UUID], Any] = {}
+    items = [await _assessment_out(session, row, cache) for row in rows]
+    return Page[AssessmentOut](items=items, next_cursor=next_cursor, total=total)
+
+
+def _score_out(
+    score: Score | None,
+    profile: StudentProfile,
+    person: Person,
+    *,
+    roll_number: str | None,
+    out_of: Decimal,
+    enrolled: bool = True,
+) -> ScoreOut:
+    return ScoreOut(
+        score_id=str(score.id) if score is not None else None,
+        student_id=str(profile.id),
+        student_number=profile.student_number,
+        student_name=common.person_name(person, "en"),
+        student_name_am=common.person_name(person, "am") or None,
+        roll_number=roll_number,
+        enrolled=enrolled,
+        raw_score=decimal_out(score.raw_score) if score is not None else None,
+        out_of=decimal_out(score.out_of) if score is not None else decimal_out(out_of) or "0",
+        status=score.status if score is not None else "present",
+        converted=decimal_out(score.converted) if score is not None else None,
+        note=score.note if score is not None else None,
+        row_version=score.row_version if score is not None else None,
+        entered_at=score.entered_at if score is not None else None,
+    )
+
+
+def _stats(
+    items: list[ScoreOut],
+    *,
+    assessment: Assessment,
+    component: AssessmentComponent,
+    structure: AssessmentStructure | None,
+) -> ScoreStats:
+    counts = {"present": 0, "absent": 0, "excused": 0, "exempt": 0, "not_taken": 0}
+    values: list[Decimal] = []
+    entered = 0
+    for item in items:
+        if item.score_id is None:
+            continue
+        entered += 1
+        counts[item.status] = counts.get(item.status, 0) + 1
+        if item.converted is not None:
+            values.append(Decimal(item.converted))
+    precision = structure.precision if structure is not None else 2
+    rounding = common.rounding_mode(structure.rounding) if structure is not None else None
+    average_converted = None
+    average_percent = None
+    highest = None
+    lowest = None
+    if values:
+        mean = sum(values, Decimal(0)) / len(values)
+        if rounding is None:
+            average_converted = round_mark(mean, precision=precision)
+        else:
+            average_converted = round_mark(mean, precision=precision, rounding=rounding)
+        average_percent = round_mark(mean * 100 / component.max_points, precision=2)
+        highest = max(values)
+        lowest = min(values)
+    return ScoreStats(
+        total=len(items),
+        entered=entered,
+        missing=len(items) - entered,
+        present=counts["present"],
+        absent=counts["absent"],
+        excused=counts["excused"],
+        exempt=counts["exempt"],
+        not_taken=counts["not_taken"],
+        out_of=decimal_out(assessment.out_of) or "0",
+        component_max_points=decimal_out(component.max_points) or "0",
+        average_converted=decimal_out(average_converted),
+        average_percent=decimal_out(average_percent),
+        highest_converted=decimal_out(highest),
+        lowest_converted=decimal_out(lowest),
+    )
+
+
+async def _sheet(session: AsyncSession, row: Assessment) -> ScoreSheet:
+    structure = await _assessment_structure(session, row)
+    component = await common.live_component(session, row.component_id)
+    roster = await common.enrolled_roster(session, row.year_id, row.section_id)
+    scores = {
+        score.student_id: score
+        for score in (
+            await session.execute(
+                select(Score).where(
+                    Score.assessment_id == row.id,
+                    Score.deleted_at.is_(None),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    }
+    items: list[ScoreOut] = []
+    for profile, person, enrollment in roster:
+        items.append(
+            _score_out(
+                scores.pop(profile.id, None),
+                profile,
+                person,
+                roll_number=enrollment.roll_number,
+                out_of=row.out_of,
+            )
+        )
+    # A student who left the section still has marks on this assessment; show
+    # them at the end rather than hiding an entered value.
+    for student_id, score in sorted(scores.items(), key=lambda pair: str(pair[0])):
+        profile = await session.get(StudentProfile, student_id)
+        if profile is None or profile.deleted_at is not None:
+            continue
+        person = await session.get(Person, profile.person_id)
+        if person is None:
+            continue
+        items.append(
+            _score_out(
+                score,
+                profile,
+                person,
+                roll_number=None,
+                out_of=row.out_of,
+                enrolled=False,
+            )
+        )
+    return ScoreSheet(
+        assessment_id=str(row.id),
+        title=row.title,
+        component_key=component.key,
+        component_max_points=decimal_out(component.max_points) or "0",
+        out_of=decimal_out(row.out_of) or "0",
+        allow_bonus=row.allow_bonus,
+        editable=row.status == "active",
+        items=items,
+        stats=_stats(items, assessment=row, component=component, structure=structure),
+    )
+
+
+async def score_sheet(
+    session: AsyncSession,
+    principal: Principal,
+    assessment_id: uuid.UUID,
+) -> ScoreSheet:
+    row = await common.live_assessment(session, assessment_id)
+    await scoping.assert_visible(
+        session,
+        principal,
+        "assessment.view",
+        section_id=row.section_id,
+        subject_id=row.subject_id,
+    )
+    return await _sheet(session, row)
+
+
+async def upsert_scores(
+    session: AsyncSession,
+    principal: Principal,
+    assessment_id: uuid.UUID,
+    data: ScoreBulkInput,
+    *,
+    via: str = "api",
+) -> ScoreBulkResult:
+    """Create or update one score per student, idempotently.
+
+    The natural key ``(assessment, student)`` makes a repeated request a no-op:
+    unchanged rows are counted, not rewritten, so retrying a flaky upload cannot
+    duplicate a mark or a revision.
+    """
+    row = await common.live_assessment(session, assessment_id)
+    await scoping.assert_visible(
+        session,
+        principal,
+        "assessment.enter_marks",
+        section_id=row.section_id,
+        subject_id=row.subject_id,
+    )
+    if row.status != "active":
+        raise Conflict(
+            "This assessment is archived and cannot change",
+            message_key="assessment.error.assessment_archived",
+            details={"assessment_id": str(row.id)},
+        )
+    structure = await _assessment_structure(session, row)
+    component = await common.live_component(session, row.component_id)
+    roster = {
+        profile.id
+        for profile, _person, _enrollment in await common.enrolled_roster(
+            session, row.year_id, row.section_id
+        )
+    }
+    existing = {
+        score.student_id: score
+        for score in (
+            await session.execute(
+                select(Score).where(
+                    Score.assessment_id == row.id,
+                    Score.deleted_at.is_(None),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    }
+    actor_id = uuid.UUID(principal.user_id) if principal.actor_type == "user" else None
+    seen: set[uuid.UUID] = set()
+    created = updated = unchanged = 0
+    for item in data.items:
+        if item.student_id in seen:
+            raise ValidationFailed(
+                "That student appears twice in this request",
+                message_key="assessment.error.duplicate_score_entry",
+                details={"student_id": str(item.student_id)},
+            )
+        seen.add(item.student_id)
+        current = existing.get(item.student_id)
+        if item.student_id not in roster and current is None:
+            raise ValidationFailed(
+                "The student is not enrolled in this section",
+                message_key="assessment.error.student_not_enrolled",
+                details={"student_id": str(item.student_id)},
+            )
+        if current is not None and item.row_version is not None:
+            ensure_row_version(
+                current,
+                item.row_version,
+                current_state=common.score_state(current),
+            )
+        _validate_mark(row, component, item)
+        converted = common.converted_for(
+            raw=item.raw_score,
+            out_of=row.out_of,
+            status=item.status,
+            component=component,
+            structure=structure,
+        )
+        if current is None:
+            score = Score(
+                assessment_id=row.id,
+                student_id=item.student_id,
+                raw_score=item.raw_score,
+                out_of=row.out_of,
+                status=item.status,
+                converted=converted,
+                note=item.note,
+                entered_at=common.utcnow(),
+                entered_by=actor_id,
+                created_by=actor_id,
+                updated_by=actor_id,
+            )
+            session.add(score)
+            await session.flush()
+            session.add(
+                ScoreRevision(
+                    score_id=score.id,
+                    assessment_id=row.id,
+                    student_id=score.student_id,
+                    old_raw=None,
+                    new_raw=score.raw_score,
+                    old_status=None,
+                    new_status=score.status,
+                    old_converted=None,
+                    new_converted=score.converted,
+                    source="entry",
+                    reason=data.reason,
+                    changed_by=actor_id,
+                    created_by=actor_id,
+                    updated_by=actor_id,
+                )
+            )
+            await record(
+                session,
+                action="assessment.score.create",
+                module=MODULE,
+                entity_type="score",
+                entity_id=str(score.id),
+                after=common.score_state(score),
+                actor=principal,
+                reason=data.reason,
+                via=via,
+            )
+            existing[score.student_id] = score
+            created += 1
+            continue
+
+        same = (
+            current.raw_score == item.raw_score
+            and current.status == item.status
+            and current.note == item.note
+            and current.out_of == row.out_of
+            and current.converted == converted
+        )
+        if same:
+            unchanged += 1
+            continue
+        before = common.score_state(current)
+        current.raw_score = item.raw_score
+        current.out_of = row.out_of
+        current.status = item.status
+        current.converted = converted
+        current.note = item.note
+        current.entered_at = common.utcnow()
+        current.entered_by = actor_id
+        current.updated_by = actor_id
+        current.row_version = (current.row_version or 0) + 1
+        session.add(
+            ScoreRevision(
+                score_id=current.id,
+                assessment_id=row.id,
+                student_id=current.student_id,
+                old_raw=Decimal(before["raw_score"]) if before["raw_score"] is not None else None,
+                new_raw=current.raw_score,
+                old_status=before["status"],
+                new_status=current.status,
+                old_converted=Decimal(before["converted"]) if before["converted"] is not None else None,
+                new_converted=current.converted,
+                source="entry",
+                reason=data.reason,
+                changed_by=actor_id,
+                created_by=actor_id,
+                updated_by=actor_id,
+            )
+        )
+        await record(
+            session,
+            action="assessment.score.update",
+            module=MODULE,
+            entity_type="score",
+            entity_id=str(current.id),
+            before=before,
+            after=common.score_state(current),
+            actor=principal,
+            reason=data.reason,
+            via=via,
+        )
+        updated += 1
+
+    await session.commit()
+    return ScoreBulkResult(
+        sheet=await _sheet(session, row),
+        created=created,
+        updated=updated,
+        unchanged=unchanged,
+    )
+
+
 __all__ = [
+    "create_assessment",
     "create_structure",
+    "delete_assessment",
     "delete_structure",
+    "get_assessment",
     "get_structure",
+    "list_assessments",
     "list_structures",
     "recalculate_structure",
+    "score_sheet",
     "structure_impact",
+    "update_assessment",
     "update_structure",
+    "upsert_scores",
 ]

@@ -1978,3 +1978,41 @@ and recorded here (date, decision, reason).
   assessment.error.component_in_use`. Renaming a key would break stored
   `component_id` references and external reports; a new component can be added
   instead. A structure that already has marks cannot be deleted either.
+
+## 2026-11-18 — P4-06 assessment and score APIs
+
+- **The most specific mark structure wins automatically.** Creating an
+  assessment resolves a structure for the section's level and the subject:
+  subject > level > school. A stage-scoped structure is only used when the
+  caller names `structure_id`, because a section carries a level but the
+  academics model has no level→stage link yet. This keeps the default path
+  predictable while leaving stage-scoped configuration usable.
+- **`out_of` is copied onto scores and becomes immutable once a mark exists.**
+  The assessment maximum at entry time is the denominator a raw score was
+  entered against. Allowing it to change later would silently reinterpret
+  history, so `PATCH` returns `409 assessment.error.out_of_locked` as soon as
+  one score row exists; the assessment can be deleted and recreated while it is
+  still empty. `allow_bonus` may still be turned off, but only when no existing
+  raw value exceeds the maximum.
+- **Scores upsert on the natural key `(assessment, student)`.** Repeating a
+  request is a no-op: unchanged rows are counted, not rewritten, and no revision
+  or audit row is produced. This is what makes the web grid's autosave and a
+  mobile offline retry safe without relying on an `Idempotency-Key` (the HTTP
+  middleware still honours one when the client sends it). An optional per-entry
+  `row_version` adds optimistic concurrency for a grid that read a row, and a
+  stale value returns `409` with the current score state.
+- **Every applied score change writes a revision and an audit entry.** The
+  revision stores the old/new raw, status and converted values plus the reason
+  of the request, so a report-card explanation does not depend on parsing audit
+  JSON. The audit entry is written through the service, keeping the "every
+  mutation audited" rule even for bulk entry.
+- **Scope is resolved to (section, subject) pairs.** `assigned_subjects` maps to
+  the teacher's `StaffTeachingAssignment` pairs, `own_class` to every subject in
+  the homeroom section, and `department` to the pairs taught by staff in the
+  caller's department (so a department head can review their teachers' marks).
+  List endpoints translate the same access into a SQL condition; point reads
+  and writes assert it and return `403 error.scope_denied`.
+- **A teacher can only create an assessment for a pair they teach.** The router
+  requires `assessment.enter_marks`, and the service narrows it to the assigned
+  pair before resolving the structure, so a crafted `section_id` cannot reach
+  another class.
