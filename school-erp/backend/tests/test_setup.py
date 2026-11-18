@@ -121,10 +121,7 @@ async def test_setup_creates_the_first_super_admin_and_school_profile(client, ap
     assert status.json()["required"] is False
     assert status.json()["completed"] is True
     # Signed URLs embed an expiry timestamp, so compare the stable file path.
-    assert (
-        urlsplit(status.json()["school"]["logo_url"]).path
-        == urlsplit(body["logo_url"]).path
-    )
+    assert urlsplit(status.json()["school"]["logo_url"]).path == urlsplit(body["logo_url"]).path
 
     actions = await _actions(client, headers)
     assert "setup.complete" in actions
