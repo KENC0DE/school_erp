@@ -118,6 +118,38 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         staff_attendance_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(staff_attendance)")
         }
+        structure_columns = {row[1] for row in connection.execute("PRAGMA table_info(assessment_structures)")}
+        component_columns = {row[1] for row in connection.execute("PRAGMA table_info(assessment_components)")}
+        assessment_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_assessments)")
+        }
+        score_columns = {row[1] for row in connection.execute("PRAGMA table_info(assessment_scores)")}
+        revision_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_score_revisions)")
+        }
+        correction_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_correction_requests)")
+        }
+        scale_columns = {row[1] for row in connection.execute("PRAGMA table_info(assessment_grade_scales)")}
+        band_columns = {row[1] for row in connection.execute("PRAGMA table_info(assessment_grade_bands)")}
+        assignment_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_scale_assignments)")
+        }
+        window_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_marking_windows)")
+        }
+        submission_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_submissions)")
+        }
+        term_result_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_term_results)")
+        }
+        snapshot_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(assessment_result_snapshots)")
+        }
+        mark_type = connection.execute(
+            "SELECT type FROM pragma_table_info('assessment_assessments') WHERE name = 'out_of'"
+        ).fetchone()
     finally:
         connection.close()
 
@@ -177,9 +209,22 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "attendance_sessions",
         "attendance_records",
         "staff_attendance",
+        "assessment_structures",
+        "assessment_components",
+        "assessment_assessments",
+        "assessment_scores",
+        "assessment_score_revisions",
+        "assessment_correction_requests",
+        "assessment_grade_scales",
+        "assessment_grade_bands",
+        "assessment_scale_assignments",
+        "assessment_marking_windows",
+        "assessment_submissions",
+        "assessment_term_results",
+        "assessment_result_snapshots",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0027_staff_attendance"
+    assert version == "0028_assessment"
 
     assert {
         "failed_login_count",
@@ -494,3 +539,204 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "is_verified",
     } <= stage_columns
     assert {"stage_id", "level_id"} <= membership_columns
+
+    assert {
+        "year_id",
+        "scope_type",
+        "scope_key",
+        "level_id",
+        "stage_id",
+        "subject_id",
+        "name",
+        "name_am",
+        "term_system",
+        "year_mode",
+        "year_weights",
+        "precision",
+        "rounding",
+        "intended_total",
+        "descriptive_mode",
+        "version",
+        "is_active",
+        "row_version",
+        "deleted_at",
+    } <= structure_columns
+    assert {
+        "structure_id",
+        "key",
+        "name",
+        "name_am",
+        "max_points",
+        "aggregation",
+        "absent_counts_as_zero",
+        "best_n",
+        "cap",
+        "sort_order",
+        "is_active",
+    } <= component_columns
+    assert {
+        "year_id",
+        "term_id",
+        "section_id",
+        "subject_id",
+        "structure_id",
+        "component_id",
+        "title",
+        "title_am",
+        "assessment_date",
+        "out_of",
+        "weight",
+        "allow_bonus",
+        "status",
+    } <= assessment_columns
+    assert {
+        "assessment_id",
+        "student_id",
+        "raw_score",
+        "out_of",
+        "status",
+        "converted",
+        "note",
+        "entered_at",
+        "entered_by",
+    } <= score_columns
+    assert {
+        "score_id",
+        "assessment_id",
+        "student_id",
+        "correction_request_id",
+        "old_raw",
+        "new_raw",
+        "old_status",
+        "new_status",
+        "old_converted",
+        "new_converted",
+        "source",
+        "reason",
+        "changed_at",
+        "changed_by",
+    } <= revision_columns
+    assert {
+        "score_id",
+        "assessment_id",
+        "student_id",
+        "year_id",
+        "term_id",
+        "section_id",
+        "subject_id",
+        "old_raw",
+        "new_raw",
+        "old_status",
+        "new_status",
+        "reason",
+        "status",
+        "requested_at",
+        "requested_by",
+        "decided_at",
+        "decided_by",
+        "decision_note",
+    } <= correction_columns
+    assert {
+        "name",
+        "name_am",
+        "type",
+        "is_default",
+        "lower_bound",
+        "upper_bound",
+        "precision",
+        "rounding",
+        "version",
+        "effective_from",
+        "effective_to",
+        "is_active",
+    } <= scale_columns
+    assert {
+        "scale_id",
+        "min_value",
+        "max_value",
+        "label",
+        "remark",
+        "gpa_points",
+        "is_pass",
+        "color",
+        "sort_order",
+    } <= band_columns
+    assert {
+        "scale_id",
+        "context",
+        "scope_key",
+        "assessment_id",
+        "subject_id",
+        "level_id",
+        "stage_id",
+    } <= assignment_columns
+    assert {
+        "year_id",
+        "term_id",
+        "level_id",
+        "section_id",
+        "scope_key",
+        "opens_at",
+        "closes_at",
+        "is_active",
+        "note",
+    } <= window_columns
+    assert {
+        "year_id",
+        "term_id",
+        "section_id",
+        "subject_id",
+        "status",
+        "submitted_at",
+        "submitted_by",
+        "approved_at",
+        "approved_by",
+        "published_at",
+        "published_by",
+        "locked_at",
+        "locked_by",
+        "note",
+    } <= submission_columns
+    assert {
+        "year_id",
+        "term_id",
+        "section_id",
+        "subject_id",
+        "student_id",
+        "structure_id",
+        "structure_version",
+        "scale_id",
+        "scale_version",
+        "total",
+        "out_of",
+        "percent",
+        "grade_label",
+        "grade_remark",
+        "gpa_points",
+        "is_pass",
+        "rank",
+        "rank_size",
+        "status",
+        "published_at",
+    } <= term_result_columns
+    assert {
+        "year_id",
+        "term_id",
+        "section_id",
+        "student_id",
+        "kind",
+        "structure_id",
+        "structure_version",
+        "scale_id",
+        "scale_version",
+        "payload",
+        "checksum",
+        "published_at",
+        "published_by",
+        "note",
+        "supersedes_id",
+    } <= snapshot_columns
+
+    # Marks are stored as integer micro-units, never as SQL floats (ARCH §9.5).
+    assert mark_type is not None
+    assert mark_type[0] == "BIGINT"
