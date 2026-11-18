@@ -71,9 +71,7 @@ MANIFEST = ModuleManifest(
     events=["marks.submitted", "marks.published"],
     i18n_namespaces=["assessment"],
     licensable=True,
-    # The module becomes default-enabled with P4-SEED, once its APIs and demo
-    # data exist. Until then it is installed but off, exactly like payroll.
-    default_enabled=False,
+    default_enabled=True,
     core=False,
 )
 

@@ -2170,3 +2170,30 @@ and recorded here (date, decision, reason).
 - **`assessment` joins `DEMO_MODULES`.** The demo school's signed license now
   includes the assessment module, otherwise the seeded data would be unreachable
   through the gated API and navigation.
+
+## 2026-11-18 — P4-10 mark structure UI
+
+- **One screen holds the list and the editor.** `/assessment` renders the
+  structures for the selected year, and "New structure" / "Edit" open an inline
+  form on the same page. It keeps the scope selector, the year rule, rounding,
+  precision and the component editor together, so a manager sees the components
+  total update while changing maxima.
+- **Totals are summed with exact integer micro-units.** The browser never adds
+  mark strings as floats: `toMicro`/`fromMicro` in
+  `src/pages/assessment/types.ts` convert decimal strings to 6-dp integers and
+  back. The total warning appears whenever the components differ from the
+  intended total; saving is blocked only when the components exceed it (the
+  backend rejects that) or a required field is missing.
+- **Aggregation options are translated, not raw enum values.** The assessment
+  bundle gained labels for the five aggregation modes, the three year rules and
+  the seven rounding modes, plus the list/form chrome (`new`, `edit`, `cancel`,
+  `year_weights`, `version`, `active`, `inactive`). Both `en` and `am` carry the
+  same keys.
+- **Read-only viewers see the list, never the editor.** Managers need
+  `assessment.manage`; viewers with `assessment.view` still see names, scopes,
+  totals and versions. The scope target queries (levels, stages, subjects) only
+  run for managers, so a viewer does not pay for data the form cannot use.
+- **`assessment` is now default-enabled.** P4-SEED left the manifest comment
+  saying the switch flips once the APIs and demo data exist; P4-10 is the point
+  where the module is reachable and usable, so `default_enabled=True` now
+  matches the demo license and the navigation.
