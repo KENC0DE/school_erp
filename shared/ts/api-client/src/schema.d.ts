@@ -4,6 +4,145 @@
  */
 
 export interface paths {
+    "/api/v1/academics/academic-years": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Years */
+        get: operations["get_years_api_v1_academics_academic_years_get"];
+        put?: never;
+        /** Post Year */
+        post: operations["post_year_api_v1_academics_academic_years_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/academic-years/{year_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Year Detail */
+        get: operations["get_year_detail_api_v1_academics_academic_years__year_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Year Route */
+        delete: operations["delete_year_route_api_v1_academics_academic_years__year_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Year */
+        patch: operations["patch_year_api_v1_academics_academic_years__year_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/academics/academic-years/{year_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Year Route */
+        post: operations["close_year_route_api_v1_academics_academic_years__year_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/academic-years/{year_id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Open Year Route */
+        post: operations["open_year_route_api_v1_academics_academic_years__year_id__open_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/academic-years/{year_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Year Route */
+        post: operations["restore_year_route_api_v1_academics_academic_years__year_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/academic-years/{year_id}/terms/{term_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Term */
+        patch: operations["patch_term_api_v1_academics_academic_years__year_id__terms__term_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/academics/academic-years/{year_id}/terms/{term_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close Term Route */
+        post: operations["close_term_route_api_v1_academics_academic_years__year_id__terms__term_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/academic-years/{year_id}/terms/{term_id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Open Term Route */
+        post: operations["open_term_route_api_v1_academics_academic_years__year_id__terms__term_id__open_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/academics/levels": {
         parameters: {
             query?: never;
@@ -2445,6 +2584,74 @@ export interface components {
             /** Title Key */
             title_key?: string | null;
         };
+        /** TermInput */
+        TermInput: {
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+        };
+        /** TermOut */
+        TermOut: {
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** End Date Display */
+            end_date_display: string;
+            /** End Date Ec */
+            end_date_ec: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Number */
+            number: number;
+            /** Row Version */
+            row_version: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Start Date Display */
+            start_date_display: string;
+            /** Start Date Ec */
+            start_date_ec: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "open" | "closed";
+            /** Year Id */
+            year_id: string;
+        };
+        /** TermUpdate */
+        TermUpdate: {
+            /** End Date */
+            end_date?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Start Date */
+            start_date?: string | null;
+        };
         /** ThemeImportRequest */
         ThemeImportRequest: {
             /** Content */
@@ -2609,6 +2816,96 @@ export interface components {
             token_type: string;
             user: components["schemas"]["UserOut"];
         };
+        /** YearCreate */
+        YearCreate: {
+            /** Code */
+            code: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Terms */
+            terms?: components["schemas"]["TermInput"][] | null;
+        };
+        /** YearList */
+        YearList: {
+            /** Current Year Id */
+            current_year_id?: string | null;
+            /** Items */
+            items: components["schemas"]["YearOut"][];
+            /** Next Cursor */
+            next_cursor?: null;
+            /** Total */
+            total: number;
+        };
+        /** YearOut */
+        YearOut: {
+            /** Code */
+            code: string;
+            /** Current Term Id */
+            current_term_id?: string | null;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** End Date Display */
+            end_date_display: string;
+            /** End Date Ec */
+            end_date_ec: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Start Date Display */
+            start_date_display: string;
+            /** Start Date Ec */
+            start_date_ec: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "open" | "closed";
+            /**
+             * Term System
+             * @enum {string}
+             */
+            term_system: "semester" | "quarter";
+            /** Terms */
+            terms: components["schemas"]["TermOut"][];
+        };
+        /** YearUpdate */
+        YearUpdate: {
+            /** End Date */
+            end_date?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Start Date */
+            start_date?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -2618,6 +2915,379 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_years_api_v1_academics_academic_years_get: {
+        parameters: {
+            query?: {
+                status?: ("draft" | "open" | "closed") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_year_api_v1_academics_academic_years_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["YearCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_year_detail_api_v1_academics_academic_years__year_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                year_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_year_route_api_v1_academics_academic_years__year_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                year_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_year_api_v1_academics_academic_years__year_id__patch: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                year_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["YearUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_year_route_api_v1_academics_academic_years__year_id__close_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                year_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_year_route_api_v1_academics_academic_years__year_id__open_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                year_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_year_route_api_v1_academics_academic_years__year_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                year_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_term_api_v1_academics_academic_years__year_id__terms__term_id__patch: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                year_id: string;
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TermUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_term_route_api_v1_academics_academic_years__year_id__terms__term_id__close_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                year_id: string;
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_term_route_api_v1_academics_academic_years__year_id__terms__term_id__open_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                year_id: string;
+                term_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_levels_api_v1_academics_levels_get: {
         parameters: {
             query?: {

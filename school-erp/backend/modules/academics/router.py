@@ -41,8 +41,10 @@ from modules.academics.schemas import (
     StageOut,
     StageUpdate,
 )
+from modules.academics.year_router import year_router
 
 router = APIRouter(tags=["academics"])
+router.include_router(year_router)
 
 ScopeQuery = Literal["school", "all"]
 

@@ -930,3 +930,31 @@ and recorded here (date, decision, reason).
   order and that at least one active level exists in the range, writes the two
   core settings in an order that never leaves the model invalid, and writes one
   `academics.scope.update` audit entry. Repeating the same scope is a no-op.
+
+## 2026-11-18 — P2-02 academic years and terms
+
+- **One open academic year at a time.** A year moves `draft → open → closed`.
+  Opening a second live year is rejected with a clear `409` until the first is
+  closed, so "current year" is unambiguous for enrollment, fees and reports.
+  Reopening a closed year is allowed and audited; a closed year is immutable
+  until reopened.
+- **Closing a year closes every term in it**, including terms that never
+  opened. Terms are then explicitly reopened if a correction window is needed,
+  which keeps the year result closed while allowing a controlled exception.
+- **The term system is snapshotted per year.** `academic_scope.term_system`
+  (semester = 2, quarter = 4) is a core setting used when a year is created.
+  Changing the setting later only affects new years; existing years keep their
+  term count because results and document templates address terms by number.
+  The term count is fixed at creation and terms are never added or removed.
+- **Dates are stored in GC and displayed in EC or GC.** `DATE` columns keep
+  ordering and reporting independent of the display preference. Responses add
+  `*_ec` values (`YYYY-MM-DD` Ethiopian) and `*_display` labels produced by the
+  shared Ethiopian calendar using `school_profile.calendar` and
+  `school_profile.default_language`. No date is stored twice.
+- **Year deletion is for drafts only.** Deleting an open or closed year would
+  hide history, so the API requires closing it and returns `409` otherwise.
+  Deleting a draft is a soft delete and keeps its terms, so restoring the year
+  brings the terms back intact.
+- **Term editing follows the year state.** Names and dates can be edited while
+  the year is a draft or open; a closed year rejects edits. Term dates are
+  validated to stay inside the year, in chronological order and non-overlapping.

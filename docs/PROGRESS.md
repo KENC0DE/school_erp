@@ -120,7 +120,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 ## Phase 2 — Academic structure, students and admissions
 
 - [x] P2-01 — Module `academics`: KG1–Grade 12 catalog, stages, school scope with validation; scope filters every listing; audited CRUD with soft delete and restore
-- [ ] P2-02 — Academic years and terms (semester or quarter chosen per school), open/close, EC/GC display
+- [x] P2-02 — Academic years and terms: semester/quarter snapshot per year, validated term dates, open/close workflow, EC/GC display, audited soft delete and restore
 - [ ] P2-03 — Sections (per level per year, homeroom teacher, capacity), subjects, level-subject assignment, subject groups
 - [ ] P2-04 — Curriculum profiles
 - [ ] P2-05 — Academics UI (web)

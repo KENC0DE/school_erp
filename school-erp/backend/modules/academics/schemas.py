@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -101,6 +103,86 @@ class StageList(BaseModel):
     scope: ScopeOut
 
 
+YearStatus = Literal["draft", "open", "closed"]
+TermStatus = Literal["pending", "open", "closed"]
+TermSystem = Literal["semester", "quarter"]
+
+
+class TermInput(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    name_am: str | None = Field(default=None, max_length=120)
+    start_date: date
+    end_date: date
+
+
+class YearCreate(BaseModel):
+    code: str = Field(min_length=1, max_length=40, pattern=r"^[A-Za-z0-9][A-Za-z0-9/_-]*$")
+    name: str = Field(min_length=1, max_length=120)
+    name_am: str | None = Field(default=None, max_length=120)
+    start_date: date
+    end_date: date
+    # Optional explicit term boundaries; omitted terms are split evenly across
+    # the year using the school's term system.
+    terms: list[TermInput] | None = Field(default=None, max_length=6)
+
+
+class YearUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    name_am: str | None = Field(default=None, max_length=120)
+    start_date: date | None = None
+    end_date: date | None = None
+    row_version: int = Field(ge=1)
+
+
+class TermUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    name_am: str | None = Field(default=None, max_length=120)
+    start_date: date | None = None
+    end_date: date | None = None
+    row_version: int = Field(ge=1)
+
+
+class TermOut(BaseModel):
+    id: str
+    year_id: str
+    number: int
+    name: str
+    name_am: str | None = None
+    start_date: date
+    end_date: date
+    start_date_ec: str
+    end_date_ec: str
+    start_date_display: str
+    end_date_display: str
+    status: TermStatus
+    row_version: int
+
+
+class YearOut(BaseModel):
+    id: str
+    code: str
+    name: str
+    name_am: str | None = None
+    start_date: date
+    end_date: date
+    start_date_ec: str
+    end_date_ec: str
+    start_date_display: str
+    end_date_display: str
+    term_system: TermSystem
+    status: YearStatus
+    current_term_id: str | None = None
+    terms: list[TermOut]
+    row_version: int
+
+
+class YearList(BaseModel):
+    items: list[YearOut]
+    next_cursor: None = None
+    total: int
+    current_year_id: str | None = None
+
+
 __all__ = [
     "LevelCreate",
     "LevelList",
@@ -112,4 +194,14 @@ __all__ = [
     "StageList",
     "StageOut",
     "StageUpdate",
+    "TermInput",
+    "TermOut",
+    "TermStatus",
+    "TermSystem",
+    "TermUpdate",
+    "YearCreate",
+    "YearList",
+    "YearOut",
+    "YearStatus",
+    "YearUpdate",
 ]

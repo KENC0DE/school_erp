@@ -48,6 +48,8 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         membership_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(academics_stage_levels)")
         }
+        year_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_academic_years)")}
+        term_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_terms)")}
     finally:
         connection.close()
 
@@ -69,9 +71,11 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "academics_grade_levels",
         "academics_stages",
         "academics_stage_levels",
+        "academics_academic_years",
+        "academics_terms",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0015_academics"
+    assert version == "0016_academic_years"
 
     assert {
         "failed_login_count",
@@ -83,6 +87,8 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "theme_mode",
     } <= user_columns
     assert {"require_totp", "is_active"} <= role_columns
+    assert {"code", "start_date", "end_date", "term_system", "status"} <= year_columns
+    assert {"year_id", "number", "start_date", "end_date", "status"} <= term_columns
     assert {"reason", "granted_by"} <= override_columns
     assert {"available_at", "last_attempt_at", "last_error"} <= outbox_columns
 

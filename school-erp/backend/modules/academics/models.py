@@ -9,9 +9,10 @@ list endpoint in this module filters against it.
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 from core.db.base import Base, BusinessModel
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Uuid, text
+from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, String, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -64,6 +65,67 @@ class Stage(BusinessModel):
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
+class AcademicYear(BusinessModel):
+    """A school year. Dates are stored in GC and displayed in EC or GC.
+
+    ``term_system`` is a snapshot: changing the school setting later does not
+    rewrite years that already carry results.
+    """
+
+    __tablename__ = "academics_academic_years"
+    __table_args__ = (
+        Index(
+            "uq_academics_academic_years_code_live",
+            "code",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index("ix_academics_academic_years_start_date", "start_date"),
+    )
+
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_am: Mapped[str | None] = mapped_column(String(120))
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    term_system: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+
+
+class Term(BusinessModel):
+    """One semester or quarter inside an academic year.
+
+    The number of terms is fixed at year creation so year-result rules stay
+    addressable. Names and dates stay editable until the year is closed.
+    """
+
+    __tablename__ = "academics_terms"
+    __table_args__ = (
+        Index(
+            "uq_academics_terms_year_number_live",
+            "year_id",
+            "number",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index("ix_academics_terms_year_start", "year_id", "start_date"),
+    )
+
+    year_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_academic_years.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    number: Mapped[int] = mapped_column(Integer, nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_am: Mapped[str | None] = mapped_column(String(120))
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+
+
 class StageLevel(Base):
     """Ordered membership: which grade levels belong to a stage."""
 
@@ -81,4 +143,4 @@ class StageLevel(Base):
     )
 
 
-__all__ = ["GradeLevel", "Stage", "StageLevel"]
+__all__ = ["AcademicYear", "GradeLevel", "Stage", "StageLevel", "Term"]

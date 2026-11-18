@@ -21,6 +21,8 @@ class SchoolProfile(BaseModel):
 class AcademicScope(BaseModel):
     first_level: int = Field(0, ge=0, le=12)
     last_level: int = Field(12, ge=0, le=12)
+    # Existing academic years keep the term system they were created with.
+    term_system: Literal["semester", "quarter"] = "semester"
 
     @model_validator(mode="after")
     def _ordered(self) -> AcademicScope:
