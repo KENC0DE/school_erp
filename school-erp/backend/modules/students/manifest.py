@@ -5,11 +5,12 @@ from core.modules.manifest import ModuleManifest, Nav, Perm
 from modules.students import actions as _actions  # noqa: F401 - registers actions
 from modules.students import models as _models  # noqa: F401 - registers models
 from modules.students.router import router
+from modules.students.settings import StudentSettings
 
 MANIFEST = ModuleManifest(
     key="students",
     name="Students",
-    version="0.1.0",
+    version="0.2.0",
     description="Student records, enrollment, guardians, medical data and documents.",
     depends_on=["academics"],
     permissions=[
@@ -31,6 +32,7 @@ MANIFEST = ModuleManifest(
     router=router,
     actions=[*_actions.__all__],
     i18n_namespaces=["students"],
+    settings_schema=StudentSettings,
     licensable=True,
     default_enabled=True,
     core=False,

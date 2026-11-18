@@ -140,7 +140,7 @@ def field_specs(
     return specs
 
 
-def _unflatten(values: dict[str, Any]) -> dict[str, Any]:
+def unflatten(values: dict[str, Any]) -> dict[str, Any]:
     nested: dict[str, Any] = {}
     for key, value in values.items():
         cursor = nested
@@ -160,7 +160,7 @@ def validate_value(
     """Validate the candidate against the whole typed model and return it in JSON form."""
     merged = {**current, key: value}
     try:
-        validated = model.model_validate(_unflatten(merged))
+        validated = model.model_validate(unflatten(merged))
     except ValidationError as exc:
         details = [
             {"loc": list(error["loc"]), "msg": error["msg"], "type": error["type"]}

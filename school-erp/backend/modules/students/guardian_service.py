@@ -37,7 +37,7 @@ async def _live_guardian(
     if row is None:
         raise NotFound(
             "The guardian link does not exist",
-            message_key="error.students.guardian_not_found",
+            message_key="students.error.guardian_not_found",
         )
     return row
 
@@ -59,7 +59,7 @@ async def _assert_person_free(
     if (await session.execute(stmt)).scalar_one_or_none() is not None:
         raise Conflict(
             "That person is already a guardian of this student",
-            message_key="error.students.guardian_exists",
+            message_key="students.error.guardian_exists",
             details={"person_id": str(person_id)},
         )
 
@@ -69,7 +69,7 @@ async def _assert_not_student(session: AsyncSession, student_id: uuid.UUID, pers
     if student.person_id == person_id:
         raise ValidationFailed(
             "A student cannot be their own guardian",
-            message_key="error.students.guardian_is_student",
+            message_key="students.error.guardian_is_student",
         )
 
 
@@ -264,7 +264,7 @@ async def restore_guardian(
     if row is None or row.student_id != student_id:
         raise NotFound(
             "The guardian link does not exist",
-            message_key="error.students.guardian_not_found",
+            message_key="students.error.guardian_not_found",
         )
     await _assert_person_free(session, student_id, row.person_id, current_id=row.id)
     await restore(

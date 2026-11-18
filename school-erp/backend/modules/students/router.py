@@ -28,6 +28,7 @@ from modules.students.actions import (
     get_student,
     list_enrollments,
     list_guardians,
+    preview_number,
     preview_register,
     register_student,
     remove_guardian,
@@ -51,6 +52,7 @@ from modules.students.schemas import (
     MedicalInput,
     MedicalOut,
     StudentList,
+    StudentNumberPreviewOut,
     StudentOut,
     StudentQuery,
     StudentRegister,
@@ -128,6 +130,16 @@ async def register_student_route(
     session: AsyncSession = Depends(get_session),
 ) -> StudentRegisterOut:
     return await register_student(_context(principal, session), payload.model_dump())
+
+
+@router.get("/number-preview", response_model=StudentNumberPreviewOut)
+async def number_preview_route(
+    year_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("students.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> StudentNumberPreviewOut:
+    payload = {"year_id": str(year_id)} if year_id is not None else {}
+    return await preview_number(_context(principal, session), payload)
 
 
 @router.get("/{student_id}", response_model=StudentOut)

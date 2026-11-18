@@ -31,7 +31,7 @@ async def live_student(session: AsyncSession, student_id: uuid.UUID) -> StudentP
     if student is None:
         raise NotFound(
             "The student does not exist",
-            message_key="error.students.not_found",
+            message_key="students.error.not_found",
         )
     return student
 
@@ -43,7 +43,7 @@ async def live_person(session: AsyncSession, person_id: uuid.UUID) -> Person:
     if person is None:
         raise NotFound(
             "The person does not exist",
-            message_key="error.students.person_not_found",
+            message_key="students.error.person_not_found",
         )
     return person
 

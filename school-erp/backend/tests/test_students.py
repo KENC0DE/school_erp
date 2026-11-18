@@ -189,7 +189,7 @@ async def test_registration_validation_conflicts_and_status_rules(client, supera
         json={"person": _person(given_name_en="Bekele"), "student_number": "S-0100"},
     )
     assert duplicate_number.status_code == 409
-    assert duplicate_number.json()["error"]["message_key"] == "error.students.number_taken"
+    assert duplicate_number.json()["error"]["message_key"] == "students.error.number_taken"
 
     missing_names = await client.post(
         BASE,
@@ -245,7 +245,7 @@ async def test_registration_validation_conflicts_and_status_rules(client, supera
 
     restored = await client.post(f"{BASE}/{first['id']}/restore", headers=superadmin_headers)
     assert restored.status_code == 409
-    assert restored.json()["error"]["message_key"] == "error.students.number_taken"
+    assert restored.json()["error"]["message_key"] == "students.error.number_taken"
 
 
 async def test_list_search_filters_and_cursor_pagination(client, superadmin_headers, seeded) -> None:
@@ -344,7 +344,7 @@ async def test_enrollment_lifecycle_conflicts_and_closed_year(client, superadmin
         json={"year_id": year["id"], "level_id": level["id"]},
     )
     assert duplicate.status_code == 409
-    assert duplicate.json()["error"]["message_key"] == "error.students.enrollment_exists"
+    assert duplicate.json()["error"]["message_key"] == "students.error.enrollment_exists"
 
     next_year = await _year(client, superadmin_headers, code="2027-2028")
     mismatch = await client.post(
@@ -357,7 +357,7 @@ async def test_enrollment_lifecycle_conflicts_and_closed_year(client, superadmin
         },
     )
     assert mismatch.status_code == 422
-    assert mismatch.json()["error"]["message_key"] == "error.students.section_mismatch"
+    assert mismatch.json()["error"]["message_key"] == "students.error.section_mismatch"
 
     promoted = await client.post(
         f"{BASE}/{student['id']}/enrollments",
@@ -411,7 +411,7 @@ async def test_enrollment_lifecycle_conflicts_and_closed_year(client, superadmin
         json={"year_id": year["id"], "level_id": level["id"]},
     )
     assert blocked.status_code == 409
-    assert blocked.json()["error"]["message_key"] == "error.students.year_closed"
+    assert blocked.json()["error"]["message_key"] == "students.error.year_closed"
 
     actions = {item["action"] for item in await _activity(client, superadmin_headers)}
     assert {
@@ -460,7 +460,7 @@ async def test_guardians_are_shared_across_children_and_primary_is_unique(
         json={"person_id": parent_id, "relationship": "father"},
     )
     assert duplicated.status_code == 409
-    assert duplicated.json()["error"]["message_key"] == "error.students.guardian_exists"
+    assert duplicated.json()["error"]["message_key"] == "students.error.guardian_exists"
 
     own_person = first["person"]["id"]
     self_guardian = await client.post(
@@ -469,7 +469,7 @@ async def test_guardians_are_shared_across_children_and_primary_is_unique(
         json={"person_id": own_person, "relationship": "self"},
     )
     assert self_guardian.status_code == 422
-    assert self_guardian.json()["error"]["message_key"] == "error.students.guardian_is_student"
+    assert self_guardian.json()["error"]["message_key"] == "students.error.guardian_is_student"
 
     mother = await client.post(
         f"{BASE}/{first['id']}/guardians",

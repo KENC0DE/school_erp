@@ -1107,3 +1107,56 @@ and recorded here (date, decision, reason).
   view/manage; director gets students view/manage and medical view; academic
   head gets students view; homeroom teacher gets students view. These are
   starting points and remain editable through RBAC.
+
+## 2026-11-18 — P2-07 student number generator
+
+- **Numbering is module settings, not a separate screen.** The students module
+  declares `StudentSettings.numbering` with `format`, `scope` and `start`. The
+  Settings page renders it from the typed schema like every other module, and
+  changes are validated and audited by the existing settings API. Defaults are
+  `STU-{year}-{seq:04d}`, one sequence per academic year, starting at `1`.
+- **The format grammar is deliberately small.** A template combines literal
+  text with `{year}` and exactly one `{seq}` or `{seq:0Nd}` zero-padded token.
+  Literals are limited to letters, digits, spaces and `- _ . / # ( )`; unknown
+  tokens, stray braces, multiple `{seq}` tokens and widths above 39 are
+  rejected. Rendered numbers are re-checked against the 40-character column as
+  the sequence grows, so a valid template cannot silently overflow the column.
+- **Year scope requires `{year}`.** Student numbers are globally unique, so a
+  per-year counter without a year token would issue the same number in two
+  years. The settings model rejects that combination at save time instead of
+  letting registration fall into conflict retries.
+- **The sequence bucket is the enrollment year, then the open year.** Preview
+  and registration accept an optional academic year; registration passes the
+  enrollment year when there is one. Otherwise the open year is preferred, then
+  the most recently started year, and finally the calendar year so a school can
+  register applicants before creating its first academic year. Year-scoped
+  keys are `year:<uuid>`; a global sequence uses one `global` key. Changing the
+  format or start value never rewrites an existing bucket: only later numbers
+  in that bucket use the new settings.
+- **Allocation is a single atomic upsert.** `student_number_sequences` holds one
+  row per scope. Both SQLite and PostgreSQL use `INSERT … ON CONFLICT (scope)
+  DO UPDATE SET value = value + 1 RETURNING value`, so concurrent registrations
+  serialize in the database and can never receive the same number. The
+  allocation commits in its own short transaction before the rest of
+  registration. A failed registration therefore leaves a gap, which is
+  acceptable; reusing a number is not. If a manually typed number already
+  occupies a generated candidate, registration skips that candidate (up to ten
+  times) and reserves the next one.
+- **Previews do not reserve.** `GET /students/number-preview` and the
+  registration preview return the next candidate without touching the
+  sequence, so two open forms may see the same number; the create call remains
+  authoritative. Preview requires `students.manage`, matching registration.
+  The action `students.numbers.preview` exposes the same behaviour to the AI
+  layer.
+- **Explicit numbers remain first-class.** Registration still accepts a typed
+  number (trimmed); omitting it or sending a blank string generates one. The
+  unique live index remains the final guard and returns `409` on a duplicate,
+  including when restoring a soft-deleted student.
+- **Registration, not the counter, is the audit record.** The counter is
+  internal bookkeeping and is deliberately not soft-deleted or audited;
+  `students.register` records the assigned number in the before/after state.
+  Settings changes remain audited by the settings module.
+- **Student error keys now use the module namespace.** The web loads module
+  bundles under `<module>.<key>`, so `error.students.*` keys could never
+  resolve. The students module now raises `students.error.*` keys, its bundle
+  gains the new numbering errors, and the web loads the `students` namespace.

@@ -62,6 +62,9 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         curriculum_subject_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(academics_curriculum_level_subjects)")
         }
+        sequence_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(student_number_sequences)")
+        }
     finally:
         connection.close()
 
@@ -96,9 +99,10 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "student_enrollments",
         "student_guardians",
         "student_medical_records",
+        "student_number_sequences",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0019_students"
+    assert version == "0020_student_numbering"
 
     assert {
         "failed_login_count",
@@ -129,6 +133,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "is_verified",
     } <= curriculum_columns
     assert {"profile_id", "level_id", "subject_id", "credit"} <= curriculum_subject_columns
+    assert {"scope", "value", "created_at", "updated_at"} <= sequence_columns
     assert {"reason", "granted_by"} <= override_columns
     assert {"available_at", "last_attempt_at", "last_error"} <= outbox_columns
 

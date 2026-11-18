@@ -5,8 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
-from core.db.base import BusinessModel, JSONType
-from sqlalchemy import Boolean, Date, ForeignKey, Index, String, Text, Uuid, text
+from core.db.base import Base, BusinessModel, JSONType, TimestampMixin, UUIDPrimaryKeyMixin
+from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, String, Text, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -136,9 +136,25 @@ class StudentMedicalRecord(BusinessModel):
     consent_to_treat: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
+class StudentNumberSequence(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """The last student number issued for one numbering scope.
+
+    This is a counter, not a business record: allocation is atomic and is not
+    soft-deleted, because a rollback may leave a gap but must never reuse a
+    number. The student registration itself is audited with the final number.
+    """
+
+    __tablename__ = "student_number_sequences"
+    __table_args__ = (UniqueConstraint("scope", name="uq_student_number_sequences_scope"),)
+
+    scope: Mapped[str] = mapped_column(String(120), nullable=False)
+    value: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 __all__ = [
     "StudentEnrollment",
     "StudentGuardian",
     "StudentMedicalRecord",
+    "StudentNumberSequence",
     "StudentProfile",
 ]

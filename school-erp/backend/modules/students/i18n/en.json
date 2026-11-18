@@ -69,6 +69,7 @@
   "action.guardians.restore": "Restore a guardian link",
   "action.medical.get": "Read a medical record",
   "action.medical.update": "Edit a medical record",
+  "action.numbers.preview": "Preview the next student number",
   "registered": "Student registered",
   "updated": "Student updated",
   "deleted": "Student deleted",
@@ -87,5 +88,7 @@
   "error.enrollment_exists": "This student is already enrolled for that academic year",
   "error.guardian_not_found": "The guardian link does not exist",
   "error.guardian_exists": "That person is already a guardian of this student",
-  "error.guardian_is_student": "A student cannot be their own guardian"
+  "error.guardian_is_student": "A student cannot be their own guardian",
+  "error.numbering_too_long": "The generated student number is longer than 40 characters",
+  "error.numbering_exhausted": "Could not allocate a free student number; check the numbering format"
 }

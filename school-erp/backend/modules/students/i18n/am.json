@@ -69,6 +69,7 @@
   "action.guardians.restore": "የአሳዳጊ ግንኙነት ይመልሱ",
   "action.medical.get": "የህክምና መዝገብ ያንብቡ",
   "action.medical.update": "የህክምና መዝገብ ያሻሽሉ",
+  "action.numbers.preview": "ቀጣዩን የተማሪ ቁጥር ይመልከቱ",
   "registered": "ተማሪው ተመዝግቧል",
   "updated": "ተማሪው ተሻሽሏል",
   "deleted": "ተማሪው ተሰርዟል",
@@ -87,5 +88,7 @@
   "error.enrollment_exists": "ይህ ተማሪ ለዚያ የትምህርት ዓመት አስቀድሞ ተመዝግቧል",
   "error.guardian_not_found": "የአሳዳጊ ግንኙነቱ አልተገኘም",
   "error.guardian_exists": "ይህ ሰው አስቀድሞ የዚህ ተማሪ አሳዳጊ ነው",
-  "error.guardian_is_student": "ተማሪ ለራሱ አሳዳጊ ሊሆን አይችልም"
+  "error.guardian_is_student": "ተማሪ ለራሱ አሳዳጊ ሊሆን አይችልም",
+  "error.numbering_too_long": "የተፈጠረው የተማሪ ቁጥር ከ40 ፊደላት በላይ ነው",
+  "error.numbering_exhausted": "ነጻ የተማሪ ቁጥር ማመንጨት አልተቻለም፤ የቁጥር አቀራረቡን ያረጋግጡ"
 }

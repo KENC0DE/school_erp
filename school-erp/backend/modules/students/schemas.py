@@ -7,7 +7,7 @@ from datetime import date
 from typing import Any, Literal
 
 from core.people.schemas import PersonInput
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 StudentStatus = Literal[
     "applicant",
@@ -170,7 +170,7 @@ class StudentQuery(BaseModel):
 
 class StudentRegister(BaseModel):
     person: PersonInput
-    student_number: str = Field(min_length=1, max_length=40)
+    student_number: str | None = Field(default=None, min_length=1, max_length=40)
     status: StudentStatus | None = None
     admission_date: date | None = None
     notes: str | None = Field(default=None, max_length=4000)
@@ -178,6 +178,14 @@ class StudentRegister(BaseModel):
     enrollment: EnrollmentInput | None = None
     guardians: list[GuardianInput] = Field(default_factory=list, max_length=10)
     medical: MedicalInput | None = None
+
+    @field_validator("student_number")
+    @classmethod
+    def _blank_means_generated(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
 
 class StudentUpdate(BaseModel):
@@ -226,6 +234,17 @@ class DuplicateCheck(BaseModel):
     person: PersonInput
 
 
+class StudentNumberPreview(BaseModel):
+    year_id: uuid.UUID | None = None
+
+
+class StudentNumberPreviewOut(BaseModel):
+    student_number: str
+    scope: str
+    year: int
+    sequence: int
+
+
 __all__ = [
     "DuplicateCheck",
     "EnrollmentInput",
@@ -239,6 +258,8 @@ __all__ = [
     "PersonOut",
     "STUDENT_STATUSES",
     "StudentList",
+    "StudentNumberPreview",
+    "StudentNumberPreviewOut",
     "StudentOut",
     "StudentQuery",
     "StudentRegister",

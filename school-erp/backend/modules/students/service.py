@@ -19,7 +19,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.academics import years as year_service
-from modules.students import enrollment_service, guardian_service, medical_service
+from modules.students import enrollment_service, guardian_service, medical_service, numbering
 from modules.students.common import live_person, live_student, student_state
 from modules.students.lookups import AcademicLabels
 from modules.students.models import StudentEnrollment, StudentProfile
@@ -55,7 +55,7 @@ def _assert_status(value: str) -> None:
     if value not in STATUS_VALUES:
         raise ValidationFailed(
             "Unknown student status",
-            message_key="error.students.status_invalid",
+            message_key="students.error.status_invalid",
             details={"status": value},
         )
 
@@ -70,22 +70,31 @@ def _assert_medical_permission(principal: Principal, has_medical: bool) -> None:
         )
 
 
-async def _assert_number_free(
+async def _number_taken(
     session: AsyncSession,
     student_number: str,
     *,
     current_id: uuid.UUID | None = None,
-) -> None:
+) -> bool:
     stmt = select(StudentProfile.id).where(
         StudentProfile.student_number == student_number,
         StudentProfile.deleted_at.is_(None),
     )
     if current_id is not None:
         stmt = stmt.where(StudentProfile.id != current_id)
-    if (await session.execute(stmt)).scalar_one_or_none() is not None:
+    return (await session.execute(stmt)).scalar_one_or_none() is not None
+
+
+async def _assert_number_free(
+    session: AsyncSession,
+    student_number: str,
+    *,
+    current_id: uuid.UUID | None = None,
+) -> None:
+    if await _number_taken(session, student_number, current_id=current_id):
         raise Conflict(
             "A student with that number already exists",
-            message_key="error.students.number_taken",
+            message_key="students.error.number_taken",
             details={"student_number": student_number},
         )
 
@@ -102,7 +111,7 @@ async def _assert_person_free(
     if (await session.execute(stmt)).scalar_one_or_none() is not None:
         raise Conflict(
             "That person already has a student record",
-            message_key="error.students.person_exists",
+            message_key="students.error.person_exists",
             details={"person_id": str(person_id)},
         )
 
@@ -277,15 +286,48 @@ async def duplicate_warnings(session: AsyncSession, data: DuplicateCheck) -> lis
 
 async def preview_registration(session: AsyncSession, data: StudentRegister) -> dict[str, Any]:
     person, warnings = await prepare_person(session, data.person.model_dump())
+    generated = data.student_number is None
+    if generated:
+        preview = await numbering.peek_number(
+            session,
+            year_id=data.enrollment.year_id if data.enrollment is not None else None,
+        )
+        student_number = preview.student_number
+    else:
+        student_number = data.student_number
     return {
         "will_create": "student",
-        "student_number": data.student_number,
+        "student_number": student_number,
+        "number_generated": generated,
         "full_name": full_name(person),
         "duplicate_warnings": warnings,
         "guardian_count": len(data.guardians),
         "has_enrollment": data.enrollment is not None,
         "has_medical": data.medical is not None,
     }
+
+
+async def _resolve_student_number(
+    session: AsyncSession,
+    data: StudentRegister,
+) -> str:
+    """Return the explicit number or allocate and reserve a generated one."""
+    if data.student_number is not None:
+        await _assert_number_free(session, data.student_number)
+        return data.student_number
+
+    year_id = data.enrollment.year_id if data.enrollment is not None else None
+    # A school may also type numbers by hand, so a generated candidate can
+    # already be in use. Skip those candidates; every reservation is atomic.
+    for _ in range(10):
+        allocation = await numbering.allocate_number(session, year_id=year_id)
+        if not await _number_taken(session, allocation.student_number):
+            return allocation.student_number
+    raise Conflict(
+        "Could not allocate a free student number",
+        message_key="students.error.numbering_exhausted",
+        details={"format": (await numbering.load_settings(session)).numbering.format},
+    )
 
 
 async def register_student(
@@ -297,7 +339,7 @@ async def register_student(
 ) -> tuple[StudentProfile, list[dict[str, Any]]]:
     _assert_status(data.status or "applicant")
     _assert_medical_permission(principal, data.medical is not None)
-    await _assert_number_free(session, data.student_number)
+    student_number = await _resolve_student_number(session, data)
     custom = None
     if data.custom is not None:
         cleaned = await validate_entity_values(session, "student", data.custom)
@@ -314,7 +356,7 @@ async def register_student(
     status = data.status or ("active" if data.enrollment is not None else "applicant")
     profile = StudentProfile(
         person_id=person.id,
-        student_number=data.student_number,
+        student_number=student_number,
         status=status,
         admission_date=data.admission_date,
         notes=data.notes,
@@ -470,7 +512,7 @@ async def restore_student(
     if profile is None:
         raise NotFound(
             "The student does not exist",
-            message_key="error.students.not_found",
+            message_key="students.error.not_found",
         )
     await _assert_number_free(session, profile.student_number, current_id=profile.id)
     await _assert_person_free(session, profile.person_id, current_id=profile.id)

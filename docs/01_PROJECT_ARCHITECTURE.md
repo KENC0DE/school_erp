@@ -171,21 +171,14 @@ modules/<key>/
 
 ```python
 MANIFEST = ModuleManifest(
-    key="assessment",
-    name="Marks & Grading",
-    version="1.0.0",
+    key="assessment", name="Marks & Grading", version="1.0.0",
     depends_on=["academics", "students", "staff"],
     permissions=[Perm("assessment.marks.enter", scopes=["assigned_subjects"]), ...],
-    router=router,
-    actions=ACTIONS,
-    events=EVENTS,
-    i18n_namespaces=["assessment"],
-    document_fields=FIELDS,
+    router=router, actions=ACTIONS, events=EVENTS,
+    i18n_namespaces=["assessment"], document_fields=FIELDS,
     settings_schema=AssessmentSettings,
     nav=[Nav(key="marks", label_key="assessment.nav.marks", perm="assessment.marks.enter", path="/marks")],
-    licensable=True,
-    default_enabled=False,
-    core=False,
+    licensable=True, default_enabled=False, core=False,
 )
 ```
 
@@ -342,14 +335,10 @@ Every operation worth exposing is a registered **Action**:
 
 ```python
 @action(
-    key="students.register",
-    module="students",
-    permission="students.record.create",
-    risk="write",  # read | write | bulk | destructive
-    input=RegisterStudent,
-    output=StudentOut,
-    describe="Register a new student",
-    preview=preview_register_student,
+    key="students.register", module="students",
+    permission="students.record.create", risk="write",     # read | write | bulk | destructive
+    input=RegisterStudent, output=StudentOut,
+    describe="Register a new student", preview=preview_register_student,
 )
 async def register_student(ctx: ActionContext, data: RegisterStudent) -> StudentOut: ...
 ```
@@ -606,7 +595,7 @@ Naming: plural snake_case tables. All business tables include `id, created_at, u
 - **Shell:** sidebar/tab navigation generated from `GET /me/navigation` (module registry ∩ enabled ∩ permitted). Nothing is hard-coded in menus.
 - **Command palette** and the **AI assistant panel** are available everywhere (if the AI module is on and permitted).
 - Server state in TanStack Query. Forms in React Hook Form + Zod, with server validation errors mapped to fields.
-- Every string through i18n. Every color and radius through tokens. Every date through the calendar layer. Every amount through the money layer.
+- Every string through i18n. Every color, radius and spacing value through tokens, following the design principles in §11.5. Every date through the calendar layer. Every amount through the money layer.
 - Responsive and accessible (keyboard navigation, focus states, ARIA, contrast). Ethiopic text tested in every key screen.
 - Tables: server-side pagination, sorting, filtering and saved views. Virtualization for long lists.
 
@@ -632,6 +621,64 @@ Naming: plural snake_case tables. All business tables include `id, created_at, u
 - Persisted query cache for read data. A **mutation outbox** (SQLite) for offline-capable actions: attendance, mark entry, announcements read, simple messages. Each queued mutation has an idempotency key and a base `row_version`.
 - Sync worker with retry and backoff, visible sync status, conflict UI. Anything not safe to queue offline (payments, role changes, deletions) is online-only.
 - The cache and outbox are **namespaced per school** (§8.9), so queued actions can never be sent to the wrong school's server.
+
+### 11.5 Design principles and UI standards
+
+**Goal:** a modern, clean and beautiful interface that feels calm and professional. It should look like a well-made modern business app, not futuristic and not flashy. **Content comes first, and decoration stays quiet.** Every screen in every app follows these standards. Nothing is styled ad hoc.
+
+**Overall feel**
+- Clean, restrained, generous whitespace, clear hierarchy. Neutral base colors plus **one brand accent**.
+- **Avoid:** heavy gradients, glassmorphism, neon colors, large drop shadows, decorative animation, crowded layouts, and more than one visual style per screen.
+
+**Spacing and layout (use the tokens, never raw numbers)**
+- **8-point grid** (4-point half steps). Spacing scale: 4, 8, 12, 16, 24, 32, 48, 64.
+- Page padding: 24 on desktop, 16 on mobile. Card padding 16 to 24. Gaps between sections 24 to 32.
+- App shell: left sidebar about 240 to 264 wide (collapsible to an icon rail), top bar 56 to 64 high, content max width about 1280 for dashboards and lists, about 720 for forms.
+- Breakpoints: phone under 640, tablet 640 to 1024, desktop over 1024. The school web app must be fully usable on tablets. On narrow screens, tables turn into stacked cards.
+
+**Typography**
+- One clean neutral sans for Latin (a font such as Inter, bundled, license checked) and an Ethiopic font (Noto Sans Ethiopic) designed to sit well beside it.
+- Scale: 12, 14 (the base for dense screens), 16, 18, 20, 24, 30. Weights 400, 500 and 600 only. Line height 1.4 to 1.6, slightly more generous for Ethiopic.
+- **Tabular (fixed-width) numerals** for marks, money and tables so columns align.
+- Sentence case, short plain sentences, consistent terminology.
+
+**Color**
+- Light and dark modes are both first-class. Semantic colors for success, warning, danger and info. **Color is never the only signal** (add an icon or label).
+- Contrast meets WCAG AA (4.5:1 for body text, 3:1 for large text and UI parts). Status badges use a consistent style.
+- A school's theme changes the **accent and brand elements only**. The layout and spacing never change per school.
+
+**Shape, depth, icons, motion**
+- Default corner radius 8 (a token), 1px subtle borders, shadows only on floating elements (menus, dialogs).
+- One icon set (the one shadcn/ui uses, Lucide), sized 16 or 20, consistent stroke.
+- Motion 150 to 200 ms, only for feedback (hover, expand, toast, page transitions kept minimal). Respect "reduce motion."
+
+**Standard patterns (build once in the shared UI kit, reuse everywhere)**
+- **Page header:** title, short description, one primary action, breadcrumbs where useful.
+- **Data table:** sticky header, sorting, filters bar, column visibility, saved views, row actions, bulk actions, pagination, density toggle (comfortable 44 or compact 36 row height).
+- **Forms:** labels above inputs, single column by default, inline validation with plain messages, helper text, clear required markers, a sticky save bar on long forms, and an unsaved-changes warning.
+- **Dialogs and side sheets:** dialogs for quick decisions, side sheets for editing a record. Destructive actions always ask for confirmation and name what will be affected.
+- **Every screen has a loading state (skeletons, not full-page spinners), an empty state (with a clear next action) and an error state (with retry and the request id).** Also 403, 404 and offline screens.
+- **Dashboards:** a few clear cards and simple charts, no clutter.
+- **Controller-session banner:** while an owner is acting in a school through a controller session, a persistent, unmistakable banner is shown on every screen.
+
+**Density by audience**
+- Office staff (registrar, accountant, admin): compact, scannable, keyboard-friendly.
+- Teachers: the mark-entry grid and attendance optimized for speed.
+- Parents, students and mobile in general: roomier layouts, larger text, simple flows.
+
+**Mobile-specific**
+- Native feel and platform conventions. Bottom tabs (five at most). Touch targets at least 44 pt (iOS) or 48 dp (Android). Safe-area aware. Pull to refresh. Dark mode. Minimal haptics.
+
+**Amharic and long text**
+- Every screen is checked with Amharic. Allow 30 to 40 percent text expansion. No fixed-width labels. Names (three parts, two scripts) never truncate without a tooltip.
+
+**Accessibility**
+- Full keyboard navigation, always-visible focus ring, labels on all inputs, ARIA roles, no information by color alone.
+
+**Process rules**
+- **Design foundation first:** the shared UI kit, app shell and three reference screens (list, form, dashboard) are built and approved before any feature screens.
+- Feature screens use **only** shared components and tokens. Lint rules ban hard-coded colors, font sizes and spacing values outside the token set.
+- A screen is not done until it passes the **UI quality gate** (build guide §0.3): all states present, screenshots at desktop, tablet and phone widths, in light and dark mode, in English and Amharic, an automated accessibility check, and the checklist in `docs/UI_CHECKLIST.md`.
 
 ---
 
@@ -717,6 +764,7 @@ The dev launcher and demo accounts exist from phase 0 and grow each phase, so th
 10. **One mobile app for all schools**, using a signed school directory hosted by the controller, with per-school isolated storage.
 11. API stays backward compatible within `/api/v1` (additive only), because schools run different versions.
 12. Push notifications go through the controller with minimal payloads.
+13. **Design:** a modern, clean, restrained UI (§11.5), built from a shared UI kit on an 8-point grid with one brand accent. A design foundation is built and approved before feature screens, and every screen passes a UI quality gate.
 
 **To verify during the build (do not assume)**
 - Ethiopian calendar conversion test vectors (two independent sources).

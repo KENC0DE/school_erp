@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +23,7 @@ from core.settings.schema import (
     field_specs,
     flatten_values,
     require_field,
+    unflatten,
     validate_value,
 )
 
@@ -73,6 +75,12 @@ async def module_settings(session: AsyncSession, module: str, model: type) -> di
             {**item.spec.as_dict(), "value": item.value, "source": item.source} for item in effective.values()
         ],
     }
+
+
+async def load_model(session: AsyncSession, module: str, model: type[BaseModel]) -> Any:
+    """Return the effective values as a validated instance of ``model``."""
+    effective = await effective_map(session, module, model)
+    return model.model_validate(unflatten({key: item.value for key, item in effective.items()}))
 
 
 async def all_settings(session: AsyncSession, registry: Any) -> list[dict[str, Any]]:
@@ -175,6 +183,7 @@ __all__ = [
     "clear_setting",
     "code_values",
     "effective_map",
+    "load_model",
     "module_model",
     "module_settings",
     "set_setting",

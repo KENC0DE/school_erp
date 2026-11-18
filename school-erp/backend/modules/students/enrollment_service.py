@@ -35,14 +35,14 @@ async def _validate_placement(
     if year.status == "closed":
         raise Conflict(
             "A closed academic year cannot receive new enrollments",
-            message_key="error.students.year_closed",
+            message_key="students.error.year_closed",
             details={"year_id": str(year_id)},
         )
     level = await catalog.get_level(session, level_id)
     if not level.is_active:
         raise ValidationFailed(
             "An inactive grade level cannot receive enrollments",
-            message_key="error.students.level_inactive",
+            message_key="students.error.level_inactive",
             details={"level_id": str(level_id)},
         )
     if section_id is None:
@@ -51,13 +51,13 @@ async def _validate_placement(
     if section.year_id != str(year_id) or section.level_id != str(level_id):
         raise ValidationFailed(
             "The section does not belong to that academic year and level",
-            message_key="error.students.section_mismatch",
+            message_key="students.error.section_mismatch",
             details={"section_id": str(section_id)},
         )
     if not section.is_active:
         raise ValidationFailed(
             "An inactive section cannot receive enrollments",
-            message_key="error.students.section_inactive",
+            message_key="students.error.section_inactive",
             details={"section_id": str(section_id)},
         )
 
@@ -77,7 +77,7 @@ async def _live_enrollment(
     if row is None:
         raise NotFound(
             "The enrollment does not exist",
-            message_key="error.students.enrollment_not_found",
+            message_key="students.error.enrollment_not_found",
         )
     return row
 
@@ -99,7 +99,7 @@ async def _assert_year_free(
     if (await session.execute(stmt)).scalar_one_or_none() is not None:
         raise Conflict(
             "This student is already enrolled for that academic year",
-            message_key="error.students.enrollment_exists",
+            message_key="students.error.enrollment_exists",
             details={"year_id": str(year_id)},
         )
 
@@ -249,7 +249,7 @@ async def restore_enrollment(
     if row is None or row.student_id != student_id:
         raise NotFound(
             "The enrollment does not exist",
-            message_key="error.students.enrollment_not_found",
+            message_key="students.error.enrollment_not_found",
         )
     await _assert_year_free(session, student_id, row.year_id, current_id=row.id)
     await restore(

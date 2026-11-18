@@ -10,8 +10,6 @@
 1. Open `docs/PROGRESS.md` and find the first unchecked task.
 2. Read only the ARCH sections that task cites. Do **not** load the whole repository or whole documents into context.
 3. Do the task. Run its **Verify** step. Tick it in `PROGRESS.md`. Commit. Continue.
-4. **Work autonomously until the whole build is complete.** Do not stop for per-task confirmation and do not ask whether to continue between tasks. Continue with the next unchecked task immediately after each commit. Stop only when every task is ticked, or when a task is genuinely blocked by a credential, physical device, paid service or ambiguous product decision; record that in `docs/QUESTIONS.md` and continue with the next unblocked task. The same loop is mirrored in `AGENTS.md` at the repository root, which is loaded at session start and after compaction.
-5. After a compaction or a new session, run `git log --oneline -5` and `git status --short`, re-read `docs/PROGRESS.md`, and resume the loop from the first unchecked task.
 
 ### 0.2 Non-negotiable rules
 1. **One task at a time, in order.** Never start the next task while the current one fails verification.
@@ -29,11 +27,14 @@
 13. **Seed data and the dev launcher are updated at the end of every phase** (task `Pn-SEED`), so the owner can test what exists.
 14. **Respect the zone boundaries** (ARCH §4.4): `school-erp/` never imports `owner/`; `owner/` uses only `shared/` and the school HTTP API; `shared/` imports neither. The boundary check in CI must always pass.
 15. **Keep the school API backward compatible** within `/api/v1` (additive only, ARCH §8.10), because one mobile app talks to schools running different versions.
+16. **Follow the UI standards** (ARCH §11.5). Build screens only from the shared UI kit and tokens. Every screen needs loading, empty and error states, and must pass the UI quality gate in 0.3 before its task is ticked.
+17. **Work autonomously until the project is complete** (section 0.7). Do not stop to ask whether to continue, do not pause between tasks or phases, and do not wait for approval. Only the narrow stop conditions in 0.7 apply.
 
 ### 0.3 Definition of Done (every task)
 - [ ] Code implemented and matches ARCH.
 - [ ] Tests added and passing. Lint and type check clean.
 - [ ] Permissions, audit and i18n handled where relevant.
+- [ ] **Screens only (UI quality gate):** loading, empty and error states present; screenshots at desktop (1440), tablet (768) and phone (390) widths in light and dark mode and in `en` and `am`; automated accessibility check with no serious violations; `docs/UI_CHECKLIST.md` passed; only shared components and tokens used.
 - [ ] `docs/PROGRESS.md` updated. Commit made.
 
 ### 0.4 Standard commands (create in P0-25, keep working forever)
@@ -52,6 +53,45 @@ API 8000 · Controller API 8100 · School web 5173 · Controller web 5174 · Pos
 
 ### 0.6 Repository zones (see ARCH §4.4)
 `school-erp/` (backend + web, deployed per school) · `owner/` (controller-api, controller-web, and the **single mobile app for all schools**) · `shared/` (py + ts contracts and utilities) · plus `deploy/`, `scripts/`, `docs/`.
+
+
+### 0.7 Autonomous operation (the builder never waits for the owner)
+
+**Mission:** keep building, in guide order, until the **FINAL CHECKPOINT** at the end of Phase 15 is complete. Finishing a task or a phase is never a reason to stop.
+
+**The loop (repeat without pausing)**
+1. Read `docs/PROGRESS.md`, take the first unchecked, non-blocked task.
+2. Implement, test, verify, tick it, write a one-line note in `PROGRESS.md`, commit.
+3. Immediately start the next task. **Never end a turn with "should I continue?", a summary that waits for a reply, or a request for permission.**
+4. At the end of a phase, run its CHECKPOINT. If it passes, tag it and start the next phase at once. If it fails, fix the cause and re-run. Never skip a checkpoint and never weaken a test.
+
+**Owner-review items never block you.** Wherever this guide says the owner reviews, approves or tests something (for example the design foundation, the owner test scripts, printed PDFs), do this instead of waiting: do your own review against `docs/UI_CHECKLIST.md` and the phase checkpoint, save screenshots or sample outputs under `docs/review/<phase>/`, add an entry to `docs/OWNER_REVIEW.md` (what to look at, how to run it, what good looks like), and continue. The owner will review later and file any changes as new tasks.
+
+**When a task fails or is unclear**
+1. Find the root cause. Try up to **three genuinely different approaches**.
+2. Still stuck: record what you tried in `docs/QUESTIONS.md`, mark the task `[~]` (blocked) in `PROGRESS.md`, and move to the next independent task.
+3. Revisit every `[~]` task at the end of its phase and again before the final checkpoint, with fresh eyes.
+4. Ambiguous requirement: choose the simplest option consistent with ARCH, record it in `docs/DECISIONS.md`, and continue.
+
+**Things you cannot do yourself: stub and continue.** Real payment-provider credentials, SMS provider accounts, AI provider keys, Apple/Google developer accounts, a physical phone, and real production servers are not available to you. Build everything behind adapters with test doubles and fakes (as the tasks already say), document exactly what the owner must supply in `docs/OWNER_ACTIONS.md`, and move on.
+
+**The only legitimate reasons to stop**
+- The final checkpoint is complete and `docs/FINAL_REPORT.md` is written.
+- Every remaining task is blocked (`[~]`) after the revisit passes.
+- The next action would be **irreversible or leave the repository**: deleting data outside the repo, force-pushing or rewriting published history, publishing to an app store or registry, spending money, sending real emails/SMS/push to real people, or using real credentials. Do not do these. Record them in `docs/OWNER_ACTIONS.md` and continue with other work.
+
+**Guardrails that make autonomy safe**
+- Work on a branch per phase (`phase-N`), merge into `main` only when its checkpoint is green, and tag each phase.
+- Commit after every task so any step can be undone. Never rewrite history.
+- Never touch files outside the repository. Never run commands that need `sudo`. Never add real secrets to the repo.
+- Quality is not traded for speed: no deleted, skipped or weakened tests; no silenced boundary or lint checks.
+- Optional work is skipped unless requested: Phase 13 add-ons are built only if listed in `docs/OWNER_REQUESTS.md`, and P15-07 (repo split) is documented but never executed.
+
+**Memory across sessions:** your context is limited. `PROGRESS.md` (state), `DECISIONS.md` (choices), `QUESTIONS.md` (blockers), `OWNER_REVIEW.md` and `OWNER_ACTIONS.md` are your memory. Update them as you go, and start every session by reading them.
+
+**If you work with sub-agents or in parallel:** the same autonomy and guardrail rules apply to each of them. One integrator is responsible for running checkpoints and for keeping the loop going.
+
+**At the very end:** write `docs/FINAL_REPORT.md` with what was built, what was verified (and how), the `[~]` tasks left, everything in `OWNER_REVIEW.md` and `OWNER_ACTIONS.md`, and how to run `./scripts/dev.sh up` and `seed`.
 
 ---
 
@@ -123,20 +163,23 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 ### Frontends
 - [ ] **P0-18** Shared packages: `api-client` generated from OpenAPI (script `pnpm gen:api`), `tokens` → CSS variables and RN theme object, `i18n` runtime loader (loads from the API with caching), `module-sdk` (frontend manifest types and registry), stubs for `calendar` and `money`. **Verify:** generation script runs in CI and fails on a diff.
 - [ ] **P0-19** **`school-erp/web`:** Vite + React + TS + Tailwind v4 + shadcn/ui init, router, login, authenticated shell with sidebar from `/me/navigation`, theme provider from tokens (light/dark switch), i18n loaded from the API with `en`/`am` switch, a dashboard showing one translated string, and the `sample` module page. **Verify:** Vitest render test; manual check that disabling `sample` removes its menu item.
+- [ ] **P0-19b** **Web design foundation** (ARCH §11.5), done before any feature screens: tokens for spacing (8-point scale), type scale, radius and shadows in `shared/ts/tokens`; bundled fonts (clean Latin sans + Noto Sans Ethiopic) with tabular numerals; the shared UI kit in `shared/ts/ui-web` (buttons, inputs, select, date picker with EC/GC, dialog, side sheet, toast, badge, tabs, skeleton, empty state, error state, page header, data table, form layout, sidebar/top-bar shell, controller-session banner); three reference screens (a list with filters, a form, a dashboard) using only the kit; `docs/UI_CHECKLIST.md` distilled from ARCH §11.5; lint rules banning hard-coded colors, font sizes and spacing outside tokens. **Verify:** the three screens render cleanly in light and dark, in `en` and `am`, at 1440, 768 and 390 widths; you review it against `docs/UI_CHECKLIST.md`, save the screenshots under `docs/review/p0/` and log it in `docs/OWNER_REVIEW.md` (the owner reviews later and does not block progress).
 - [ ] **P0-20** **`owner/controller-web`:** login, schools list, school detail with module toggles, "Open as school admin" (asks for a reason), a basic vault audit list. **Verify:** component tests plus the e2e in P0-26.
 - [ ] **P0-21** **`owner/mobile`, the ONE app for all schools:** Expo app with Expo Router. The first screen is the **school picker**: enter a school code or scan a QR code, call the controller's `GET /directory/resolve`, **verify the signed response** against the embedded controller public key, store the school profile (id, name, api_base_url, logo, versions), then log in against **that school's server** with tokens in `expo-secure-store` **namespaced per school**. After login: a shell with the same navigation as web, an `en`/`am` switch, the school's theme from tokens, running in Expo Go. **Verify:** Jest tests: a tampered directory response is rejected; two stored school profiles keep separate tokens and caches; the app refuses a server address that is not in a verified profile. Manual: `./scripts/dev.sh mobile`, enter `DEMO`, log in.
+- [ ] **P0-21b** **Mobile design foundation:** native UI kit in `owner/mobile/src/ui` built from the same tokens (buttons, inputs, list rows, cards, bottom tabs, sheet, toast, skeleton, empty and error states, school-picker styling), safe-area handling, 44/48 pt touch targets, dark mode, and three reference screens (list, form, dashboard). **Verify:** screenshots on a small and a large phone in light/dark and `en`/`am`; you review it against `docs/UI_CHECKLIST.md`, save the screenshots under `docs/review/p0/` and log it in `docs/OWNER_REVIEW.md`.
 - [ ] **P0-22** **AI wiring stub:** `POST /api/v1/ai/chat` that echoes and lists the tools the user may use (no LLM yet), plus a chat panel on web. **Verify:** panel shows different tools for two different users.
 
 ### Document and delivery spike
 - [ ] **P0-23** **PDF spike (decides the renderer):** render an HTML page containing Amharic (Ge'ez) text, Latin text, an embedded font and a QR code to PDF with Chromium/Playwright and with WeasyPrint. Compare shaping, embedding and speed. Choose one, record the decision in `docs/DECISIONS.md`, and expose `POST /api/v1/sample/pdf`. **Verify:** automated check that the PDF contains the embedded Ethiopic font, plus a manual visual check by opening the file.
 - [ ] **P0-24** CI (GitHub Actions or equivalent): ruff, type check, pytest, Vitest, builds for web, controller web and mobile, API client generation diff check, i18n key check.
 - [ ] **P0-25** **Dev launcher:** `scripts/dev.sh` and `scripts/dev.ps1` with `up`, `seed`, `reset`, `test`, `mobile`, `logs`, `down`. `seed` creates the controller owner, one enrolled demo instance (school code `DEMO`) and the demo accounts from section 1 (those relevant so far). It refuses to run in production. **Verify:** from a clean clone, `./scripts/dev.sh up && ./scripts/dev.sh seed` yields working logins at the ports listed in 0.5.
-- [ ] **P0-26** **Smoke e2e (Playwright):** controller login → disable the `sample` module for the demo school → school login shows the menu without it → re-enable → "Open as school admin" → perform a sample change → controller vault shows it labeled `via=controller`. Keep this test forever.
+- [ ] **P0-26** **Smoke e2e (Playwright):** controller login → disable the `sample` module for the demo school → school login shows the menu without it → re-enable → "Open as school admin" → perform a sample change (the persistent controller-session banner is visible) → controller vault shows it labeled `via=controller`. Keep this test forever.
 
 ### ✅ CHECKPOINT P0
 - [ ] `./scripts/dev.sh reset && ./scripts/dev.sh test` is fully green.
 - [ ] Smoke e2e (P0-26) passes. The mobile app opens in Expo Go and logs in.
 - [ ] Amharic text renders correctly in the PDF spike and in the web UI.
+- [ ] The design foundation (P0-19b, P0-21b) is self-reviewed against `docs/UI_CHECKLIST.md` (clean, modern, consistent in light and dark and in Amharic), with screenshots saved and an `OWNER_REVIEW.md` entry. The owner's later review does not block progress.
 - [ ] Every connection in the architecture diagram (ARCH §4.1) has been exercised by a test.
 - [ ] `docs/PROGRESS.md` and `docs/DECISIONS.md` are current. Tag `v0.0-skeleton`.
 
@@ -182,6 +225,7 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 - [ ] **P1-24** Instance setup wizard: school profile, logo, calendar display, default language, grade scope placeholder, theme, first Super Admin.
 - [ ] **P1-25** Jobs UI: list of background jobs with progress, retry, errors (user-safe).
 - [ ] **P1-26** **API compatibility guard** (ARCH §8.10): snapshot the OpenAPI schema per release and fail CI on breaking changes within `/api/v1` (removed or renamed fields or endpoints, narrowed types, new required request fields). Policy: additive only; deprecations stay for at least two releases. **Verify:** a deliberately breaking change fails the check.
+- [ ] **P1-27** **UI quality gate automation:** Playwright screenshot tests for the reference and key screens at 1440, 768 and 390 widths in light and dark and in `en` and `am` (with a long-Amharic-text fixture); an automated accessibility scan (axe) failing on serious violations; a check that every data screen implements loading, empty and error states; theme import check that a community theme cannot break layout. **Verify:** a deliberately low-contrast theme and a screen missing its empty state both fail the gate.
 - [ ] **P1-SEED** Update seed: all roles, accounts from §1 (roles assigned), a custom limited role, sample translation overrides, themes, sample audit history.
 
 ### ✅ CHECKPOINT P1
@@ -451,7 +495,7 @@ Seed data grows each phase: a few classes, ~60 students with Ethiopian three-par
 
 ## PHASE 13: Add-on modules (optional, one at a time)
 
-Build only those the owner requests. Each must be a **self-contained module** (manifest, permissions, i18n, document fields, actions, tests) that passes the module-conformance test.
+Build only those listed in `docs/OWNER_REQUESTS.md`. If the file is empty or missing, skip this phase and continue to Phase 14. Each must be a **self-contained module** (manifest, permissions, i18n, document fields, actions, tests) that passes the module-conformance test.
 
 - [ ] **P13-00** Create the **module conformance test** (checks manifest completeness, permissions declared, actions have risk levels, i18n keys exist for `en`, migrations carry the module branch label, no cross-module table imports).
 - [ ] **P13-01** Library (catalog, borrowing, fines in ETB).
@@ -487,7 +531,7 @@ Build only those the owner requests. Each must be a **self-contained module** (m
 - [ ] **P14-10** Production compose files (`deploy/compose/instance.yml`, `controller.yml`), Caddy with automatic TLS, resource limits per size profile, log rotation, secret handling, `.env.production.example`.
 - [ ] **P14-11** Observability: structured logs, optional error reporting, metrics for heartbeats, uptime checks.
 - [ ] **P14-12** Runbooks in `docs/runbooks`: provision a school, upgrade, rollback, restore, rotate keys, suspend/reactivate, investigate a chain alert, onboard a payment provider, release a mobile build.
-- [ ] **P14-13** Accessibility and i18n pass: keyboard-only walkthrough of key flows, contrast checks across shipped themes, Amharic overflow check on all screens, missing `am` key report delivered to the owner for translation.
+- [ ] **P14-13** Full visual review of every screen against `docs/UI_CHECKLIST.md` (spacing, states, consistency), plus accessibility and i18n pass: keyboard-only walkthrough of key flows, contrast checks across shipped themes, Amharic overflow check on all screens, missing `am` key report delivered to the owner for translation.
 - [ ] **P14-14** Documentation: admin guide, teacher quick-start, registrar guide, parent guide (English and Amharic drafts clearly marked for human review).
 
 ### ✅ CHECKPOINT P14
@@ -505,7 +549,7 @@ Build only those the owner requests. Each must be a **self-contained module** (m
 - [ ] **P15-04** Full regression: `./scripts/dev.sh reset && ./scripts/dev.sh test && ./scripts/dev.sh smoke` all green from a clean clone.
 - [ ] **P15-05** Version tags, changelog, release notes, EAS production build instructions, first-school onboarding checklist (provision → enroll → setup wizard → choose scope/curriculum/term system → set mark structure and grade rules → create roles → import students → train staff).
 - [ ] **P15-06** Final review of `docs/DECISIONS.md` and `docs/QUESTIONS.md`: produce a summary for the owner of every open item (payment credentials, SMS provider, legal review, translations to review, curriculum starter data to verify).
-- [ ] **P15-07** **Optional: repo split rehearsal** (only if the owner asks to split). Write `docs/runbooks/split-repo.md` and verify it in a scratch copy: `school-erp/` + `shared/` become one repo, `owner/` + `shared/` another; `shared/` is published as versioned private packages (a Python wheel and an npm package, or tagged git dependencies); the OpenAPI schema is published as a release artifact that `owner/` consumes; each repo has its own CI. **Verify:** both scratch repos build and pass their tests (the boundary checks already being green proves there is no hidden coupling). Do **not** perform the real split unless instructed.
+- [ ] **P15-07** **Optional: repo split rehearsal** (only if the owner asks to split). Write `docs/runbooks/split-repo.md` and verify it in a scratch copy: `school-erp/` + `shared/` become one repo, `owner/` + `shared/` another; `shared/` is published as versioned private packages (a Python wheel and an npm package, or tagged git dependencies); the OpenAPI schema is published as a release artifact that `owner/` consumes; each repo has its own CI. **Verify:** both scratch repos build and pass their tests (the boundary checks already being green proves there is no hidden coupling). Do **not** perform the real split unless instructed in `docs/OWNER_REQUESTS.md`.
 
 ### ✅ FINAL CHECKPOINT
 - [ ] `./scripts/dev.sh up && ./scripts/dev.sh seed` gives a fully working demo with all accounts in section 1.

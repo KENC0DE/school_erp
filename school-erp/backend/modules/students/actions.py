@@ -11,7 +11,13 @@ import uuid
 
 from core.actions.registry import ActionContext, action
 
-from modules.students import enrollment_service, guardian_service, medical_service, service
+from modules.students import (
+    enrollment_service,
+    guardian_service,
+    medical_service,
+    numbering,
+    service,
+)
 from modules.students.schemas import (
     DuplicateCheck,
     EnrollmentInput,
@@ -23,6 +29,8 @@ from modules.students.schemas import (
     MedicalInput,
     MedicalOut,
     StudentList,
+    StudentNumberPreview,
+    StudentNumberPreviewOut,
     StudentOut,
     StudentQuery,
     StudentRegister,
@@ -113,6 +121,26 @@ async def duplicate_check(ctx: ActionContext, payload: dict) -> dict:
     data = DuplicateCheck.model_validate(_body(payload, "student_id"))
     warnings = await service.duplicate_warnings(ctx.session, data)
     return {"duplicate_warnings": warnings}
+
+
+@action(
+    key="students.numbers.preview",
+    module="students",
+    permission="students.manage",
+    risk="read",
+    describe="Preview the next generated student number without reserving it",
+    input=StudentNumberPreview,
+    output=StudentNumberPreviewOut,
+)
+async def preview_number(ctx: ActionContext, payload: dict | None = None) -> StudentNumberPreviewOut:
+    data = StudentNumberPreview.model_validate(payload or {})
+    allocation = await numbering.peek_number(ctx.session, year_id=data.year_id)
+    return StudentNumberPreviewOut(
+        student_number=allocation.student_number,
+        scope=allocation.scope,
+        year=allocation.year,
+        sequence=allocation.sequence,
+    )
 
 
 @action(
@@ -400,6 +428,7 @@ __all__ = [
     "get_student",
     "list_enrollments",
     "list_guardians",
+    "preview_number",
     "preview_register",
     "register_student",
     "remove_guardian",

@@ -1972,6 +1972,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/number-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Number Preview Route */
+        get: operations["number_preview_route_api_v1_students_number_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/students/register/preview": {
         parameters: {
             query?: never;
@@ -3597,6 +3614,17 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** StudentNumberPreviewOut */
+        StudentNumberPreviewOut: {
+            /** Scope */
+            scope: string;
+            /** Sequence */
+            sequence: number;
+            /** Student Number */
+            student_number: string;
+            /** Year */
+            year: number;
+        };
         /** StudentOut */
         StudentOut: {
             /** Admission Date */
@@ -3648,7 +3676,7 @@ export interface components {
             /** Status */
             status?: ("applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni") | null;
             /** Student Number */
-            student_number: string;
+            student_number?: string | null;
         };
         /** StudentRegisterOut */
         StudentRegisterOut: {
@@ -9242,6 +9270,37 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    number_preview_route_api_v1_students_number_preview_get: {
+        parameters: {
+            query?: {
+                year_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentNumberPreviewOut"];
                 };
             };
             /** @description Validation Error */
