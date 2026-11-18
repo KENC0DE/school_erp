@@ -122,7 +122,7 @@ no Expo Go device, no `pwsh` for `scripts/dev.ps1`.
 - [x] P2-01 — Module `academics`: KG1–Grade 12 catalog, stages, school scope with validation; scope filters every listing; audited CRUD with soft delete and restore
 - [x] P2-02 — Academic years and terms: semester/quarter snapshot per year, validated term dates, open/close workflow, EC/GC display, audited soft delete and restore
 - [x] P2-03 — Sections (per level per year, homeroom teacher, capacity), subjects, level-subject assignment, subject groups
-- [ ] P2-04 — Curriculum profiles
+- [x] P2-04 — Curriculum profiles (starter templates, duplicate and edit, apply from a chosen year)
 - [ ] P2-05 — Academics UI (web)
 - [ ] P2-06 — Module `students`
 - [ ] P2-07 — Student ID generator with configurable format, atomic sequence

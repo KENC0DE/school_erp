@@ -91,6 +91,11 @@ class AcademicYear(BusinessModel):
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     term_system: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    # The curriculum applied from this year forward, if any.
+    curriculum_profile_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_curriculum_profiles.id", ondelete="SET NULL"),
+    )
 
 
 class Term(BusinessModel):
@@ -241,6 +246,61 @@ class Section(BusinessModel):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
+class CurriculumProfile(BusinessModel):
+    """A reusable curriculum bundle: term system plus subjects per level.
+
+    Shipped profiles are starter data (``is_starter=True``,
+    ``is_verified=False``) and stay fully editable; a school can duplicate one
+    and change the copy. Mark structures, grade scales and promotion rules are
+    added to the bundle in their own phases.
+    """
+
+    __tablename__ = "academics_curriculum_profiles"
+    __table_args__ = (
+        Index(
+            "uq_academics_curriculum_profiles_code_live",
+            "code",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index("ix_academics_curriculum_profiles_sort_order", "sort_order"),
+    )
+
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_am: Mapped[str | None] = mapped_column(String(120))
+    description: Mapped[str | None] = mapped_column(String(500))
+    term_system: Mapped[str] = mapped_column(String(20), nullable=False, default="semester")
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_starter: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class CurriculumLevelSubject(Base):
+    """A subject a curriculum profile offers at a level, with its credit."""
+
+    __tablename__ = "academics_curriculum_level_subjects"
+
+    profile_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_curriculum_profiles.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    level_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_grade_levels.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_subjects.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    credit: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
 class StageLevel(Base):
     """Ordered membership: which grade levels belong to a stage."""
 
@@ -260,6 +320,8 @@ class StageLevel(Base):
 
 __all__ = [
     "AcademicYear",
+    "CurriculumLevelSubject",
+    "CurriculumProfile",
     "GradeLevel",
     "LevelSubject",
     "Section",

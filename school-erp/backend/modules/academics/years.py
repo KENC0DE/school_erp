@@ -27,7 +27,8 @@ from core.settings.service import effective_map
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.academics.models import AcademicYear, Term
+from modules.academics import curriculum_service
+from modules.academics.models import AcademicYear, CurriculumProfile, Term
 from modules.academics.schemas import (
     TermInput,
     TermOut,
@@ -96,6 +97,7 @@ def _year_state(year: AcademicYear, terms: list[Term]) -> dict[str, Any]:
         "end_date": year.end_date.isoformat(),
         "term_system": year.term_system,
         "status": year.status,
+        "curriculum_profile_id": str(year.curriculum_profile_id) if year.curriculum_profile_id else None,
         "terms": [{"number": term.number, "status": term.status} for term in terms],
         "row_version": year.row_version,
     }
@@ -123,6 +125,13 @@ async def _year_out(session: AsyncSession, year: AcademicYear, terms: list[Term]
     calendar, locale = await _display_context(session)
     rows = terms if terms is not None else await _terms(session, year.id)
     open_term = next((term for term in rows if term.status == "open"), None)
+    profile_code: str | None = None
+    if year.curriculum_profile_id is not None:
+        profile_code = (
+            await session.execute(
+                select(CurriculumProfile.code).where(CurriculumProfile.id == year.curriculum_profile_id)
+            )
+        ).scalar_one_or_none()
     return YearOut(
         id=str(year.id),
         code=year.code,
@@ -137,6 +146,10 @@ async def _year_out(session: AsyncSession, year: AcademicYear, terms: list[Term]
         term_system=year.term_system,  # type: ignore[arg-type]
         status=year.status,  # type: ignore[arg-type]
         current_term_id=str(open_term.id) if open_term is not None else None,
+        curriculum_profile_id=(
+            str(year.curriculum_profile_id) if year.curriculum_profile_id is not None else None
+        ),
+        curriculum_profile_code=profile_code,
         terms=[_term_out(term, calendar=calendar, locale=locale) for term in rows],
         row_version=year.row_version,
     )
@@ -237,6 +250,29 @@ def _default_terms(year: AcademicYear, system: str) -> list[TermInput]:
     return terms
 
 
+async def _seed_year_curriculum(
+    session: AsyncSession,
+    principal: Principal,
+    year: AcademicYear,
+    profile: CurriculumProfile,
+    *,
+    via: str,
+) -> None:
+    """Write the profile's in-scope subjects as the year's starting map."""
+    count = await curriculum_service.seed_assignments(session, profile.id)
+    await record(
+        session,
+        action="academics.curriculum.apply",
+        module=MODULE,
+        entity_type="academic_year",
+        entity_id=str(year.id),
+        before={"year": year.code, "profile": None},
+        after={"year": year.code, "profile": profile.code, "assignments": count},
+        actor=principal,
+        via=via,
+    )
+
+
 async def list_years(
     session: AsyncSession,
     *,
@@ -277,6 +313,24 @@ async def create_year(
             message_key="error.academics.year_dates",
         )
     system = await term_system(session)
+    profile: CurriculumProfile | None = None
+    if data.curriculum_profile_id is not None:
+        profile = (
+            await session.execute(
+                select(CurriculumProfile).where(CurriculumProfile.id == data.curriculum_profile_id)
+            )
+        ).scalar_one_or_none()
+        if profile is None:
+            raise NotFound(
+                "The curriculum profile does not exist",
+                message_key="error.academics.curriculum_not_found",
+            )
+        if not profile.is_active:
+            raise Conflict(
+                "An inactive curriculum profile cannot be applied",
+                message_key="error.academics.curriculum_inactive",
+            )
+        system = profile.term_system
     year = AcademicYear(
         code=data.code,
         name=data.name,
@@ -285,6 +339,7 @@ async def create_year(
         end_date=data.end_date,
         term_system=system,
         status="draft",
+        curriculum_profile_id=profile.id if profile is not None else None,
     )
     provided = data.terms or _default_terms(year, system)
     expected = TERM_COUNTS[system]
@@ -329,6 +384,8 @@ async def create_year(
         actor=principal,
         via=via,
     )
+    if profile is not None:
+        await _seed_year_curriculum(session, principal, year, profile, via=via)
     return await _year_out(session, year, terms)
 
 

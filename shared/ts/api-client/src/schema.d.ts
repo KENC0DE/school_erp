@@ -143,6 +143,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/academics/curriculum-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile List */
+        get: operations["get_profile_list_api_v1_academics_curriculum_profiles_get"];
+        put?: never;
+        /** Post Profile */
+        post: operations["post_profile_api_v1_academics_curriculum_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/curriculum-profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile Detail */
+        get: operations["get_profile_detail_api_v1_academics_curriculum_profiles__profile_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Profile Route */
+        delete: operations["delete_profile_route_api_v1_academics_curriculum_profiles__profile_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Profile */
+        patch: operations["patch_profile_api_v1_academics_curriculum_profiles__profile_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/academics/curriculum-profiles/{profile_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Profile Route */
+        post: operations["apply_profile_route_api_v1_academics_curriculum_profiles__profile_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/curriculum-profiles/{profile_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Profile Route */
+        post: operations["duplicate_profile_route_api_v1_academics_curriculum_profiles__profile_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/curriculum-profiles/{profile_id}/levels/{level_id}/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Profile Level Subjects */
+        put: operations["put_profile_level_subjects_api_v1_academics_curriculum_profiles__profile_id__levels__level_id__subjects_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/academics/curriculum-profiles/{profile_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Profile Route */
+        post: operations["restore_profile_route_api_v1_academics_curriculum_profiles__profile_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/academics/levels": {
         parameters: {
             query?: never;
@@ -2133,6 +2238,192 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** CurriculumApply */
+        CurriculumApply: {
+            /**
+             * Confirm
+             * @default false
+             */
+            confirm: boolean;
+            /** Reason */
+            reason?: string | null;
+            /** Row Version */
+            row_version?: number | null;
+            /**
+             * Year Id
+             * Format: uuid
+             */
+            year_id: string;
+        };
+        /** CurriculumApplyOut */
+        CurriculumApplyOut: {
+            /** Applied */
+            applied: boolean;
+            /** Assignments Added */
+            assignments_added: number;
+            /** Assignments Removed */
+            assignments_removed: number;
+            /** Changed Levels */
+            changed_levels: string[];
+            /** Credits Changed */
+            credits_changed: number;
+            /** Levels Changed */
+            levels_changed: number;
+            /** Profile Code */
+            profile_code: string;
+            /** Profile Id */
+            profile_id: string;
+            /** Profile Name */
+            profile_name: string;
+            /**
+             * Profile Term System
+             * @enum {string}
+             */
+            profile_term_system: "semester" | "quarter";
+            /** Skipped Inactive Subjects */
+            skipped_inactive_subjects: string[];
+            /** Term System Matches */
+            term_system_matches: boolean;
+            /** Year Code */
+            year_code: string;
+            /** Year Id */
+            year_id: string;
+            /**
+             * Year Term System
+             * @enum {string}
+             */
+            year_term_system: "semester" | "quarter";
+        };
+        /** CurriculumLevelOut */
+        CurriculumLevelOut: {
+            /** Level Code */
+            level_code: string;
+            /** Level Id */
+            level_id: string;
+            /** Level Name */
+            level_name: string;
+            /** Subjects */
+            subjects: components["schemas"]["LevelSubjectOut"][];
+            /** Total */
+            total: number;
+        };
+        /** CurriculumLevelReplace */
+        CurriculumLevelReplace: {
+            /** Reason */
+            reason?: string | null;
+            /** Subjects */
+            subjects: components["schemas"]["CurriculumSubjectEntry"][];
+        };
+        /** CurriculumProfileCreate */
+        CurriculumProfileCreate: {
+            /** Code */
+            code: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+            /**
+             * Term System
+             * @default semester
+             * @enum {string}
+             */
+            term_system: "semester" | "quarter";
+        };
+        /** CurriculumProfileDuplicate */
+        CurriculumProfileDuplicate: {
+            /** Code */
+            code: string;
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** CurriculumProfileList */
+        CurriculumProfileList: {
+            /** Items */
+            items: components["schemas"]["CurriculumProfileOut"][];
+            /** Next Cursor */
+            next_cursor?: null;
+            /** Total */
+            total: number;
+        };
+        /** CurriculumProfileOut */
+        CurriculumProfileOut: {
+            /** Code */
+            code: string;
+            /** Description */
+            description?: string | null;
+            /** Id */
+            id: string;
+            /** In Use */
+            in_use: boolean;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Starter */
+            is_starter: boolean;
+            /** Is Verified */
+            is_verified: boolean;
+            /** Levels */
+            levels: components["schemas"]["CurriculumLevelOut"][];
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Sort Order */
+            sort_order: number;
+            /**
+             * Term System
+             * @enum {string}
+             */
+            term_system: "semester" | "quarter";
+        };
+        /** CurriculumProfileUpdate */
+        CurriculumProfileUpdate: {
+            /** Description */
+            description?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Is Verified */
+            is_verified?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Name Am */
+            name_am?: string | null;
+            /** Row Version */
+            row_version: number;
+            /** Sort Order */
+            sort_order?: number | null;
+            /** Term System */
+            term_system?: ("semester" | "quarter") | null;
+        };
+        /** CurriculumSubjectEntry */
+        CurriculumSubjectEntry: {
+            /**
+             * Credit
+             * @default 1
+             */
+            credit: number;
+            /**
+             * Subject Id
+             * Format: uuid
+             */
+            subject_id: string;
+        };
         /** DefinitionInput */
         DefinitionInput: {
             /**
@@ -3250,6 +3541,8 @@ export interface components {
         YearCreate: {
             /** Code */
             code: string;
+            /** Curriculum Profile Id */
+            curriculum_profile_id?: string | null;
             /**
              * End Date
              * Format: date
@@ -3284,6 +3577,10 @@ export interface components {
             code: string;
             /** Current Term Id */
             current_term_id?: string | null;
+            /** Curriculum Profile Code */
+            curriculum_profile_code?: string | null;
+            /** Curriculum Profile Id */
+            curriculum_profile_id?: string | null;
             /**
              * End Date
              * Format: date
@@ -3705,6 +4002,313 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["YearOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_list_api_v1_academics_curriculum_profiles_get: {
+        parameters: {
+            query?: {
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_profile_api_v1_academics_curriculum_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurriculumProfileCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_detail_api_v1_academics_curriculum_profiles__profile_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_profile_route_api_v1_academics_curriculum_profiles__profile_id__delete: {
+        parameters: {
+            query?: {
+                row_version?: number | null;
+                reason?: string | null;
+            };
+            header?: {
+                "if-match"?: string | null;
+            };
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_profile_api_v1_academics_curriculum_profiles__profile_id__patch: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurriculumProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_profile_route_api_v1_academics_curriculum_profiles__profile_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurriculumApply"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumApplyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_profile_route_api_v1_academics_curriculum_profiles__profile_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurriculumProfileDuplicate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_profile_level_subjects_api_v1_academics_curriculum_profiles__profile_id__levels__level_id__subjects_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+                level_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurriculumLevelReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_profile_route_api_v1_academics_curriculum_profiles__profile_id__restore_post: {
+        parameters: {
+            query?: {
+                reason?: string | null;
+            };
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurriculumProfileOut"];
                 };
             };
             /** @description Validation Error */

@@ -988,3 +988,36 @@ and recorded here (date, decision, reason).
 - **Capacity is an integer count of seats.** It is nullable (capacity unknown)
   and validated non-negative; occupancy is derived from enrollments in Phase 2
   later tasks rather than stored twice.
+
+## 2026-11-18 — P2-04 curriculum profiles
+
+- **A profile bundles what exists today and grows later.** This phase stores the
+  term system plus subjects per level (with the same integer credit as level
+  assignments). Mark-structure templates, grade scales, promotion rules and
+  document templates join the same profile in their own phases; the profile id
+  on a year is the stable link they will use.
+- **Shipped profiles are editable starter data.** The bootstrap creates the
+  three templates only when their code is missing (including soft-deleted
+  lookups, so a deleted row is not resurrected). Every field, subject and credit
+  can be edited, and a school can duplicate any profile and change the copy.
+  Shipped profiles cannot be deleted because losing a baseline template is hard
+  to undo; they can be deactivated instead. Custom profiles are soft-deletable
+  and restorable.
+- **Applying is preview-then-confirm.** `POST …/apply` with `confirm=false`
+  returns added, removed and credit-changed counts plus affected level codes
+  without writing anything, so the UI can show the impact before touching the
+  school's subject map. `confirm=true` performs the replacement and records one
+  `academics.curriculum.apply` audit entry on the year.
+- **Applying replaces the in-scope level-subject map.** Subjects per level are
+  school-global, so the profile is the new map for every level in the school's
+  scope: subjects absent from the profile are removed, not merged. Out-of-scope
+  and inactive levels are untouched, and inactive subjects are skipped and
+  reported. The chosen year records `curriculum_profile_id`, which is the
+  provenance of the map from that year forward.
+- **Term systems cannot be retrofitted.** A year snapshots its term system at
+  creation (P2-02). Applying a semester profile to a quarter year is rejected
+  with `409`; the supported path is to create the year with the profile, which
+  adopts the profile's term system, term count and starting subjects in one
+  audited operation. Re-applying the same profile is a no-op.
+- **Closed years are frozen.** Applying a profile to a closed year is rejected
+  even for a preview, matching the rule for sections and term edits.

@@ -29,6 +29,7 @@ from modules.academics.actions import (
     update_scope,
     update_stage,
 )
+from modules.academics.curriculum_router import curriculum_router
 from modules.academics.schemas import (
     LevelCreate,
     LevelList,
@@ -49,6 +50,7 @@ router = APIRouter(tags=["academics"])
 router.include_router(year_router)
 router.include_router(subject_router)
 router.include_router(section_router)
+router.include_router(curriculum_router)
 
 ScopeQuery = Literal["school", "all"]
 

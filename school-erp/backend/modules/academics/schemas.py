@@ -124,6 +124,9 @@ class YearCreate(BaseModel):
     # Optional explicit term boundaries; omitted terms are split evenly across
     # the year using the school's term system.
     terms: list[TermInput] | None = Field(default=None, max_length=6)
+    # Choose a curriculum bundle when creating the year; its term system and
+    # subjects become the year's starting point.
+    curriculum_profile_id: uuid.UUID | None = None
 
 
 class YearUpdate(BaseModel):
@@ -172,6 +175,8 @@ class YearOut(BaseModel):
     term_system: TermSystem
     status: YearStatus
     current_term_id: str | None = None
+    curriculum_profile_id: str | None = None
+    curriculum_profile_code: str | None = None
     terms: list[TermOut]
     row_version: int
 

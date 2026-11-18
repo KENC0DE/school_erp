@@ -15,6 +15,7 @@ from core.db.filters import INCLUDE_DELETED
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.academics.curriculum_seed import ensure_default_curriculum
 from modules.academics.models import GradeLevel, Stage, StageLevel
 
 # code, English name, Amharic name, scope level, sort order
@@ -116,6 +117,7 @@ async def ensure_default_academics(session: AsyncSession) -> None:
                 session.add(StageLevel(stage_id=stage.id, level_id=level.id))
         existing_stages[code] = stage
     await session.flush()
+    await ensure_default_curriculum(session)
 
 
 __all__ = ["DEFAULT_LEVELS", "DEFAULT_STAGES", "ensure_default_academics"]

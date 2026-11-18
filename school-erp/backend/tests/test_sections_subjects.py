@@ -49,15 +49,16 @@ async def _activity(client, headers) -> list[str]:
 async def test_subject_crud_conflicts_soft_delete_and_restore(client, superadmin_headers, seeded) -> None:
     initial = await client.get(f"{BASE}/subjects", headers=superadmin_headers)
     assert initial.status_code == 200
-    assert initial.json()["total"] == 0
+    starter_codes = {item["code"] for item in initial.json()["items"]}
+    assert {"amharic", "english", "mathematics"} <= starter_codes
 
     maths = await _subject(client, superadmin_headers, "maths", "Mathematics")
-    english = await _subject(client, superadmin_headers, "english", "English", sort_order=1)
+    literature = await _subject(client, superadmin_headers, "literature", "Literature")
     assert maths["is_active"] is True
     assert maths["row_version"] == 1
 
     listed = await client.get(f"{BASE}/subjects", headers=superadmin_headers)
-    assert [item["code"] for item in listed.json()["items"]] == ["maths", "english"]
+    assert [item["code"] for item in listed.json()["items"]][-2:] == ["maths", "literature"]
 
     duplicate = await client.post(
         f"{BASE}/subjects",
@@ -84,19 +85,24 @@ async def test_subject_crud_conflicts_soft_delete_and_restore(client, superadmin
     assert stale.status_code == 409
 
     deleted = await client.delete(
-        f"{BASE}/subjects/{english['id']}",
+        f"{BASE}/subjects/{literature['id']}",
         headers=superadmin_headers,
-        params={"row_version": english["row_version"], "reason": "Merged into English Language"},
+        params={"row_version": literature["row_version"], "reason": "Merged into Literature"},
     )
     assert deleted.status_code == 200, deleted.text
     assert (
-        await client.get(f"{BASE}/subjects/{english['id']}", headers=superadmin_headers)
+        await client.get(f"{BASE}/subjects/{literature['id']}", headers=superadmin_headers)
     ).status_code == 404
-    assert (await client.get(f"{BASE}/subjects", headers=superadmin_headers)).json()["total"] == 1
+    live_codes = {
+        item["code"]
+        for item in (await client.get(f"{BASE}/subjects", headers=superadmin_headers)).json()["items"]
+    }
+    assert "literature" not in live_codes
+    assert "maths" in live_codes
 
-    restored = await client.post(f"{BASE}/subjects/{english['id']}/restore", headers=superadmin_headers)
+    restored = await client.post(f"{BASE}/subjects/{literature['id']}/restore", headers=superadmin_headers)
     assert restored.status_code == 200, restored.text
-    assert restored.json()["name"] == "English"
+    assert restored.json()["name"] == "Literature"
 
     actions = await _activity(client, superadmin_headers)
     assert "academics.subjects.create" in actions
@@ -109,7 +115,7 @@ async def test_level_subject_assignment_respects_scope_and_active_rows(
     client, superadmin_headers, seeded
 ) -> None:
     maths = await _subject(client, superadmin_headers, "maths", "Mathematics")
-    english = await _subject(client, superadmin_headers, "english", "English", sort_order=1)
+    literature = await _subject(client, superadmin_headers, "literature", "Literature")
     g5 = await _level(client, superadmin_headers, "g5")
     g6 = await _level(client, superadmin_headers, "g6")
 
@@ -119,7 +125,7 @@ async def test_level_subject_assignment_respects_scope_and_active_rows(
         json={
             "subjects": [
                 {"subject_id": maths["id"], "credit": 5},
-                {"subject_id": english["id"], "credit": 4},
+                {"subject_id": literature["id"], "credit": 4},
             ]
         },
     )
@@ -128,7 +134,7 @@ async def test_level_subject_assignment_respects_scope_and_active_rows(
     assert body["level_code"] == "g5"
     assert [(item["code"], item["credit"]) for item in body["items"]] == [
         ("maths", 5),
-        ("english", 4),
+        ("literature", 4),
     ]
 
     replaced = await client.put(
@@ -149,15 +155,15 @@ async def test_level_subject_assignment_respects_scope_and_active_rows(
     assert missing.json()["error"]["message_key"] == "error.academics.subject_missing"
 
     deactivated = await client.patch(
-        f"{BASE}/subjects/{english['id']}",
+        f"{BASE}/subjects/{literature['id']}",
         headers=superadmin_headers,
-        json={"is_active": False, "row_version": english["row_version"]},
+        json={"is_active": False, "row_version": literature["row_version"]},
     )
     assert deactivated.status_code == 200, deactivated.text
     inactive = await client.put(
         f"{BASE}/levels/{g5['id']}/subjects",
         headers=superadmin_headers,
-        json={"subjects": [{"subject_id": english["id"], "credit": 1}]},
+        json={"subjects": [{"subject_id": literature["id"], "credit": 1}]},
     )
     assert inactive.status_code == 422
     assert inactive.json()["error"]["message_key"] == "error.academics.subject_inactive"
@@ -198,7 +204,7 @@ async def test_level_subject_assignment_respects_scope_and_active_rows(
 
 async def test_subject_groups_membership_and_restore(client, superadmin_headers, seeded) -> None:
     maths = await _subject(client, superadmin_headers, "maths", "Mathematics")
-    english = await _subject(client, superadmin_headers, "english", "English", sort_order=1)
+    literature = await _subject(client, superadmin_headers, "literature", "Literature")
 
     created = await client.post(
         f"{BASE}/subject-groups",
@@ -239,13 +245,13 @@ async def test_subject_groups_membership_and_restore(client, superadmin_headers,
         headers=superadmin_headers,
         json={
             "name": "Science stream",
-            "subject_ids": [english["id"]],
+            "subject_ids": [literature["id"]],
             "row_version": group["row_version"],
         },
     )
     assert updated.status_code == 200, updated.text
     assert updated.json()["name"] == "Science stream"
-    assert [item["code"] for item in updated.json()["subjects"]] == ["english"]
+    assert [item["code"] for item in updated.json()["subjects"]] == ["literature"]
 
     stale = await client.patch(
         f"{BASE}/subject-groups/{group['id']}",
@@ -264,7 +270,7 @@ async def test_subject_groups_membership_and_restore(client, superadmin_headers,
 
     restored = await client.post(f"{BASE}/subject-groups/{group['id']}/restore", headers=superadmin_headers)
     assert restored.status_code == 200, restored.text
-    assert [item["code"] for item in restored.json()["subjects"]] == ["english"]
+    assert [item["code"] for item in restored.json()["subjects"]] == ["literature"]
 
 
 async def test_sections_crud_listing_and_homeroom_validation(client, app, superadmin_headers, seeded) -> None:
