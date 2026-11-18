@@ -1,6 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 
 import { Shell } from "./components/Shell";
 import { ActivityPage } from "./pages/ActivityPage";
@@ -23,6 +30,7 @@ import { SamplePage } from "./pages/SamplePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SetupWizardPage } from "./pages/SetupWizardPage";
 import { StudentProfilePage } from "./pages/students/StudentProfilePage";
+import { PromotionPage } from "./pages/students/PromotionPage";
 import { StudentsPage } from "./pages/students/StudentsPage";
 import { ThemeManagerPage } from "./pages/ThemeManagerPage";
 import { TranslationsPage } from "./pages/TranslationsPage";
@@ -32,15 +40,21 @@ import { I18nProvider, useI18n } from "./providers/I18nProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
 
 export const appQueryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
+  defaultOptions: {
+    queries: { staleTime: 30_000, refetchOnWindowFocus: false },
+  },
 });
 
 function RequireAuth() {
   const { user, loading } = useAuth();
   const { t } = useI18n();
   const location = useLocation();
-  if (loading) return <p className="p-6 text-sm text-muted-foreground">{t("common.loading")}</p>;
-  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (loading)
+    return (
+      <p className="p-6 text-sm text-muted-foreground">{t("common.loading")}</p>
+    );
+  if (!user)
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <Outlet />;
 }
 
@@ -83,11 +97,18 @@ export function AppRoutes() {
           <Route path="activity" element={<ActivityPage />} />
           <Route path="academics" element={<AcademicsPage />} />
           <Route path="students" element={<StudentsPage />} />
+          <Route path="students/promotions" element={<PromotionPage />} />
           <Route path="students/:studentId" element={<StudentProfilePage />} />
           <Route path="admissions" element={<AdmissionsPage />} />
-          <Route path="admissions/new" element={<ApplicationFormPage mode="new" />} />
+          <Route
+            path="admissions/new"
+            element={<ApplicationFormPage mode="new" />}
+          />
           <Route path="admissions/:id" element={<ApplicationProfilePage />} />
-          <Route path="admissions/:id/edit" element={<ApplicationFormPage mode="edit" />} />
+          <Route
+            path="admissions/:id/edit"
+            element={<ApplicationFormPage mode="edit" />}
+          />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
           <Route path="settings/languages" element={<TranslationsPage />} />
@@ -100,7 +121,11 @@ export function AppRoutes() {
   );
 }
 
-export function App({ initialMessages }: { initialMessages?: Record<string, string> }) {
+export function App({
+  initialMessages,
+}: {
+  initialMessages?: Record<string, string>;
+}) {
   return (
     <AppProviders initialMessages={initialMessages}>
       <BrowserRouter>

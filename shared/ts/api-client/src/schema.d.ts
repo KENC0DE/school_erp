@@ -2220,6 +2220,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/promotions/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Promotion Route */
+        post: operations["apply_promotion_route_api_v1_students_promotions_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/promotions/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Promotion Route */
+        post: operations["preview_promotion_route_api_v1_students_promotions_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/students/register/preview": {
         parameters: {
             query?: never;
@@ -2443,6 +2477,23 @@ export interface paths {
         put?: never;
         /** Restore Student Route */
         post: operations["restore_student_route_api_v1_students__student_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{student_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Student Status Route */
+        post: operations["change_student_status_route_api_v1_students__student_id__status_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4021,6 +4072,166 @@ export interface components {
             /** Short Name */
             short_name: string;
         };
+        /** PromotionApplyOut */
+        PromotionApplyOut: {
+            /**
+             * Enrolled
+             * @default 0
+             */
+            enrolled: number;
+            /**
+             * Graduated
+             * @default 0
+             */
+            graduated: number;
+            /** Items */
+            items?: components["schemas"]["PromotionRow"][];
+            /**
+             * Promoted
+             * @default 0
+             */
+            promoted: number;
+            /**
+             * Repeated
+             * @default 0
+             */
+            repeated: number;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+            /** Source Year Id */
+            source_year_id: string;
+            /** Target Year Id */
+            target_year_id: string;
+        };
+        /**
+         * PromotionException
+         * @description A manual decision for one student that overrides the default rule.
+         */
+        PromotionException: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "promote" | "repeat" | "graduate" | "skip";
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Target Level Id */
+            target_level_id?: string | null;
+            /** Target Section Id */
+            target_section_id?: string | null;
+        };
+        /** PromotionPreview */
+        PromotionPreview: {
+            /**
+             * Blocking
+             * @default 0
+             */
+            blocking: number;
+            /**
+             * Graduate
+             * @default 0
+             */
+            graduate: number;
+            /** Items */
+            items?: components["schemas"]["PromotionRow"][];
+            /**
+             * Promote
+             * @default 0
+             */
+            promote: number;
+            /**
+             * Repeat
+             * @default 0
+             */
+            repeat: number;
+            /**
+             * Skip
+             * @default 0
+             */
+            skip: number;
+            /** Source Year Id */
+            source_year_id: string;
+            /** Target Year Id */
+            target_year_id: string;
+            /** Total */
+            total: number;
+        };
+        /** PromotionRequest */
+        PromotionRequest: {
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Exceptions */
+            exceptions?: components["schemas"]["PromotionException"][];
+            /** Reason */
+            reason?: string | null;
+            /** Source Level Id */
+            source_level_id?: string | null;
+            /** Source Section Id */
+            source_section_id?: string | null;
+            /**
+             * Source Year Id
+             * Format: uuid
+             */
+            source_year_id: string;
+            /** Student Ids */
+            student_ids?: string[];
+            /**
+             * Target Year Id
+             * Format: uuid
+             */
+            target_year_id: string;
+        };
+        /** PromotionRow */
+        PromotionRow: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "promote" | "repeat" | "graduate" | "skip";
+            /**
+             * Blocking
+             * @default false
+             */
+            blocking: boolean;
+            /** Current Level Id */
+            current_level_id: string;
+            /** Current Level Name */
+            current_level_name: string;
+            /** Current Level Sort Order */
+            current_level_sort_order: number;
+            /** Current Section Code */
+            current_section_code?: string | null;
+            /** Current Section Id */
+            current_section_id?: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Next Level Id */
+            next_level_id?: string | null;
+            /** Next Level Name */
+            next_level_name?: string | null;
+            /** Status */
+            status: string;
+            /** Student Id */
+            student_id: string;
+            /** Student Number */
+            student_number: string;
+            /** Target Level Id */
+            target_level_id?: string | null;
+            /** Target Level Name */
+            target_level_name?: string | null;
+            /** Target Section Code */
+            target_section_code?: string | null;
+            /** Target Section Id */
+            target_section_id?: string | null;
+            /** Warnings */
+            warnings?: string[];
+        };
         /** PublicApplicationCreate */
         PublicApplicationCreate: {
             /** Custom */
@@ -4549,6 +4760,34 @@ export interface components {
             status: "applicant" | "active" | "promoted" | "repeating" | "transferred_out" | "withdrawn" | "graduated" | "alumni";
             /** Student Number */
             student_number: string;
+        };
+        /** StudentStatusChange */
+        StudentStatusChange: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "transfer_out" | "withdraw" | "graduate" | "alumni" | "reinstate";
+            /** Exit Date */
+            exit_date?: string | null;
+            /** Exit Reason */
+            exit_reason?: string | null;
+            /** Row Version */
+            row_version?: number | null;
+        };
+        /** StudentStatusChangeOut */
+        StudentStatusChangeOut: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "transfer_out" | "withdraw" | "graduate" | "alumni" | "reinstate";
+            /** Changed */
+            changed: boolean;
+            /** Student */
+            student: {
+                [key: string]: unknown;
+            };
         };
         /** StudentSummary */
         StudentSummary: {
@@ -10708,6 +10947,72 @@ export interface operations {
             };
         };
     };
+    apply_promotion_route_api_v1_students_promotions_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionApplyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_promotion_route_api_v1_students_promotions_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     register_preview_route_api_v1_students_register_preview_post: {
         parameters: {
             query?: never;
@@ -11422,6 +11727,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_student_status_route_api_v1_students__student_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentStatusChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentStatusChangeOut"];
                 };
             };
             /** @description Validation Error */

@@ -25,6 +25,7 @@ export const DATA_SCREENS = [
   "school-erp/web/src/pages/academics/ScopePanel.tsx",
   "school-erp/web/src/pages/students/StudentsPage.tsx",
   "school-erp/web/src/pages/students/StudentProfilePage.tsx",
+  "school-erp/web/src/pages/students/PromotionPage.tsx",
   "school-erp/web/src/pages/admissions/AdmissionsPage.tsx",
   "school-erp/web/src/pages/admissions/ApplicationProfilePage.tsx",
   "school-erp/web/src/pages/admissions/PublicApplicationPage.tsx",
@@ -65,20 +66,27 @@ export function checkScreenStates(
 }
 
 /** A deliberately low-contrast theme: text and background are the same. */
-export function lowContrastCss(tokens: Record<string, Record<string, string>>): string {
+export function lowContrastCss(
+  tokens: Record<string, Record<string, string>>,
+): string {
   const light = { ...tokens.light, foreground: tokens.light?.background ?? "" };
   const dark = { ...tokens.dark, foreground: tokens.dark?.background ?? "" };
   return cssFrom(light ?? {}, dark ?? {});
 }
 
 /** A valid community theme: same layout, different brand colour. */
-export function recolouredCss(tokens: Record<string, Record<string, string>>): string {
+export function recolouredCss(
+  tokens: Record<string, Record<string, string>>,
+): string {
   const light = { ...tokens.light, primary: "oklch(0.52 0.16 30)" };
   const dark = { ...tokens.dark, primary: "oklch(0.7 0.14 30)" };
   return cssFrom(light ?? {}, dark ?? {});
 }
 
-function cssFrom(light: Record<string, string>, dark: Record<string, string>): string {
+function cssFrom(
+  light: Record<string, string>,
+  dark: Record<string, string>,
+): string {
   const block = (variant: Record<string, string>) =>
     Object.entries(variant)
       .map(([key, value]) => `  --${key}: ${value};`)

@@ -16,7 +16,15 @@ from modules.students import (
     guardian_service,
     medical_service,
     numbering,
+    progression_service,
     service,
+)
+from modules.students.progression_schemas import (
+    PromotionApplyOut,
+    PromotionPreview,
+    PromotionRequest,
+    StudentStatusChange,
+    StudentStatusChangeOut,
 )
 from modules.students.schemas import (
     DuplicateCheck,
@@ -388,6 +396,59 @@ async def restore_guardian(ctx: ActionContext, payload: dict) -> GuardianOut:
     return await guardian_service.guardian_view(ctx.session, row, locale=ctx.principal.locale)
 
 
+async def preview_promotion(ctx: ActionContext, payload: dict) -> PromotionPreview:
+    data = PromotionRequest.model_validate(_body(payload, "student_id"))
+    return await progression_service.preview_promotion(ctx.session, data)
+
+
+@action(
+    key="students.promotions.preview",
+    module="students",
+    permission="students.manage",
+    risk="read",
+    describe="Preview a bulk promotion, its target sections and warnings",
+    input=PromotionRequest,
+    output=PromotionPreview,
+)
+async def preview_promotion_action(ctx: ActionContext, payload: dict) -> PromotionPreview:
+    return await preview_promotion(ctx, payload)
+
+
+@action(
+    key="students.promotions.apply",
+    module="students",
+    permission="students.manage",
+    risk="bulk",
+    describe="Promote, repeat or graduate a whole section or level in one audited batch",
+    input=PromotionRequest,
+    output=PromotionApplyOut,
+    preview=preview_promotion,
+)
+async def apply_promotion(ctx: ActionContext, payload: dict) -> PromotionApplyOut:
+    data = PromotionRequest.model_validate(_body(payload, "student_id"))
+    result = await progression_service.apply_promotion(ctx.session, ctx.principal, data, via=ctx.via)
+    await _commit(ctx)
+    return result
+
+
+@action(
+    key="students.status.change",
+    module="students",
+    permission="students.manage",
+    risk="write",
+    describe="Transfer out, withdraw, graduate, convert to alumni or reinstate a student",
+    input=StudentStatusChange,
+    output=StudentStatusChangeOut,
+)
+async def change_student_status(ctx: ActionContext, payload: dict) -> StudentStatusChangeOut:
+    data = StudentStatusChange.model_validate(_body(payload, "student_id"))
+    result = await progression_service.change_status(
+        ctx.session, ctx.principal, _student_id(payload), data, via=ctx.via
+    )
+    await _commit(ctx)
+    return result
+
+
 @action(
     key="students.medical.get",
     module="students",
@@ -420,6 +481,8 @@ async def update_medical(ctx: ActionContext, payload: dict) -> MedicalOut:
 
 __all__ = [
     "add_guardian",
+    "apply_promotion",
+    "change_student_status",
     "create_enrollment",
     "delete_enrollment",
     "delete_student",
@@ -429,6 +492,7 @@ __all__ = [
     "list_enrollments",
     "list_guardians",
     "preview_number",
+    "preview_promotion_action",
     "preview_register",
     "register_student",
     "remove_guardian",

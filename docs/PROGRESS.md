@@ -101,7 +101,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P2-08 — Students UI (web)
 - [x] P2-09 — Module `admissions`
 - [x] P2-10 — Admissions UI and public application page
-- [ ] P2-11 — Promotion and transfer
+- [x] P2-11 — Promotion and transfer
 - [ ] P2-12 — Mobile: student directory/profile/registration
 - [ ] P2-13 — Events
 - [ ] P2-SEED — Seed

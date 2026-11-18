@@ -175,3 +175,87 @@ export interface SavedView {
   name: string;
   filters: StudentFilters;
 }
+
+export type PromotionAction = "promote" | "repeat" | "graduate" | "skip";
+
+export interface PromotionRow {
+  student_id: string;
+  student_number: string;
+  full_name: string;
+  status: StudentStatus;
+  current_level_id: string;
+  current_level_name: string;
+  current_level_sort_order: number;
+  current_section_id: string | null;
+  current_section_code: string | null;
+  action: PromotionAction;
+  next_level_id: string | null;
+  next_level_name: string | null;
+  target_level_id: string | null;
+  target_level_name: string | null;
+  target_section_id: string | null;
+  target_section_code: string | null;
+  warnings: string[];
+  blocking: boolean;
+}
+
+export interface PromotionPreview {
+  source_year_id: string;
+  target_year_id: string;
+  total: number;
+  promote: number;
+  repeat: number;
+  graduate: number;
+  skip: number;
+  blocking: number;
+  items: PromotionRow[];
+}
+
+export interface PromotionApplyOut {
+  source_year_id: string;
+  target_year_id: string;
+  enrolled: number;
+  promoted: number;
+  repeated: number;
+  graduated: number;
+  skipped: number;
+  items: PromotionRow[];
+}
+
+export interface PromotionExceptionInput {
+  student_id: string;
+  action: PromotionAction;
+  target_level_id?: string;
+  target_section_id?: string;
+}
+
+export interface PromotionRequestInput {
+  source_year_id: string;
+  target_year_id: string;
+  source_level_id?: string;
+  source_section_id?: string;
+  student_ids?: string[];
+  exceptions?: PromotionExceptionInput[];
+  effective_date?: string;
+  reason?: string;
+}
+
+export type StudentStatusAction =
+  | "transfer_out"
+  | "withdraw"
+  | "graduate"
+  | "alumni"
+  | "reinstate";
+
+export interface StudentStatusChangeInput {
+  action: StudentStatusAction;
+  exit_date?: string;
+  exit_reason?: string;
+  row_version?: number;
+}
+
+export interface StudentStatusChangeOut {
+  action: StudentStatusAction;
+  changed: boolean;
+  student: StudentDetail;
+}

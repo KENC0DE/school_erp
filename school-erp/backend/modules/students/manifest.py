@@ -4,6 +4,7 @@ from core.modules.manifest import ModuleManifest, Nav, Perm
 
 from modules.students import actions as _actions  # noqa: F401 - registers actions
 from modules.students import models as _models  # noqa: F401 - registers models
+from modules.students import revert as _revert  # noqa: F401 - registers revert handlers
 from modules.students.router import router
 from modules.students.settings import StudentSettings
 

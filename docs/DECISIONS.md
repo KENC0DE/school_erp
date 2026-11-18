@@ -1388,3 +1388,51 @@ and recorded here (date, decision, reason).
 - **Guardians are editable only while taking the application.** The service has
   no guardian update route, so the edit form explains that guardians are managed
   from the student record after enrolment instead of pretending to edit them.
+
+## 2026-11-18 — P2-11 promotion and transfer
+
+- **One planner serves both preview and apply.** `progression_service._plan`
+  resolves the next in-scope level, the matching target section and every
+  warning; `preview_promotion` only serialises its rows, while
+  `apply_promotion` re-runs it and writes the result. The two screens therefore
+  cannot disagree about which students move or where.
+- **Defaults are deterministic.** A student below the last in-scope level is
+  `promote`; a student in the last level is `graduate`. A manual exception may
+  override this with `promote`, `repeat`, `graduate` or `skip`. `skip` leaves
+  the profile status untouched, so a mistaken row in a batch has no side effect.
+- **Missing target sections are warnings, not blocks.** Sections have no id
+  continuity across years, so the planner carries the source section `code`
+  over to the target level. If that code is absent the student is enrolled in
+  the target level without a section and the row shows
+  `students.progress.warning.section_unmapped`; the office can edit the
+  enrollment afterwards. A target section that was explicitly supplied but
+  belongs to another year or level is blocking, because the request itself is
+  inconsistent.
+- **Already-enrolled students are skipped.** Running a batch twice must not
+  duplicate placements, so any student with a live enrollment in the target
+  year becomes `skip` with
+  `students.progress.warning.already_enrolled`, regardless of their exception.
+- **Profile statuses record the outcome.** `promote` sets `promoted`, `repeat`
+  sets `repeating`, and `graduate` sets `graduated` with `exit_date` and
+  `exit_reason`. A capacity warning (`section_full`) never blocks a batch: the
+  school may deliberately overfill a section, and the office decides.
+- **Status transitions are explicit.** `transfer_out`, `withdraw` and
+  `graduate` are allowed from `active`, `promoted` and `repeating`; `alumni`
+  only from `graduated`; `reinstate` only from `transferred_out` or
+  `withdrawn`. `transfer_out` and `withdraw` require a reason. Graduation is
+  additionally checked against the latest enrollment and the highest in-scope
+  level, so the single-student route cannot bypass the bulk rule.
+- **Audit rollback restores both halves of a promotion.** The
+  `student_progression` reverter restores the before-status and exit fields and
+  soft-deletes the enrollment created by that same entry. It compares the
+  before and after enrollment ids, so a status change that did not create an
+  enrollment never deletes an unrelated one.
+- **The transfer-out certificate is deferred to Document Studio.** The
+  certificate is a printable artifact owned by the documents module in Phase 5;
+  Phase 2 records the transfer-out status, exit date and reason so the template
+  can be generated when that module lands.
+- **Promotion rules wait for Phase 4 through a resolver hook.** `_plan` accepts
+  an optional `rule_resolver` callable that receives a candidate and returns an
+  action. The default resolver encodes only the next-level/final-level rule;
+  P4-03 will pass the assessment rule engine through the same hook without
+  changing the HTTP surface.

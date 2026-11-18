@@ -20,6 +20,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.students import documents_service
 from modules.students.actions import (
     add_guardian,
+    apply_promotion,
+    change_student_status,
     create_enrollment,
     delete_enrollment,
     delete_student,
@@ -29,6 +31,7 @@ from modules.students.actions import (
     list_enrollments,
     list_guardians,
     preview_number,
+    preview_promotion_action,
     preview_register,
     register_student,
     remove_guardian,
@@ -40,6 +43,13 @@ from modules.students.actions import (
     update_guardian,
     update_medical,
     update_student,
+)
+from modules.students.progression_schemas import (
+    PromotionApplyOut,
+    PromotionPreview,
+    PromotionRequest,
+    StudentStatusChange,
+    StudentStatusChangeOut,
 )
 from modules.students.schemas import (
     DuplicateCheck,
@@ -173,6 +183,38 @@ async def get_photo_route(
     settings: Settings = Depends(get_app_settings),
 ) -> dict:
     return await documents_service.get_photo(session, storage, settings, student_id)
+
+
+# ------------------------------------------------------------------ progression
+
+
+@router.post("/promotions/preview", response_model=PromotionPreview)
+async def preview_promotion_route(
+    payload: PromotionRequest,
+    principal: Principal = Depends(require("students.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> PromotionPreview:
+    return await preview_promotion_action(_context(principal, session), payload.model_dump())
+
+
+@router.post("/promotions/apply", response_model=PromotionApplyOut)
+async def apply_promotion_route(
+    payload: PromotionRequest,
+    principal: Principal = Depends(require("students.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> PromotionApplyOut:
+    return await apply_promotion(_context(principal, session), payload.model_dump())
+
+
+@router.post("/{student_id}/status", response_model=StudentStatusChangeOut)
+async def change_student_status_route(
+    student_id: uuid.UUID,
+    payload: StudentStatusChange,
+    principal: Principal = Depends(require("students.manage")),
+    session: AsyncSession = Depends(get_session),
+) -> StudentStatusChangeOut:
+    body = _with_student(payload.model_dump(exclude_unset=True), student_id)
+    return await change_student_status(_context(principal, session), body)
 
 
 @router.get("/{student_id}", response_model=StudentOut)

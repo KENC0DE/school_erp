@@ -1,5 +1,11 @@
 import { ApiRequestError } from "@erp/api-client";
-import { EmptyState, ErrorState, LoadingState, Page, PageHeader } from "@erp/ui-web";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  Page,
+  PageHeader,
+} from "@erp/ui-web";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 
@@ -16,9 +22,20 @@ import {
   newViewId,
   persistSavedViews,
 } from "./savedViews";
-import { hasPermission, useLevels, useSections, useStudents, useYears } from "./queries";
+import {
+  hasPermission,
+  useLevels,
+  useSections,
+  useStudents,
+  useYears,
+} from "./queries";
 import { StudentRegisterDialog } from "./StudentRegisterDialog";
-import type { SavedView, StudentFilters, StudentStatus, StudentSummary } from "./types";
+import type {
+  SavedView,
+  StudentFilters,
+  StudentStatus,
+  StudentSummary,
+} from "./types";
 
 const STATUSES: StudentStatus[] = [
   "applicant",
@@ -31,7 +48,9 @@ const STATUSES: StudentStatus[] = [
   "alumni",
 ];
 
-function statusVariant(status: StudentStatus): "neutral" | "success" | "warning" | "danger" | "info" {
+function statusVariant(
+  status: StudentStatus,
+): "neutral" | "success" | "warning" | "danger" | "info" {
   if (status === "active") return "success";
   if (status === "applicant") return "info";
   if (status === "repeating" || status === "promoted") return "warning";
@@ -92,7 +111,10 @@ export function StudentsPage() {
   function saveView() {
     const name = viewName.trim();
     if (!name) return;
-    const next = [...views, { id: newViewId(), name, filters: { ...filters, q: draftQuery.trim() } }];
+    const next = [
+      ...views,
+      { id: newViewId(), name, filters: { ...filters, q: draftQuery.trim() } },
+    ];
     setViews(next);
     persistSavedViews(next);
     setSavingView(false);
@@ -120,16 +142,33 @@ export function StudentsPage() {
         description={t("students.intro")}
         actions={
           canManage ? (
-            <Button onClick={() => setRegistering(true)} data-testid="student-register-open">
-              {t("students.register.open")}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                className="ui-btn ui-btn--outline"
+                to="/students/promotions"
+              >
+                {t("students.progress.open")}
+              </Link>
+              <Button
+                onClick={() => setRegistering(true)}
+                data-testid="student-register-open"
+              >
+                {t("students.register.open")}
+              </Button>
+            </div>
           ) : undefined
         }
       />
 
       {registered ? (
-        <p className="text-sm text-primary" role="status" data-testid="student-registered">
-          {t("students.register.created", { name: registered.person.full_name })}{" "}
+        <p
+          className="text-sm text-primary"
+          role="status"
+          data-testid="student-registered"
+        >
+          {t("students.register.created", {
+            name: registered.person.full_name,
+          })}{" "}
           <Link className="ui-link" to={`/students/${registered.id}`}>
             {t("students.open_profile")}
           </Link>
@@ -177,7 +216,9 @@ export function StudentsPage() {
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="font-medium">{t("students.enrollment.year")}</span>
+              <span className="font-medium">
+                {t("students.enrollment.year")}
+              </span>
               <select
                 className="ui-select"
                 data-testid="student-year-filter"
@@ -201,7 +242,9 @@ export function StudentsPage() {
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="font-medium">{t("students.enrollment.level")}</span>
+              <span className="font-medium">
+                {t("students.enrollment.level")}
+              </span>
               <select
                 className="ui-select"
                 data-testid="student-level-filter"
@@ -224,14 +267,19 @@ export function StudentsPage() {
             </label>
 
             <label className="space-y-1 text-sm">
-              <span className="font-medium">{t("students.enrollment.section")}</span>
+              <span className="font-medium">
+                {t("students.enrollment.section")}
+              </span>
               <select
                 className="ui-select"
                 data-testid="student-section-filter"
                 value={filters.section_id}
                 disabled={!filters.year_id || !filters.level_id}
                 onChange={(event) =>
-                  setFilters((current) => ({ ...current, section_id: event.target.value }))
+                  setFilters((current) => ({
+                    ...current,
+                    section_id: event.target.value,
+                  }))
                 }
               >
                 <option value="">{t("students.filter.all_sections")}</option>
@@ -304,7 +352,10 @@ export function StudentsPage() {
               requestId={requestIdOf(students.error)}
               requestIdLabel={t("common.request_id")}
               retry={
-                <Button variant="outline" onClick={() => void students.refetch()}>
+                <Button
+                  variant="outline"
+                  onClick={() => void students.refetch()}
+                >
                   {t("common.retry")}
                 </Button>
               }
@@ -321,7 +372,9 @@ export function StudentsPage() {
               testId="students-empty"
               action={
                 canManage ? (
-                  <Button onClick={() => setRegistering(true)}>{t("students.register.open")}</Button>
+                  <Button onClick={() => setRegistering(true)}>
+                    {t("students.register.open")}
+                  </Button>
                 ) : undefined
               }
             />
@@ -329,9 +382,16 @@ export function StudentsPage() {
         </Card>
       ) : (
         <Card>
-          <CardContent className="overflow-x-auto p-0" tabIndex={0} role="region" aria-label={t("students.title")}>
+          <CardContent
+            className="overflow-x-auto p-0"
+            tabIndex={0}
+            role="region"
+            aria-label={t("students.title")}
+          >
             <table className="ui-table" data-testid="students-table">
-              <caption className="ui-visually-hidden">{t("students.title")}</caption>
+              <caption className="ui-visually-hidden">
+                {t("students.title")}
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">{t("students.number")}</th>
@@ -343,7 +403,10 @@ export function StudentsPage() {
               </thead>
               <tbody>
                 {rows.map((student) => (
-                  <tr key={student.id} data-testid={`student-row-${student.id}`}>
+                  <tr
+                    key={student.id}
+                    data-testid={`student-row-${student.id}`}
+                  >
                     <td className="ui-num">
                       <Link className="ui-link" to={`/students/${student.id}`}>
                         {student.student_number}
@@ -354,7 +417,11 @@ export function StudentsPage() {
                         {student.person.full_name}
                       </Link>
                       {student.person.given_name_am ? (
-                        <span className="block text-xs text-muted-foreground" lang="am" dir="auto">
+                        <span
+                          className="block text-xs text-muted-foreground"
+                          lang="am"
+                          dir="auto"
+                        >
                           {[
                             student.person.given_name_am,
                             student.person.father_name_am,
@@ -387,7 +454,9 @@ export function StudentsPage() {
             </table>
           </CardContent>
           <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">
-            {t("students.count", { count: students.data?.total ?? rows.length })}
+            {t("students.count", {
+              count: students.data?.total ?? rows.length,
+            })}
           </p>
         </Card>
       )}
