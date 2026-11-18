@@ -50,6 +50,12 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         }
         year_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_academic_years)")}
         term_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_terms)")}
+        subject_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_subjects)")}
+        section_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_sections)")}
+        level_subject_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(academics_level_subjects)")
+        }
+        group_columns = {row[1] for row in connection.execute("PRAGMA table_info(academics_subject_groups)")}
     finally:
         connection.close()
 
@@ -73,9 +79,14 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "academics_stage_levels",
         "academics_academic_years",
         "academics_terms",
+        "academics_subjects",
+        "academics_level_subjects",
+        "academics_subject_groups",
+        "academics_subject_group_members",
+        "academics_sections",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0016_academic_years"
+    assert version == "0017_subjects_sections"
 
     assert {
         "failed_login_count",
@@ -89,6 +100,10 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
     assert {"require_totp", "is_active"} <= role_columns
     assert {"code", "start_date", "end_date", "term_system", "status"} <= year_columns
     assert {"year_id", "number", "start_date", "end_date", "status"} <= term_columns
+    assert {"code", "name", "name_am", "sort_order", "is_active"} <= subject_columns
+    assert {"year_id", "level_id", "code", "capacity", "homeroom_user_id"} <= section_columns
+    assert {"level_id", "subject_id", "credit"} <= level_subject_columns
+    assert {"code", "name", "name_am", "sort_order", "is_active"} <= group_columns
     assert {"reason", "granted_by"} <= override_columns
     assert {"available_at", "last_attempt_at", "last_error"} <= outbox_columns
 

@@ -156,6 +156,18 @@ async def get_level(
     return _level_out(level, first, last)
 
 
+async def scoped_level(session: AsyncSession, level_id: uuid.UUID) -> GradeLevel:
+    """Return a live level that belongs to the school's current scope."""
+    level = await _live_level(session, level_id)
+    first, last = await academic_scope(session)
+    if not _in_scope(level, first, last):
+        raise NotFound(
+            "That grade level is outside the school's scope",
+            message_key="error.academics.level_out_of_scope",
+        )
+    return level
+
+
 async def _live_level(session: AsyncSession, level_id: uuid.UUID) -> GradeLevel:
     level = (await session.execute(select(GradeLevel).where(GradeLevel.id == level_id))).scalar_one_or_none()
     if level is None:
@@ -719,6 +731,7 @@ __all__ = [
     "restore_level",
     "restore_stage",
     "scope_view",
+    "scoped_level",
     "update_level",
     "update_scope",
     "update_stage",

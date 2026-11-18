@@ -126,6 +126,121 @@ class Term(BusinessModel):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
 
 
+class Subject(BusinessModel):
+    """A subject the school teaches. Assignment to levels carries credit."""
+
+    __tablename__ = "academics_subjects"
+    __table_args__ = (
+        Index(
+            "uq_academics_subjects_code_live",
+            "code",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index("ix_academics_subjects_sort_order", "sort_order"),
+    )
+
+    code: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_am: Mapped[str | None] = mapped_column(String(120))
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class LevelSubject(Base):
+    """Which subjects a grade level offers, with an integer credit/weight."""
+
+    __tablename__ = "academics_level_subjects"
+
+    level_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_grade_levels.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_subjects.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    credit: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class SubjectGroup(BusinessModel):
+    """A named group of subjects (for example electives or a stream)."""
+
+    __tablename__ = "academics_subject_groups"
+    __table_args__ = (
+        Index(
+            "uq_academics_subject_groups_code_live",
+            "code",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index("ix_academics_subject_groups_sort_order", "sort_order"),
+    )
+
+    code: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_am: Mapped[str | None] = mapped_column(String(120))
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class SubjectGroupMember(Base):
+    __tablename__ = "academics_subject_group_members"
+
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_subject_groups.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_subjects.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+
+class Section(BusinessModel):
+    """A class group for one level in one academic year."""
+
+    __tablename__ = "academics_sections"
+    __table_args__ = (
+        Index(
+            "uq_academics_sections_year_level_code_live",
+            "year_id",
+            "level_id",
+            "code",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index("ix_academics_sections_year_level", "year_id", "level_id"),
+    )
+
+    year_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_academic_years.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    level_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("academics_grade_levels.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    code: Mapped[str] = mapped_column(String(30), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(120))
+    name_am: Mapped[str | None] = mapped_column(String(120))
+    capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=40)
+    homeroom_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
 class StageLevel(Base):
     """Ordered membership: which grade levels belong to a stage."""
 
@@ -143,4 +258,15 @@ class StageLevel(Base):
     )
 
 
-__all__ = ["AcademicYear", "GradeLevel", "Stage", "StageLevel", "Term"]
+__all__ = [
+    "AcademicYear",
+    "GradeLevel",
+    "LevelSubject",
+    "Section",
+    "Stage",
+    "StageLevel",
+    "Subject",
+    "SubjectGroup",
+    "SubjectGroupMember",
+    "Term",
+]

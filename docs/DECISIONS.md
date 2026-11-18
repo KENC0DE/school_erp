@@ -958,3 +958,33 @@ and recorded here (date, decision, reason).
 - **Term editing follows the year state.** Names and dates can be edited while
   the year is a draft or open; a closed year rejects edits. Term dates are
   validated to stay inside the year, in chronological order and non-overlapping.
+
+## 2026-11-18 — P2-03 subjects, level assignments, subject groups and sections
+
+- **Subjects are school-global, not per year.** A subject (name, code, stream)
+  is a stable catalogue entry reused across years. What changes per year is the
+  *offering*: `academics_level_subjects` says which subjects a level studies,
+  and sections sit per year and level. This keeps historical results attached
+  to one subject row instead of a copy per year.
+- **Association tables are replaced, not versioned.** `academics_level_subjects`
+  and `academics_subject_group_members` are pure join tables with no own
+  identity or history. `PUT`/`PATCH` replaces the full set for its parent in one
+  audited operation; removed rows are hard-deleted because the audit entry
+  records the previous and new sets. Soft delete is still used everywhere a row
+  carries meaning of its own (subjects, groups, sections).
+- **Homeroom teacher validation is deferred to Phase 3.** `sections.homeroom_user_id`
+  is already a foreign key to `users` and only active users can be assigned, but
+  the "must be a staff member of this school" rule needs Phase 3 staff records.
+  The FK plus active-user check is the strongest guarantee available now; the
+  stricter rule will be added when staff profiles exist.
+- **Section listings honour the school scope by default.** A user with
+  `academics.view` sees sections inside the configured level range; passing
+  `scope=all` requires `academics.manage` and shows every level. This mirrors
+  the grade-level behaviour and stops a primary coordinator from curating
+  secondary sections by accident.
+- **Closed years freeze section mutations.** Sections belong to a year, so
+  create/update/delete/restore reject a closed year exactly like term edits. The
+  section can still be read, and reopening the year restores editability.
+- **Capacity is an integer count of seats.** It is nullable (capacity unknown)
+  and validated non-negative; occupancy is derived from enrollments in Phase 2
+  later tasks rather than stored twice.
