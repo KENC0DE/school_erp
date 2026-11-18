@@ -792,6 +792,13 @@ async def test_students_permissions_module_gate_and_tools(app, client, superadmi
         json={"enabled": False},
     )
     assert disabled.status_code == 200, disabled.text
+    # Attendance also depends on students, so it must be switched off first.
+    disabled = await client.put(
+        "/api/v1/system/modules/attendance",
+        headers=superadmin_headers,
+        json={"enabled": False},
+    )
+    assert disabled.status_code == 200, disabled.text
     disabled = await client.put(
         "/api/v1/system/modules/students",
         headers=superadmin_headers,

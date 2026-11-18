@@ -71,8 +71,11 @@ async def test_all_default_roles_are_seeded_with_declared_permissions(
     assert roles["teacher"]["permissions"] == [
         {"permission": "academics.view", "scope": "all"},
         {"permission": "ai.use", "scope": "all"},
+        {"permission": "attendance.record", "scope": "assigned_subjects"},
+        {"permission": "attendance.view", "scope": "assigned_subjects"},
         {"permission": "sample.notes.create", "scope": "all"},
         {"permission": "sample.notes.view", "scope": "all"},
+        {"permission": "staff.attendance.view", "scope": "self"},
         {"permission": "staff.leave.request", "scope": "self"},
         {"permission": "staff.leave.view", "scope": "self"},
         {"permission": "students.view", "scope": "assigned_subjects"},
@@ -158,8 +161,11 @@ async def test_reset_permissions_restores_the_shipped_matrix(client, app, supera
     assert roles["teacher"]["permissions"] == [
         {"permission": "academics.view", "scope": "all"},
         {"permission": "ai.use", "scope": "all"},
+        {"permission": "attendance.record", "scope": "assigned_subjects"},
+        {"permission": "attendance.view", "scope": "assigned_subjects"},
         {"permission": "sample.notes.create", "scope": "all"},
         {"permission": "sample.notes.view", "scope": "all"},
+        {"permission": "staff.attendance.view", "scope": "self"},
         {"permission": "staff.leave.request", "scope": "self"},
         {"permission": "staff.leave.view", "scope": "self"},
         {"permission": "students.view", "scope": "assigned_subjects"},

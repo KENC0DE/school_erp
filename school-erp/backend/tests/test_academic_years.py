@@ -402,6 +402,13 @@ async def test_academic_years_permissions_and_module_gate(client, app, seeded, s
         json={"enabled": False},
     )
     assert off_admissions.status_code == 200, off_admissions.text
+    # Attendance also depends on students, so it must be switched off first.
+    off_attendance = await client.put(
+        "/api/v1/system/modules/attendance",
+        headers=superadmin_headers,
+        json={"enabled": False},
+    )
+    assert off_attendance.status_code == 200, off_attendance.text
     off_students = await client.put(
         "/api/v1/system/modules/students",
         headers=superadmin_headers,

@@ -177,8 +177,79 @@ class SessionList(BaseModel):
     total: int
 
 
+class AttendanceReportQuery(BaseModel):
+    from_date: date
+    to_date: date
+    year_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    student_id: uuid.UUID | None = None
+    threshold: int = Field(default=85, ge=0, le=100)
+    below_only: bool = False
+    limit: int = Field(default=500, ge=1, le=2000)
+
+
+class StudentAttendanceReportRow(BaseModel):
+    student_id: str
+    student_number: str
+    student_name: str
+    student_name_am: str | None = None
+    year_id: str
+    year_code: str
+    section_id: str
+    section_code: str
+    section_name: str | None = None
+    total_records: int
+    present: int
+    absent: int
+    late: int
+    excused: int
+    attended: int
+    rate_percent: int
+    below_threshold: bool
+
+
+class SectionAttendanceReportRow(BaseModel):
+    year_id: str
+    year_code: str
+    section_id: str
+    section_code: str
+    section_name: str | None = None
+    level_id: str
+    level_code: str
+    level_name: str
+    student_count: int
+    session_count: int
+    total_records: int
+    present: int
+    absent: int
+    late: int
+    excused: int
+    attended: int
+    rate_percent: int
+    below_threshold: bool
+
+
+class StudentAttendanceReport(BaseModel):
+    from_date: date
+    to_date: date
+    threshold: int
+    below_only: bool
+    total: int
+    items: list[StudentAttendanceReportRow]
+
+
+class SectionAttendanceReport(BaseModel):
+    from_date: date
+    to_date: date
+    threshold: int
+    below_only: bool
+    total: int
+    items: list[SectionAttendanceReportRow]
+
+
 __all__ = [
     "AttendanceMode",
+    "AttendanceReportQuery",
     "BulkRecordsInput",
     "MODES",
     "RECORD_STATUSES",
@@ -188,6 +259,8 @@ __all__ = [
     "RecordUpdate",
     "RosterEntry",
     "SESSION_STATUSES",
+    "SectionAttendanceReport",
+    "SectionAttendanceReportRow",
     "SessionCounts",
     "SessionCreate",
     "SessionDetail",
@@ -196,4 +269,6 @@ __all__ = [
     "SessionQuery",
     "SessionStatus",
     "SessionUpdate",
+    "StudentAttendanceReport",
+    "StudentAttendanceReportRow",
 ]

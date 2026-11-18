@@ -21,20 +21,25 @@ from modules.attendance.actions import (
     lock_session,
     reopen_session,
     search_sessions,
+    section_report,
+    student_report,
     submit_session,
     update_record,
     update_session,
     upsert_records,
 )
 from modules.attendance.schemas import (
+    AttendanceReportQuery,
     BulkRecordsInput,
     RecordUpdate,
+    SectionAttendanceReport,
     SessionCreate,
     SessionDetail,
     SessionList,
     SessionQuery,
     SessionStatus,
     SessionUpdate,
+    StudentAttendanceReport,
 )
 
 router = APIRouter(tags=["attendance"])
@@ -85,6 +90,58 @@ async def create_session_route(
     session: AsyncSession = Depends(db_session),
 ) -> SessionDetail:
     return await create_session(_context(principal, session), payload.model_dump())
+
+
+@router.get("/reports/students", response_model=StudentAttendanceReport)
+async def student_report_route(
+    from_date: date = Query(...),
+    to_date: date = Query(...),
+    year_id: uuid.UUID | None = Query(None),
+    section_id: uuid.UUID | None = Query(None),
+    student_id: uuid.UUID | None = Query(None),
+    threshold: int = Query(85, ge=0, le=100),
+    below_only: bool = Query(False),
+    limit: int = Query(500, ge=1, le=2000),
+    principal: Principal = Depends(require("attendance.view")),
+    session: AsyncSession = Depends(db_session),
+) -> StudentAttendanceReport:
+    query = AttendanceReportQuery(
+        from_date=from_date,
+        to_date=to_date,
+        year_id=year_id,
+        section_id=section_id,
+        student_id=student_id,
+        threshold=threshold,
+        below_only=below_only,
+        limit=limit,
+    )
+    return await student_report(_context(principal, session), query.model_dump(mode="json"))
+
+
+@router.get("/reports/sections", response_model=SectionAttendanceReport)
+async def section_report_route(
+    from_date: date = Query(...),
+    to_date: date = Query(...),
+    year_id: uuid.UUID | None = Query(None),
+    section_id: uuid.UUID | None = Query(None),
+    student_id: uuid.UUID | None = Query(None),
+    threshold: int = Query(85, ge=0, le=100),
+    below_only: bool = Query(False),
+    limit: int = Query(500, ge=1, le=2000),
+    principal: Principal = Depends(require("attendance.view")),
+    session: AsyncSession = Depends(db_session),
+) -> SectionAttendanceReport:
+    query = AttendanceReportQuery(
+        from_date=from_date,
+        to_date=to_date,
+        year_id=year_id,
+        section_id=section_id,
+        student_id=student_id,
+        threshold=threshold,
+        below_only=below_only,
+        limit=limit,
+    )
+    return await section_report(_context(principal, session), query.model_dump(mode="json"))
 
 
 @router.get("/{session_id}", response_model=SessionDetail)

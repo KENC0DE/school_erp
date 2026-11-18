@@ -3,6 +3,7 @@ from __future__ import annotations
 from core.modules.manifest import ModuleManifest, Nav, Perm
 
 from modules.staff import actions as _actions  # noqa: F401 - registers actions
+from modules.staff import attendance_actions as _attendance_actions  # noqa: F401
 from modules.staff import leave_actions as _leave_actions  # noqa: F401 - registers actions
 from modules.staff import models as _models  # noqa: F401 - registers models
 from modules.staff.router import router
@@ -21,6 +22,16 @@ MANIFEST = ModuleManifest(
         Perm("staff.leave.request", "staff.perm.leave_request", scopes=("all", "self")),
         Perm("staff.leave.approve", "staff.perm.leave_approve", scopes=("all", "department")),
         Perm("staff.leave.manage", "staff.perm.leave_manage"),
+        Perm(
+            "staff.attendance.view",
+            "staff.perm.attendance_view",
+            scopes=("all", "department", "self"),
+        ),
+        Perm(
+            "staff.attendance.record",
+            "staff.perm.attendance_record",
+            scopes=("all", "department"),
+        ),
     ],
     nav=[
         Nav(
@@ -33,7 +44,7 @@ MANIFEST = ModuleManifest(
         )
     ],
     router=router,
-    actions=[*_actions.__all__, *_leave_actions.__all__],
+    actions=[*_actions.__all__, *_leave_actions.__all__, *_attendance_actions.__all__],
     i18n_namespaces=["staff"],
     licensable=True,
     default_enabled=True,

@@ -51,6 +51,7 @@ from modules.staff.actions import (
     update_staff,
     update_teaching_assignment,
 )
+from modules.staff.attendance_router import attendance_router
 from modules.staff.leave_router import leave_router
 from modules.staff.schemas import (
     AccountLink,
@@ -83,7 +84,9 @@ from modules.staff.schemas import (
 )
 
 router = APIRouter(tags=["staff"])
-# Leave routes must come before the dynamic ``/{staff_id}`` routes.
+# Static staff-attendance and leave routes must come before the dynamic
+# ``/{staff_id}`` routes.
+router.include_router(attendance_router)
 router.include_router(leave_router)
 
 

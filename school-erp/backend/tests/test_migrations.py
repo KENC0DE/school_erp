@@ -98,9 +98,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         payroll_rule_set_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(payroll_rule_sets)")
         }
-        payroll_rule_columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(payroll_rules)")
-        }
+        payroll_rule_columns = {row[1] for row in connection.execute("PRAGMA table_info(payroll_rules)")}
         payroll_bracket_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(payroll_rule_brackets)")
         }
@@ -116,6 +114,9 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         }
         attendance_record_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(attendance_records)")
+        }
+        staff_attendance_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(staff_attendance)")
         }
     finally:
         connection.close()
@@ -175,9 +176,10 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "payroll_payslip_lines",
         "attendance_sessions",
         "attendance_records",
+        "staff_attendance",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0026_attendance"
+    assert version == "0027_staff_attendance"
 
     assert {
         "failed_login_count",
@@ -407,6 +409,17 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "recorded_at",
         "recorded_by",
     } <= attendance_record_columns
+    assert {
+        "staff_id",
+        "date",
+        "status",
+        "reason",
+        "note",
+        "recorded_at",
+        "recorded_by",
+        "row_version",
+        "deleted_at",
+    } <= staff_attendance_columns
     assert {"reason", "granted_by"} <= override_columns
     assert {"available_at", "last_attempt_at", "last_error"} <= outbox_columns
 

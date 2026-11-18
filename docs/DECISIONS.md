@@ -1844,3 +1844,46 @@ and recorded here (date, decision, reason).
   roster and lets the teacher change only exceptions. Saves send just changed
   students in chunks of at most 200, keeping large sections within the bulk API
   limit while the response refreshes the whole register.
+
+## 2026-11-18 — P3-08 staff attendance, absence events and reports
+
+- **Staff attendance lives in `staff`, not `attendance`.** Student registers are
+  per session and per section; staff presence is one row per `(staff, date)`.
+  Keeping it in `staff` lets the existing staff scopes (`all`, `department`,
+  `self`) apply unchanged and avoids a second meaning of "session". The table is
+  `staff_attendance`, and the live unique index on `(staff_id, date)` makes an
+  offline replay or correction idempotent.
+- **Only employed staff appear on the day roster.** `active` and `on_leave`
+  staff are listed; suspended, resigned and terminated staff are excluded and
+  cannot be recorded, because their contract no longer funds attendance.
+  `leave` is a status on the day row, not a copy of an approved leave request.
+- **Recording is a bulk upsert with an optional row version.** The day view
+  returns the roster with `record_id` and `row_version`, so the UI sends only
+  exceptions. An omitted reason or note clears the old value on upsert (the row
+  is the full status), while a stale `row_version` returns 409. Create and
+  update are separate audit actions: nothing is written for an unchanged
+  replay.
+- **`attendance.absent_marked` fires only on a transition to absent.** A newly
+  created absent record emits it, and an update emits it only when the previous
+  status was not already absent. Replaying the same absent entry, or correcting
+  another field on an already-absent row, emits nothing. The payload carries
+  session/record/student/year/section/date/mode/period/reason/late count and
+  is written in the same transaction as the record, so automation cannot see an
+  absence that was rolled back.
+- **Reports are integer aggregates, not rows fetched and summed in Python.**
+  Student rows group by `(student, year, section)` and section rows by
+  `(year, section)`, which keeps a promoted student's history in the right
+  section. Percentages are integers: `attended = present + late` and
+  `rate_percent = round_half_up(attended * 100 / total)`. The threshold
+  comparison uses that integer, so the same data cannot cross the threshold
+  differently on two platforms. `below_only` filters after aggregation, and
+  `limit` caps the response after sorting.
+- **Reports are scoped before aggregation.** `visible_section_ids` is applied to
+  the session join, so a caller with `assigned_subjects` or `own_class` scope
+  cannot infer another section's rate from a threshold sweep. An explicit
+  `section_id` outside scope yields an empty report rather than a 403, which
+  keeps list views simple without leaking existence.
+- **A report range is closed and bounded at 366 days.** The check runs in the
+  service as well as the schema so an action caller gets the same keyed error as
+  an HTTP caller (`attendance.error.report_range`/`_too_long`). Staff summaries
+  use the same reversal check (`staff.error.attendance_range`).

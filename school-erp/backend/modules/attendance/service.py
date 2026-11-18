@@ -17,6 +17,7 @@ from core.api.concurrency import ensure_row_version
 from core.audit.service import record
 from core.auth.models import User
 from core.auth.principal import Principal
+from core.events import service as events
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -555,6 +556,35 @@ def _record_values(
     return values
 
 
+async def _emit_absent(
+    session: AsyncSession,
+    principal: Principal,
+    session_row: AttendanceSession,
+    record_row: AttendanceRecord,
+) -> None:
+    """Publish the automation event when a student becomes absent."""
+    if record_row.status != "absent":
+        return
+    await events.emit(
+        session,
+        "attendance.absent_marked",
+        {
+            "session_id": str(session_row.id),
+            "record_id": str(record_row.id),
+            "student_id": str(record_row.student_id),
+            "year_id": str(session_row.year_id),
+            "section_id": str(session_row.section_id),
+            "date": session_row.date.isoformat(),
+            "mode": session_row.mode,
+            "period": session_row.period,
+            "reason": record_row.reason,
+            "late_minutes": record_row.late_minutes,
+            "recorded_at": record_row.recorded_at.isoformat(),
+        },
+        actor_id=principal.user_id,
+    )
+
+
 async def _live_records_for(
     session: AsyncSession,
     session_id: uuid.UUID,
@@ -628,6 +658,7 @@ async def upsert_records(
                 actor=principal,
                 via=via,
             )
+            await _emit_absent(session, principal, row, created)
             continue
 
         if item.row_version is not None:
@@ -637,6 +668,7 @@ async def upsert_records(
         if not changes:
             continue
         before = record_state(current)
+        was_absent = before["status"] == "absent"
         for key, value in changes.items():
             setattr(current, key, value)
         current.recorded_at = utcnow()
@@ -654,6 +686,8 @@ async def upsert_records(
             actor=principal,
             via=via,
         )
+        if not was_absent:
+            await _emit_absent(session, principal, row, current)
     await session.commit()
     return await _detail(session, row)
 
@@ -677,6 +711,7 @@ async def update_record(
     changes = {key: value for key, value in values.items() if getattr(current, key) != value}
     if changes:
         before = record_state(current)
+        was_absent = before["status"] == "absent"
         for key, value in changes.items():
             setattr(current, key, value)
         current.recorded_at = utcnow()
@@ -694,6 +729,8 @@ async def update_record(
             actor=principal,
             via=via,
         )
+        if not was_absent:
+            await _emit_absent(session, principal, row, current)
     await session.commit()
     return await _detail(session, row)
 

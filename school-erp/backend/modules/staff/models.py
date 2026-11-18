@@ -302,6 +302,46 @@ class StaffLeaveRequest(BusinessModel):
     decision_note: Mapped[str | None] = mapped_column(Text)
 
 
+class StaffAttendance(BusinessModel):
+    """One staff member's attendance for one day.
+
+    A school records staff presence separately from student registers: the
+    natural key is (staff, date) so a replay or correction never creates a
+    second row. ``leave`` marks an approved absence without duplicating the
+    leave request itself.
+    """
+
+    __tablename__ = "staff_attendance"
+    __table_args__ = (
+        Index(
+            "uq_staff_attendance_staff_date_live",
+            "staff_id",
+            "date",
+            unique=True,
+            **LIVE_INDEX,
+        ),
+        Index("ix_staff_attendance_date", "date"),
+        Index("ix_staff_attendance_staff_date", "staff_id", "date"),
+        Index("ix_staff_attendance_status", "status"),
+    )
+
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("staff_profiles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    # GC date; the UI shows the school's preferred calendar.
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="present")
+    reason: Mapped[str | None] = mapped_column(String(500))
+    note: Mapped[str | None] = mapped_column(Text)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recorded_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+    )
+
+
 class StaffNumberSequence(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """The last staff number issued for one numbering scope (atomic counter)."""
 
@@ -313,6 +353,7 @@ class StaffNumberSequence(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
 
 __all__ = [
+    "StaffAttendance",
     "StaffContract",
     "StaffDepartment",
     "StaffLeaveBalance",

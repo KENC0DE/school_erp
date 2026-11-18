@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from core.events.models import DomainEvent
+from sqlalchemy import select
+
 from tests.conftest import create_role, create_user, login, unique_email
 
 BASE = "/api/v1/attendance"
@@ -112,6 +115,22 @@ async def _activity(client, headers, **params) -> list[dict]:
     response = await client.get(ACTIVITY, headers=headers, params={"limit": 200, **params})
     assert response.status_code == 200, response.text
     return response.json()["items"]
+
+
+async def _absent_events(app) -> list[dict]:
+    async with app.state.db.session() as session:
+        rows = (
+            (
+                await session.execute(
+                    select(DomainEvent)
+                    .where(DomainEvent.event_type == "attendance.absent_marked")
+                    .order_by(DomainEvent.occurred_at, DomainEvent.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return [row.payload for row in rows]
 
 
 async def _teacher(client, app, headers, *, year: dict, section: dict, subject: dict) -> dict:
@@ -479,3 +498,208 @@ async def test_per_period_mode_follows_the_school_setting(client, superadmin_hea
     )
     assert future.status_code == 422
     assert future.json()["error"]["message_key"] == "attendance.error.future_date"
+
+
+async def test_absent_marking_emits_one_event_per_transition(client, app, superadmin_headers, seeded) -> None:
+    year, level, section = await _setup_section(client, superadmin_headers, year_code="2028-2029")
+    student = await _student(
+        client,
+        superadmin_headers,
+        number="S-EVENT-1",
+        given_name="Event",
+        year=year,
+        level=level,
+        section=section,
+    )
+    opened = await _open_session(
+        client,
+        superadmin_headers,
+        year,
+        section,
+        date="2026-10-05",
+    )
+    record = opened["records"][0]
+
+    marked = await client.post(
+        f"{BASE}/{opened['id']}/records",
+        headers=superadmin_headers,
+        json={"items": [{"student_id": student["id"], "status": "absent", "reason": "Sick"}]},
+    )
+    assert marked.status_code == 200, marked.text
+    events = await _absent_events(app)
+    assert len(events) == 1
+    payload = events[0]
+    assert payload["session_id"] == opened["id"]
+    assert payload["student_id"] == student["id"]
+    assert payload["section_id"] == section["id"]
+    assert payload["date"] == "2026-10-05"
+    assert payload["reason"] == "Sick"
+    assert payload["record_id"] == record["id"]
+
+    replay = await client.post(
+        f"{BASE}/{opened['id']}/records",
+        headers=superadmin_headers,
+        json={"items": [{"student_id": student["id"], "status": "absent", "reason": "Sick"}]},
+    )
+    assert replay.status_code == 200, replay.text
+    assert len(await _absent_events(app)) == 1
+
+    back = await client.patch(
+        f"{BASE}/{opened['id']}/records/{record['id']}",
+        headers=superadmin_headers,
+        json={"status": "present", "row_version": 2},
+    )
+    assert back.status_code == 200, back.text
+    assert len(await _absent_events(app)) == 1
+
+    again = await client.patch(
+        f"{BASE}/{opened['id']}/records/{record['id']}",
+        headers=superadmin_headers,
+        json={"status": "absent", "reason": "Family matter", "row_version": 3},
+    )
+    assert again.status_code == 200, again.text
+    events = await _absent_events(app)
+    assert len(events) == 2
+    assert events[1]["reason"] == "Family matter"
+
+
+async def test_reports_by_student_and_section_with_threshold_and_scope(
+    client, app, superadmin_headers, seeded
+) -> None:
+    year, level, section_a = await _setup_section(client, superadmin_headers, year_code="2029-2030")
+    section_b = await _section(client, superadmin_headers, year, level, code="B")
+    subject = await _subject(client, superadmin_headers, "math-rpt", "Mathematics")
+    teacher = await _teacher(
+        client,
+        app,
+        superadmin_headers,
+        year=year,
+        section=section_a,
+        subject=subject,
+    )
+    a_one = await _student(
+        client,
+        superadmin_headers,
+        number="S-RPT-A1",
+        given_name="Aster",
+        year=year,
+        level=level,
+        section=section_a,
+    )
+    a_two = await _student(
+        client,
+        superadmin_headers,
+        number="S-RPT-A2",
+        given_name="Abel",
+        year=year,
+        level=level,
+        section=section_a,
+    )
+    b_one = await _student(
+        client,
+        superadmin_headers,
+        number="S-RPT-B1",
+        given_name="Blen",
+        year=year,
+        level=level,
+        section=section_b,
+    )
+
+    for on_date in ("2026-10-07", "2026-10-08"):
+        opened_a = await _open_session(client, superadmin_headers, year, section_a, date=on_date)
+        opened_b = await _open_session(client, superadmin_headers, year, section_b, date=on_date)
+        recorded_a = await client.post(
+            f"{BASE}/{opened_a['id']}/records",
+            headers=superadmin_headers,
+            json={
+                "items": [
+                    {"student_id": a_one["id"], "status": "present"},
+                    {"student_id": a_two["id"], "status": "absent", "reason": "Sick"},
+                ]
+            },
+        )
+        assert recorded_a.status_code == 200, recorded_a.text
+        recorded_b = await client.post(
+            f"{BASE}/{opened_b['id']}/records",
+            headers=superadmin_headers,
+            json={"items": [{"student_id": b_one["id"], "status": "present"}]},
+        )
+        assert recorded_b.status_code == 200, recorded_b.text
+
+    params = {
+        "from_date": "2026-10-01",
+        "to_date": "2026-10-31",
+        "threshold": 60,
+    }
+    students = await client.get(
+        f"{BASE}/reports/students",
+        headers=superadmin_headers,
+        params={**params, "below_only": False},
+    )
+    assert students.status_code == 200, students.text
+    body = students.json()
+    assert body["total"] == 3
+    by_number = {row["student_number"]: row for row in body["items"]}
+    assert by_number["S-RPT-A1"]["total_records"] == 2
+    assert by_number["S-RPT-A1"]["present"] == 2
+    assert by_number["S-RPT-A1"]["rate_percent"] == 100
+    assert by_number["S-RPT-A1"]["below_threshold"] is False
+    assert by_number["S-RPT-A2"]["absent"] == 2
+    assert by_number["S-RPT-A2"]["rate_percent"] == 0
+    assert by_number["S-RPT-A2"]["below_threshold"] is True
+    assert by_number["S-RPT-A2"]["section_code"] == "A"
+
+    below = await client.get(
+        f"{BASE}/reports/students",
+        headers=superadmin_headers,
+        params={**params, "below_only": True},
+    )
+    assert below.status_code == 200, below.text
+    assert [row["student_number"] for row in below.json()["items"]] == ["S-RPT-A2"]
+
+    sections = await client.get(
+        f"{BASE}/reports/sections",
+        headers=superadmin_headers,
+        params={**params, "below_only": False},
+    )
+    assert sections.status_code == 200, sections.text
+    section_body = sections.json()
+    assert section_body["total"] == 2
+    section_rows = {row["section_code"]: row for row in section_body["items"]}
+    assert section_rows["A"]["rate_percent"] == 50
+    assert section_rows["A"]["below_threshold"] is True
+    assert section_rows["A"]["student_count"] == 2
+    assert section_rows["A"]["session_count"] == 2
+    assert section_rows["A"]["total_records"] == 4
+    assert section_rows["B"]["rate_percent"] == 100
+    assert section_rows["B"]["below_threshold"] is False
+
+    below_sections = await client.get(
+        f"{BASE}/reports/sections",
+        headers=superadmin_headers,
+        params={**params, "below_only": True},
+    )
+    assert [row["section_code"] for row in below_sections.json()["items"]] == ["A"]
+
+    scoped_students = await client.get(
+        f"{BASE}/reports/students",
+        headers=teacher["headers"],
+        params={**params, "below_only": False},
+    )
+    assert scoped_students.status_code == 200, scoped_students.text
+    assert {row["section_code"] for row in scoped_students.json()["items"]} == {"A"}
+    scoped_sections = await client.get(
+        f"{BASE}/reports/sections",
+        headers=teacher["headers"],
+        params={**params, "below_only": False},
+    )
+    assert scoped_sections.status_code == 200, scoped_sections.text
+    assert [row["section_code"] for row in scoped_sections.json()["items"]] == ["A"]
+
+    invalid = await client.get(
+        f"{BASE}/reports/students",
+        headers=superadmin_headers,
+        params={"from_date": "2026-10-31", "to_date": "2026-10-01"},
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["error"]["message_key"] == "attendance.error.report_range"
