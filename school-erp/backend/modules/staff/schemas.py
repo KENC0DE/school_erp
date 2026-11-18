@@ -138,7 +138,10 @@ class PositionList(BaseModel):
 class StaffCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    person: PersonInput
+    # Either register a new person, or hire somebody the school already knows
+    # (for example a guardian who becomes a teacher).
+    person: PersonInput | None = None
+    person_id: uuid.UUID | None = None
     staff_number: str | None = Field(default=None, min_length=1, max_length=40)
     status: StaffStatus = "active"
     department_id: uuid.UUID | None = None
@@ -147,6 +150,12 @@ class StaffCreate(BaseModel):
     end_date: date | None = None
     notes: str | None = Field(default=None, max_length=4000)
     custom: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def _one_person_source(self) -> StaffCreate:
+        if (self.person is None) == (self.person_id is None):
+            raise ValueError("Provide either a person or an existing person id")
+        return self
 
     @model_validator(mode="after")
     def _dates_in_order(self) -> StaffCreate:

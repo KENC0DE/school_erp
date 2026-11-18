@@ -387,15 +387,20 @@ async def create_staff(
     *,
     via: str = "api",
 ) -> StaffOut:
-    await _assert_person_not_staff(session, data.person.model_dump())
-    person, _warnings = await create_person(
-        session,
-        principal,
-        data.person.model_dump(),
-        via=via,
-        commit=False,
-    )
-    await _assert_person_free(session, person.id)
+    if data.person_id is not None:
+        person = await live_person(session, data.person_id)
+        await _assert_person_free(session, person.id)
+    else:
+        assert data.person is not None  # guaranteed by the schema validator
+        await _assert_person_not_staff(session, data.person.model_dump())
+        person, _warnings = await create_person(
+            session,
+            principal,
+            data.person.model_dump(),
+            via=via,
+            commit=False,
+        )
+        await _assert_person_free(session, person.id)
     staff_number = data.staff_number
     if staff_number is None:
         staff_number = (await numbering.allocate_number(session)).staff_number

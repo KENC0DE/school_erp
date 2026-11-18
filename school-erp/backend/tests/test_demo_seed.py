@@ -17,6 +17,13 @@ from modules.academics.models import (
     Subject,
     Term,
 )
+from modules.staff.models import (
+    StaffAttendance,
+    StaffLeaveRequest,
+    StaffLeaveType,
+    StaffProfile,
+    StaffTeachingAssignment,
+)
 from modules.students.models import StudentEnrollment, StudentGuardian, StudentProfile
 from sqlalchemy import func, select
 
@@ -62,6 +69,11 @@ async def _counts(app) -> dict[str, int]:
             ("guardians", StudentGuardian),
             ("persons", Person),
             ("sections", Section),
+            ("staff", StaffProfile),
+            ("teaching_assignments", StaffTeachingAssignment),
+            ("staff_attendance", StaffAttendance),
+            ("leave_types", StaffLeaveType),
+            ("leave_requests", StaffLeaveRequest),
             ("audit", AuditLog),
             ("events", DomainEvent),
         ):
@@ -182,3 +194,89 @@ async def test_demo_seed_rerun_is_a_noop(app) -> None:
     assert second["people_created"] == 0
     assert second["staff_created"] == 0
     assert before == after
+
+
+async def test_staff_seed_builds_profiles_assignments_attendance_and_leave(app) -> None:
+    summary = await _run_seed(app)
+    staff_summary = summary["staff_demo"]
+
+    assert staff_summary["departments_created"] == len(seed.DEMO_DEPARTMENTS) == 2
+    assert staff_summary["positions_created"] == len(seed.DEMO_POSITIONS) == 2
+    assert staff_summary["staff_created"] == len(seed.DEMO_STAFF) == 6
+    assert staff_summary["staff"] == 6
+    assert staff_summary["teaching_assignments_created"] == sum(
+        len(subjects) for _, _, _, subjects in seed.DEMO_TEACHING
+    )
+    assert staff_summary["attendance_days"] == len(seed.DEMO_STAFF_ATTENDANCE_WEEK) == 5
+    assert staff_summary["attendance_records_created"] == 6 * 5
+    assert staff_summary["leave_types_created"] == 2
+    assert staff_summary["leave_requests_created"] == 2
+
+    async with app.state.db.session() as session:
+        profiles = {
+            person.email: staff
+            for staff, person in (
+                await session.execute(
+                    select(StaffProfile, Person).join(Person, Person.id == StaffProfile.person_id)
+                )
+            ).all()
+        }
+        assert set(profiles) == {row[0] for row in seed.DEMO_STAFF}
+        assert all(staff.staff_number.startswith("STF-2026-") for staff in profiles.values())
+        assert all(staff.department_id is not None for staff in profiles.values())
+        assert len({staff.department_id for staff in profiles.values()}) == 2
+
+        assignments = (
+            (
+                await session.execute(
+                    select(StaffTeachingAssignment).where(
+                        StaffTeachingAssignment.staff_id == profiles["teacher1@demo.school"].id
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert len(assignments) == 3
+        subject_codes = set(
+            (
+                await session.execute(
+                    select(Subject.code).where(Subject.id.in_([a.subject_id for a in assignments]))
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert subject_codes == {"mathematics", "science", "ict"}
+
+        attendance = (
+            (await session.execute(select(StaffAttendance).order_by(StaffAttendance.date))).scalars().all()
+        )
+        assert len(attendance) == 30
+        by_key = {(row.staff_id, row.date): row for row in attendance}
+        teacher_two = profiles["teacher2@demo.school"].id
+        assert by_key[(teacher_two, seed.DEMO_STAFF_ATTENDANCE_WEEK[2])].status == "absent"
+        assert by_key[(teacher_two, seed.DEMO_STAFF_ATTENDANCE_WEEK[4])].status == "leave"
+
+        requests = (await session.execute(select(StaffLeaveRequest))).scalars().all()
+        assert len(requests) == 2
+        assert {request.status for request in requests} == {"approved", "submitted"}
+        assert all(request.deleted_at is None for request in requests)
+
+
+async def test_staff_seed_links_existing_user_accounts(app) -> None:
+    from tests.conftest import create_user
+
+    teacher = await create_user(app, "teacher1@demo.school")
+    summary = await _run_seed(app)
+    assert summary["staff_demo"]["accounts_linked"] >= 1
+
+    async with app.state.db.session() as session:
+        profile = (
+            await session.execute(
+                select(StaffProfile)
+                .join(Person, Person.id == StaffProfile.person_id)
+                .where(Person.email == "teacher1@demo.school")
+            )
+        ).scalar_one()
+        assert profile.user_id == teacher.id

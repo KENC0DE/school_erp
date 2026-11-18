@@ -53,7 +53,7 @@ DEMO_API_BASE_URL = "http://localhost:8000"
 CANONICAL_ENROLLMENT_TOKEN = "dev-enroll-DEMO-2026"
 # Modules enabled on the demo school. The controller signs this list into the
 # license, so an addition here also proves the module gate end to end.
-DEMO_MODULES: tuple[str, ...] = ("academics", "students", "admissions", "staff", "sample")
+DEMO_MODULES: tuple[str, ...] = ("academics", "students", "admissions", "staff", "attendance", "sample")
 # School-layer translation overrides. They prove the default < central < school
 # precedence and give the activity history real i18n entries to show.
 SCHOOL_I18N_OVERRIDES: tuple[tuple[str, str, str, str], ...] = (
@@ -509,6 +509,75 @@ DEMO_STAFF: tuple[tuple[str, str, str, str, str, str, str, str], ...] = (
     ),
 )
 
+# Where each demo staff member works and which position they hold.
+DEMO_STAFF_PLACEMENT: dict[str, tuple[str, str]] = {
+    "director@demo.school": ("administration", "administrator"),
+    "academichead@demo.school": ("administration", "administrator"),
+    "registrar@demo.school": ("administration", "administrator"),
+    "teacher1@demo.school": ("teaching", "teacher"),
+    "teacher2@demo.school": ("teaching", "teacher"),
+    "hr@demo.school": ("administration", "administrator"),
+}
+
+# (code, English name, Amharic name)
+DEMO_DEPARTMENTS: tuple[tuple[str, str, str], ...] = (
+    ("administration", "Administration", "አስተዳደር"),
+    ("teaching", "Teaching", "ማስተማር"),
+)
+
+# (code, English name, Amharic name, is_teaching, department code)
+DEMO_POSITIONS: tuple[tuple[str, str, str, bool, str], ...] = (
+    ("administrator", "Administrator", "አስተዳዳሪ", False, "administration"),
+    ("teacher", "Teacher", "አስተማሪ", True, "teaching"),
+)
+
+# A normal school week of staff attendance, with two exceptions so the demo
+# shows an absence, a late arrival and an approved leave in the same week.
+DEMO_STAFF_ATTENDANCE_WEEK: tuple[date, ...] = (
+    date(2026, 9, 14),
+    date(2026, 9, 15),
+    date(2026, 9, 16),
+    date(2026, 9, 17),
+    date(2026, 9, 18),
+)
+
+# (email, level, section, subject codes). The two demo teachers cover one
+# homeroom each, which is what the scope resolvers use in the owner script.
+DEMO_TEACHING: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
+    (
+        "teacher1@demo.school",
+        "g5",
+        "A",
+        ("mathematics", "science", "ict"),
+    ),
+    (
+        "teacher2@demo.school",
+        "g6",
+        "A",
+        ("english", "amharic", "social_studies"),
+    ),
+)
+
+# (staff email, leave type, start, end, reason, approve)
+DEMO_LEAVE_REQUESTS: tuple[tuple[str, str, date, date, str, bool], ...] = (
+    (
+        "teacher1@demo.school",
+        "annual",
+        date(2026, 10, 12),
+        date(2026, 10, 13),
+        "Demo seed: family event",
+        True,
+    ),
+    (
+        "teacher2@demo.school",
+        "sick",
+        date(2026, 10, 15),
+        date(2026, 10, 15),
+        "Demo seed: medical appointment",
+        False,
+    ),
+)
+
 
 def _level_scope(level_code: str) -> int:
     """Grade 1–12 map to their number; every KG level maps to 0."""
@@ -890,7 +959,292 @@ async def seed_demo_data(session, principal, *, users_by_email: dict | None = No
     summary["level_subjects"] = int(
         (await session.execute(select(func.count()).select_from(LevelSubject))).scalar_one()
     )
+    summary["staff_demo"] = await seed_staff_demo(
+        session,
+        principal,
+        users_by_email=users_by_email,
+        year_id=year_id,
+        section_ids=section_ids,
+    )
     await session.commit()
+    return summary
+
+
+async def seed_staff_demo(
+    session,
+    principal,
+    *,
+    users_by_email: dict,
+    year_id,
+    section_ids: dict[tuple[str, str], object],
+) -> dict:
+    """P3-SEED: staff profiles, teaching assignments, a week of attendance and leave.
+
+    Every write goes through the audited service functions. Re-running matches
+    the person, staff number, assignment, day row and leave request before
+    creating anything, so the second pass writes no audit rows.
+    """
+    import uuid
+
+    from core.auth.models import User
+    from core.people.models import Person
+    from modules.academics.models import Subject
+    from modules.staff import attendance_service, leave_requests, structure, teaching
+    from modules.staff.attendance_schemas import StaffAttendanceBulkInput, StaffAttendanceInput
+    from modules.staff.leave_schemas import LeaveRequestInput, LeaveTypeInput
+    from modules.staff.leave_types import create_leave_type, list_leave_types
+    from modules.staff.models import StaffAttendance, StaffProfile
+    from modules.staff.profiles import create_staff, link_account
+    from modules.staff.schemas import (
+        AccountLink,
+        DepartmentInput,
+        PositionInput,
+        StaffCreate,
+        TeachingAssignmentInput,
+    )
+    from sqlalchemy import func, select
+
+    summary: dict = {
+        "departments_created": 0,
+        "positions_created": 0,
+        "staff_created": 0,
+        "accounts_linked": 0,
+        "teaching_assignments_created": 0,
+        "attendance_days": 0,
+        "attendance_records_created": 0,
+        "leave_types_created": 0,
+        "leave_requests_created": 0,
+    }
+
+    departments = await structure.list_departments(session)
+    department_ids = {item.code: uuid.UUID(item.id) for item in departments.items}
+    for code, name, name_am in DEMO_DEPARTMENTS:
+        if code in department_ids:
+            continue
+        created = await structure.create_department(
+            session,
+            principal,
+            DepartmentInput(code=code, name=name, name_am=name_am),
+            via="api",
+        )
+        department_ids[code] = uuid.UUID(created.id)
+        summary["departments_created"] += 1
+
+    positions = await structure.list_positions(session)
+    position_ids = {item.code: uuid.UUID(item.id) for item in positions.items}
+    for code, name, name_am, is_teaching, department_code in DEMO_POSITIONS:
+        if code in position_ids:
+            continue
+        created = await structure.create_position(
+            session,
+            principal,
+            PositionInput(
+                code=code,
+                name=name,
+                name_am=name_am,
+                department_id=department_ids[department_code],
+                is_teaching=is_teaching,
+            ),
+            via="api",
+        )
+        position_ids[code] = uuid.UUID(created.id)
+        summary["positions_created"] += 1
+
+    staff_ids: dict[str, uuid.UUID] = {}
+    for index, row in enumerate(DEMO_STAFF):
+        email = row[0]
+        person = (
+            await session.execute(select(Person).where(Person.email == email, Person.deleted_at.is_(None)))
+        ).scalar_one_or_none()
+        if person is None:
+            continue
+        profile = (
+            await session.execute(
+                select(StaffProfile).where(
+                    StaffProfile.person_id == person.id,
+                    StaffProfile.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        if profile is None:
+            department_code, position_code = DEMO_STAFF_PLACEMENT.get(
+                email, ("administration", "administrator")
+            )
+            created = await create_staff(
+                session,
+                principal,
+                StaffCreate(
+                    person_id=person.id,
+                    staff_number=f"STF-{DEMO_YEAR_START.year}-{index + 1:03d}",
+                    department_id=department_ids[department_code],
+                    position_id=position_ids[position_code],
+                    hire_date=DEMO_YEAR_START,
+                ),
+                via="api",
+            )
+            profile = (
+                await session.execute(select(StaffProfile).where(StaffProfile.id == uuid.UUID(created.id)))
+            ).scalar_one()
+            summary["staff_created"] += 1
+        staff_ids[email] = profile.id
+
+        user = users_by_email.get(email)
+        if user is None:
+            user = (await session.execute(select(User).where(User.email == email))).scalar_one_or_none()
+        if user is not None and profile.user_id != user.id:
+            await link_account(
+                session,
+                principal,
+                profile.id,
+                AccountLink(user_id=user.id),
+                via="api",
+            )
+            profile.user_id = user.id
+            summary["accounts_linked"] += 1
+
+    summary["staff"] = int(
+        (
+            await session.execute(
+                select(func.count()).select_from(StaffProfile).where(StaffProfile.deleted_at.is_(None))
+            )
+        ).scalar_one()
+    )
+
+    wanted_codes = {code for _, _, _, codes in DEMO_TEACHING for code in codes}
+    subject_ids = {
+        subject.code: subject.id
+        for subject in (await session.execute(select(Subject).where(Subject.code.in_(wanted_codes))))
+        .scalars()
+        .all()
+    }
+    for email, level_code, section_code, subject_codes in DEMO_TEACHING:
+        staff_id = staff_ids.get(email)
+        section_id = section_ids.get((level_code, section_code))
+        if staff_id is None or section_id is None:
+            continue
+        existing = await teaching.list_assignments(
+            session,
+            staff_id=staff_id,
+            year_id=uuid.UUID(str(year_id)),
+        )
+        assigned = {(item.section_id, item.subject_id) for item in existing.items}
+        for code in subject_codes:
+            subject_id = subject_ids.get(code)
+            if subject_id is None:
+                continue
+            if (str(section_id), str(subject_id)) in assigned:
+                continue
+            await teaching.create_assignment(
+                session,
+                principal,
+                staff_id,
+                TeachingAssignmentInput(
+                    year_id=uuid.UUID(str(year_id)),
+                    section_id=uuid.UUID(str(section_id)),
+                    subject_id=subject_id,
+                ),
+                via="api",
+            )
+            summary["teaching_assignments_created"] += 1
+
+    attendance_before = int(
+        (await session.execute(select(func.count()).select_from(StaffAttendance))).scalar_one()
+    )
+    for on_date in DEMO_STAFF_ATTENDANCE_WEEK:
+        items: list[StaffAttendanceInput] = []
+        for email in staff_ids:
+            status, reason, note = "present", None, None
+            if on_date == DEMO_STAFF_ATTENDANCE_WEEK[0] and email == "hr@demo.school":
+                status, note = "late", "Arrived 20 minutes late"
+            if on_date == DEMO_STAFF_ATTENDANCE_WEEK[2] and email == "teacher2@demo.school":
+                status, reason = "absent", "Sick"
+            if on_date == DEMO_STAFF_ATTENDANCE_WEEK[4] and email == "teacher2@demo.school":
+                status, reason = "leave", "Approved annual leave"
+            items.append(
+                StaffAttendanceInput(
+                    staff_id=staff_ids[email],
+                    status=status,
+                    reason=reason,
+                    note=note,
+                )
+            )
+        await attendance_service.upsert_day(
+            session,
+            principal,
+            StaffAttendanceBulkInput(date=on_date, items=items),
+            via="api",
+        )
+        summary["attendance_days"] += 1
+    attendance_after = int(
+        (await session.execute(select(func.count()).select_from(StaffAttendance))).scalar_one()
+    )
+    summary["attendance_records_created"] = attendance_after - attendance_before
+
+    leave_types = {item.code: item for item in (await list_leave_types(session)).items}
+    for code, name, name_am, days in (
+        ("annual", "Annual leave", "ዓመታዊ ፈቃድ", 20),
+        ("sick", "Sick leave", "የሕመም ፈቃድ", 10),
+    ):
+        if code in leave_types:
+            continue
+        created = await create_leave_type(
+            session,
+            principal,
+            LeaveTypeInput(
+                code=code,
+                name=name,
+                name_am=name_am,
+                annual_entitlement_days=days,
+            ),
+            via="api",
+        )
+        leave_types[code] = created
+        summary["leave_types_created"] += 1
+
+    existing_requests = (
+        await leave_requests.list_leave_requests(
+            session,
+            principal,
+            year_id=uuid.UUID(str(year_id)),
+        )
+    ).items
+    for email, type_code, start, end, reason, approve in DEMO_LEAVE_REQUESTS:
+        staff_id = staff_ids.get(email)
+        leave_type = leave_types.get(type_code)
+        if staff_id is None or leave_type is None:
+            continue
+        row = next(
+            (
+                item
+                for item in existing_requests
+                if item.staff_id == str(staff_id)
+                and item.start_date == start
+                and item.end_date == end
+                and item.reason == reason
+            ),
+            None,
+        )
+        if row is None:
+            row = await leave_requests.create_leave_request(
+                session,
+                principal,
+                LeaveRequestInput(
+                    staff_id=staff_id,
+                    year_id=uuid.UUID(str(year_id)),
+                    leave_type_id=uuid.UUID(leave_type.id),
+                    start_date=start,
+                    end_date=end,
+                    reason=reason,
+                ),
+                via="api",
+            )
+            existing_requests.append(row)
+            summary["leave_requests_created"] += 1
+        if row.status == "draft":
+            row = await leave_requests.submit_leave_request(session, principal, uuid.UUID(row.id), via="api")
+        if approve and row.status == "submitted":
+            await leave_requests.approve_leave_request(session, principal, uuid.UUID(row.id), via="api")
+
     return summary
 
 

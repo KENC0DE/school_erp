@@ -483,3 +483,44 @@ async def test_staff_endpoints_require_permission(client, limited_headers, seede
         json={"code": "blocked", "name": "Blocked"},
     )
     assert created.status_code == 403
+
+
+async def test_staff_can_be_hired_from_an_existing_person(client, superadmin_headers, seeded) -> None:
+    person = await client.post(
+        "/api/v1/people",
+        headers=superadmin_headers,
+        json=_person(given_name_en="Liya", given_name_am="ሊያ", sex="female"),
+    )
+    assert person.status_code == 200, person.text
+    person_id = person.json()["person"]["id"]
+
+    hired = await client.post(
+        BASE,
+        headers=superadmin_headers,
+        json={"person_id": person_id, "staff_number": "STF-EXIST-1", "hire_date": "2026-09-01"},
+    )
+    assert hired.status_code == 201, hired.text
+    assert hired.json()["person"]["id"] == person_id
+    assert hired.json()["staff_number"] == "STF-EXIST-1"
+
+    duplicate = await client.post(
+        BASE,
+        headers=superadmin_headers,
+        json={"person_id": person_id, "staff_number": "STF-EXIST-2"},
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json()["error"]["message_key"] == "staff.error.person_exists"
+
+    neither = await client.post(
+        BASE,
+        headers=superadmin_headers,
+        json={"staff_number": "STF-EXIST-3"},
+    )
+    assert neither.status_code == 422
+
+    both = await client.post(
+        BASE,
+        headers=superadmin_headers,
+        json={"person": _person(given_name_en="Both"), "person_id": person_id},
+    )
+    assert both.status_code == 422

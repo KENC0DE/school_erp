@@ -1887,3 +1887,32 @@ and recorded here (date, decision, reason).
   service as well as the schema so an action caller gets the same keyed error as
   an HTTP caller (`attendance.error.report_range`/`_too_long`). Staff summaries
   use the same reversal check (`staff.error.attendance_range`).
+
+## 2026-11-18 — P3-SEED demo staff, teaching, attendance and leave
+
+- **A staff profile can be created from an existing person.** `POST /staff`
+  now accepts either `person` (register a new person) or `person_id` (hire a
+  person the school already knows, such as a guardian), and rejects both or
+  neither. The demo seed uses `person_id` so the people created by P2-SEED are
+  reused instead of duplicated, and the API gains the same path a real school
+  needs when a parent joins the staff.
+- **The demo school now licenses the attendance module.** The seed's module list
+  includes `attendance`, so a freshly seeded instance can open registers and
+  reports without a manual toggle. Payroll stays opt-in and off.
+- **Seeded staff are placed in two departments with two positions.** Teachers go
+  to `teaching`/`teacher`, office staff to `administration`/`administrator`.
+  This gives department-scoped leave and attendance a real target in the demo
+  without inventing a full org chart.
+- **Teaching assignments cover one homeroom per teacher.** teacher1 gets
+  mathematics, science and ICT in Grade 5 A; teacher2 gets English, Amharic and
+  social studies in Grade 6 A. The owner script can log in as either teacher and
+  observe `assigned_subjects` isolation on attendance and marks.
+- **A deterministic school week is recorded for every demo staff member.** The
+  week of 14–18 September 2026 stays `present` except one late arrival (HR), one
+  sick absence and one approved leave (teacher2), so the roster, summary and
+  report screens have interesting data on first boot.
+- **Two leave types and two requests complete the workflow.** Annual (20 days)
+  and sick (10 days) leave are created if missing; teacher1's two-day annual
+  request is submitted and approved, teacher2's one-day sick request stays
+  submitted. Requests are matched on staff, dates and reason before creation, so
+  a re-run neither duplicates them nor adds audit rows.
