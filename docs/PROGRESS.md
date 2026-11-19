@@ -157,10 +157,24 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P4-SEED — Seed
 
 ### Checkpoint P4
-- [ ] Engine tests exhaustive and green; conversion-bound and recalculation-idempotency property tests.
-- [ ] Owner script: academic head defines components and bands, teacher enters 15- and 13-mark assessments, submit → approve → publish, band change relabels without touching raw marks, correction after lock, parent sees only published results (automated in `tests/test_owner_script_assessment.py`).
-- [ ] Performance recorded in `docs/DECISIONS.md` (60-student entry, 3,000-student recalculation).
-- [ ] Tag `v0.4-assessment`.
+- [x] Engine tests exhaustive and green; conversion-bound and recalculation-idempotency property tests.
+- [x] Owner script: academic head defines components and bands, teacher enters 15- and 13-mark assessments, submit → approve → publish, band change relabels without touching raw marks, correction after lock, parent sees only published results (automated in `tests/test_owner_script_assessment.py`).
+- [x] Performance recorded in `docs/DECISIONS.md` (60-student entry 0.17 s, 3,000-student recalculation 1.2 s).
+- [x] Tag `v0.4-assessment`.
+
+### Phase 4 verification (2026-11-19)
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest school-erp/backend/tests` | 425 passed across 61 files in four chunks (137 + 100 + 97 + 91), plus the owner-script test added at the checkpoint (1 passed) |
+| `test_owner_script_assessment.py` | 1 passed — full owner script over the API with academic head, teacher and parent accounts |
+| `scripts/bench_assessment.py` | 60-student entry 0.17 s; 3,000-student / 15,000-score recalculation 1.2 s |
+| `pnpm -r --if-present test` (web + mobile) | web 125 passed (29 files); mobile 86 passed (17 suites) |
+| `tsc --noEmit` (web, mobile) | clean |
+| `vite build` (school web) | OK |
+| `./e2e/run.sh` | 9 passed, 6 opt-in screenshot captures skipped; keyboard mark entry, smoke, axe and UI quality gate green |
+| `ruff check` / `ruff format --check` / `check-i18n` / `lint-imports` / `check-api-compat` / `gen-api.sh` | clean (2549 i18n keys, 4 contracts kept, 95 released paths compatible, client up to date) |
+| `alembic heads` | `0029_portal_links` |
 
 ## Phase 5 — Document Studio
 
