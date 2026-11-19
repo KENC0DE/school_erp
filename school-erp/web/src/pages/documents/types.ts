@@ -269,6 +269,15 @@ export interface IssuedDocumentList {
   total: number | null;
 }
 
+export interface DocumentVerification {
+  valid: boolean;
+  number: string;
+  doc_type: DocType;
+  recipient_name: string;
+  issued_at: string;
+  school_name: string | null;
+}
+
 export interface FileLink {
   file_id: string | null;
   filename: string | null;

@@ -325,5 +325,20 @@
   "issued.reprint": "እንደገና አትም",
   "issued.reprinting": "በማዘጋጀት ላይ…",
   "issued.reprinted": "{{number}} ለማውረድ ዝግጁ ነው።",
-  "issued.reprint_error": "የተቀመጠውን PDF መክፈት አልተቻለም።"
+  "issued.reprint_error": "የተቀመጠውን PDF መክፈት አልተቻለም።",
+  "verify.title": "ሰነድን ያረጋግጡ",
+  "verify.intro": "የታተመ ሰነድ በዚህ ትምህርት ቤት መሰጡን ያረጋግጡ።",
+  "verify.loading": "ሰነዱ በመረጋገጥ ላይ…",
+  "verify.valid": "ተረጋግጧል",
+  "verify.valid_hint": "ይህ ሰነድ እውነተኛ ሲሆን በትምህርት ቤቱ የተሰጠ ነው።",
+  "verify.invalid_title": "ሰነዱ አልተገኘም",
+  "verify.invalid_description": "ይህ ኮድ በትምህርት ቤቱ ከተሰጠ ማንኛውም ሰነድ ጋር አይዛመድም። QR ኮዱን ያረጋግጡ ወይም ቢሮውን ይጠይቁ።",
+  "verify.error_title": "ማረጋገጥ አይገኝም",
+  "verify.error_description": "ሰነዱ አሁን ሊረጋገጥ አልቻለም። ከጥቂት ጊዜ በኋላ እንደገና ይሞክሩ።",
+  "verify.retry": "እንደገና ይሞክሩ",
+  "verify.number": "የሰነድ ቁጥር",
+  "verify.type": "ዓይነት",
+  "verify.recipient": "የተሰጠው ለ",
+  "verify.issued_at": "የተሰጠበት",
+  "verify.privacy": "ይህ ገጽ ሰነዱን ለማረጋገጥ የሚያስፈልጉትን ዝርዝሮች ብቻ ያሳያል። ውጤቶችን፣ ሞግዚቶችን ወይም ሌላ የግል መረጃን ፈጽሞ አያሳይም።"
 }

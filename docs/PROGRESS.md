@@ -186,7 +186,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P5-06 — Repeating tables: grouped headers, row totals/averages/ranks, summaries, attendance/remarks, conditional Promoted/Repeat blocks (4 table tests + renderer/schema fixtures)
 - [x] P5-07 — Preview with sample or real student data through the production renderer (7 backend tests + editor preview test + Playwright)
 - [x] P5-08 — Generation: single, section and grade batches as separate or one combined PDF through background jobs with progress; issued documents snapshot layout + data, yearly numbers, random verification codes, audited reprints (12 backend tests incl. a 300-document stress, generation/issued web tests, Playwright publish + dialog + issued page)
-- [ ] P5-09 — Public verification page
+- [x] P5-09 — Public verification page `/verify/{code}` showing only minimal data, rate-limited (4 backend tests: minimal public view, generic 404, per-client 429, module gate; public web page with valid/not-found/error states + 3 web tests; Playwright public not-found page and axe sweep)
 - [ ] P5-10 — Permissions and workflow
 - [ ] P5-11 — Wire existing modules
 - [ ] P5-12 — Mobile view/share/print

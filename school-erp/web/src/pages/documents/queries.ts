@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import type {
   DocType,
+  DocumentVerification,
   FieldsResponse,
   GenerationBatch,
   GenerationBatchList,
@@ -150,5 +151,19 @@ export function useIssuedDocuments(query: string, templateId: string | null) {
     queryKey: ["documents", "issued", query, templateId],
     queryFn: () => api.get<IssuedDocumentList>(`/api/v1/documents/issued?${params.toString()}`),
     staleTime: 15_000,
+  });
+}
+
+/** Public lookup behind the QR code; no session is needed or sent. */
+export function useDocumentVerification(code: string) {
+  return useQuery({
+    queryKey: ["documents", "verify", code],
+    queryFn: () =>
+      api.get<DocumentVerification>(
+        `/api/v1/documents/public/verify/${encodeURIComponent(code)}`,
+      ),
+    enabled: Boolean(code),
+    retry: false,
+    staleTime: 60_000,
   });
 }

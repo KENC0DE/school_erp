@@ -363,6 +363,21 @@ class FileLinkOut(BaseModel):
     checksum_sha256: str | None = None
 
 
+class DocumentVerificationOut(BaseModel):
+    """The deliberately small public view of an issued document.
+
+    This is what a QR code reveals: enough to confirm the paper is genuine,
+    never the snapshot, marks, guardian or address behind it.
+    """
+
+    valid: bool
+    number: str
+    doc_type: DocType
+    recipient_name: str
+    issued_at: datetime
+    school_name: str | None = None
+
+
 class TemplateFileTemplate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -401,6 +416,7 @@ __all__ = [
     "DocumentFormatOptions",
     "DocumentGenerationOut",
     "DocumentGenerationRequest",
+    "DocumentVerificationOut",
     "FileLinkOut",
     "GenerationBatchList",
     "GenerationBatchOut",

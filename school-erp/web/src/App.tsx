@@ -23,6 +23,7 @@ import { DashboardPage } from "./pages/Dashboard";
 import { DocumentsPage } from "./pages/documents/DocumentsPage";
 import { IssuedDocumentsPage } from "./pages/documents/IssuedDocumentsPage";
 import { TemplateEditorPage } from "./pages/documents/TemplateEditorPage";
+import { VerifyDocumentPage } from "./pages/documents/VerifyDocumentPage";
 import { DesignReferencePage } from "./pages/design/DesignReferencePage";
 import { JobsPage } from "./pages/JobsPage";
 import { LoginPage } from "./pages/Login";
@@ -93,6 +94,7 @@ export function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/controller-login" element={<ControllerLoginPage />} />
       <Route path="/apply" element={<PublicApplicationPage />} />
+      <Route path="/verify/:code" element={<VerifyDocumentPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
           <Route index element={<DashboardPage />} />

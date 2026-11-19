@@ -2312,6 +2312,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/public/verify/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Verify Document Route */
+        get: operations["verify_document_route_api_v1_documents_public_verify__code__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents/templates": {
         parameters: {
             query?: never;
@@ -6318,6 +6335,33 @@ export interface components {
             mode: "sample" | "student";
             /** Student Id */
             student_id?: string | null;
+        };
+        /**
+         * DocumentVerificationOut
+         * @description The deliberately small public view of an issued document.
+         *
+         *     This is what a QR code reveals: enough to confirm the paper is genuine,
+         *     never the snapshot, marks, guardian or address behind it.
+         */
+        DocumentVerificationOut: {
+            /**
+             * Doc Type
+             * @enum {string}
+             */
+            doc_type: "report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom";
+            /**
+             * Issued At
+             * Format: date-time
+             */
+            issued_at: string;
+            /** Number */
+            number: string;
+            /** Recipient Name */
+            recipient_name: string;
+            /** School Name */
+            school_name?: string | null;
+            /** Valid */
+            valid: boolean;
         };
         /** DuplicateCheck */
         DuplicateCheck: {
@@ -17391,6 +17435,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_document_route_api_v1_documents_public_verify__code__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentVerificationOut"];
                 };
             };
             /** @description Validation Error */

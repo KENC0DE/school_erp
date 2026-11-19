@@ -70,6 +70,11 @@ class Settings(BaseSettings):
     password_reset_minutes: int = 30
     password_reset_rate_limit: int = 5
     password_reset_window_seconds: int = 3600
+
+    # Public document verification (P5-09). Per IP; an unknown code and an
+    # exhausted limit both stop enumeration.
+    document_verify_rate_limit: int = 120
+    document_verify_rate_window_seconds: int = 60
     totp_issuer: str = "School ERP"
     totp_window: int = 1
     web_cookie_secure: bool = False

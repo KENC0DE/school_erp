@@ -289,8 +289,8 @@ async def test_single_generation_issues_a_numbered_snapshot(
     assert detail["data_snapshot"]["student"]["full_name"] == "Hana Tesfaye Bekele"
     assert detail["data_snapshot"]["document"]["number"] == "DOC-2026-00001"
     assert detail["data_snapshot"]["document"]["verification_code"] == summary["verification_code"]
-    assert detail["data_snapshot"]["document"]["verify_url"].endswith(
-        f"/verify/{summary['verification_code']}"
+    assert detail["data_snapshot"]["document"]["verify_url"] == (
+        f"http://localhost:5173/verify/{summary['verification_code']}"
     )
     assert detail["data_snapshot"]["school"]["name"] == "Demo Academy"
 

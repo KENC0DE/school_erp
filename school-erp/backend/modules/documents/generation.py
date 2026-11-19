@@ -399,7 +399,7 @@ async def _issue_one(
     year_number = _number_year(date.today())
     number = await allocate_number(session, year=year_number)
     code = await new_verification_code(session)
-    verify_url = f"{settings.public_base_url.rstrip('/')}/verify/{code}"
+    verify_url = f"{settings.web_base_url.rstrip('/')}/verify/{code}"
     data["document"] = {
         "number": number,
         "verification_code": code,

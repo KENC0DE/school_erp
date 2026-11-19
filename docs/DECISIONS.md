@@ -2770,3 +2770,40 @@ figure includes the commit and the audit row):
   combined PDFs and reprints are covered by the backend tests. This keeps the
   spec honest about what the disposable stack can actually run instead of
   waiting forever on a queued batch.
+
+## 2026-11-19 — P5-09 public document verification
+
+- **The QR code points at the web page, not the API.** `generation` now builds
+  the verification URL from `settings.web_base_url` (`http://localhost:5173`
+  in development) instead of `public_base_url`, so scanning a certificate opens
+  the human-readable page rather than raw JSON. The page then calls the public
+  API from the browser.
+- **The public response is deliberately minimal.** `GET
+  /api/v1/documents/public/verify/{code}` returns only `valid`, `number`,
+  `doc_type`, `recipient_name`, `issued_at` and the school name. The layout,
+  data snapshot, file id and download URL never cross the public boundary, so a
+  verification code cannot be turned into a way to read marks, guardians or
+  other personal data.
+- **Unknown codes are indistinguishable.** Every unknown, stale or soft-deleted
+  code returns the same `404` with `error.documents.verification_not_found`; the
+  endpoint never confirms whether a code existed in the past.
+- **Lookups are rate limited before touching the database.** A per-process
+  `SlidingWindowLimiter` keyed by client address rejects the request once
+  `DOCUMENT_VERIFY_RATE_LIMIT` requests arrive inside
+  `DOCUMENT_VERIFY_RATE_WINDOW_SECONDS`. The valid code and the guessing
+  attempts share the same bucket, so exhausting the limit blocks enumeration
+  rather than merely slowing it. The limiter moves behind Redis with the other
+  rate limits when the shared cache lands.
+- **The module gate still applies.** A school with the documents module turned
+  off returns `MODULE_DISABLED` on the public route too; the module licence is a
+  deployment fact, not something a QR scan may bypass.
+- **Public means the route has the `public_access` marker.** The route
+  coverage test treats it as intentionally unauthenticated; no session is read,
+  and the web page sits outside `RequireAuth` next to `/apply`.
+- **The page shows a neutral invalid state, not an error.** A wrong code is a
+  normal outcome for a mistyped URL, so it uses the shared error/empty visual
+  with a plain explanation and no retry button. Only a server/network failure
+  offers retry, which keeps the distinction useful to a guardian.
+- **Axe now includes the public page.** The UI quality gate sweeps
+  `/verify/not-a-real-code`, so the unauthenticated layout is checked for
+  contrast, landmarks and heading structure like the authenticated screens.

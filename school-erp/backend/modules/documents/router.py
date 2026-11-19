@@ -19,14 +19,14 @@ import uuid
 
 from app.errors import Forbidden
 from core.api.pagination import PageParams, page_params
-from core.auth.deps import require
+from core.auth.deps import public_access, require
 from core.auth.principal import Principal
 from core.db.deps import get_session as db_session
 from core.documents.registry import FORMAT_OPTIONS
 from core.documents.service import fields_for
 from core.files.deps import get_app_settings, get_storage
 from core.files.storage import Storage
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Path, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,6 +58,7 @@ from modules.documents.schemas import (
     DocumentGenerationRequest,
     DocumentPreviewOut,
     DocumentPreviewRequest,
+    DocumentVerificationOut,
     FileLinkOut,
     GenerationBatchList,
     GenerationBatchOut,
@@ -95,12 +96,32 @@ from modules.documents.service import (
     version_detail,
 )
 from modules.documents.starters import STARTERS, starter_view
+from modules.documents.verification import verify_document
 
 logger = logging.getLogger("erp.documents")
 
 router = APIRouter(tags=["documents"])
 DESIGN = "documents.template.design"
 GENERATE = "documents.generate"
+
+
+# --- public verification ----------------------------------------------------
+# Declared before the gated routes. The endpoint is intentionally public and
+# returns a minimal view; the module gate still applies to the router.
+
+
+@router.get(
+    "/public/verify/{code}",
+    response_model=DocumentVerificationOut,
+    dependencies=[Depends(public_access)],
+)
+async def verify_document_route(
+    request: Request,
+    code: str = Path(max_length=64),
+    session: AsyncSession = Depends(db_session),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> DocumentVerificationOut:
+    return await verify_document(session, settings, code, request)
 
 
 @router.get("/fields", response_model=DocumentFieldsOut)

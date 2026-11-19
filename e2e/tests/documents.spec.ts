@@ -71,3 +71,11 @@ test("design a certificate on the canvas, save the draft and preview it", async 
   await page.getByRole("link", { name: "Issued documents" }).click();
   await expect(page.getByTestId("issued-page")).toBeVisible();
 });
+
+test("an unknown verification code shows the neutral public page", async ({ page }) => {
+  // No sign-in: the QR code page is public by design.
+  await page.goto(`${SCHOOL_WEB}/verify/not-a-real-code`);
+  await expect(page.getByTestId("verify-invalid")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByText("Document not found")).toBeVisible();
+});

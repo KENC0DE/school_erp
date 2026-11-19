@@ -677,5 +677,6 @@
   "error.documents.starter_unknown": "በዚህ ቁልፍ የመነሻ አብነት የለም",
   "error.documents.starter_type_mismatch": "የመነሻ አብነቱ ለሌላ የሰነድ ዓይነት ነው",
   "error.documents.starter_layout_conflict": "የመነሻ አብነት ወይም አቀራረብ ይምረጡ፣ ሁለቱንም አይደለም",
-  "error.documents.import_invalid": "ፋይሉ ትክክለኛ የሰነድ አብነት ውጤት አይደለም"
+  "error.documents.import_invalid": "ፋይሉ ትክክለኛ የሰነድ አብነት ውጤት አይደለም",
+  "error.documents.verification_not_found": "ይህ ሰነድ ሊረጋገጥ አልቻለም"
 }

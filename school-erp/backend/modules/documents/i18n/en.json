@@ -325,5 +325,20 @@
   "issued.reprint": "Reprint",
   "issued.reprinting": "Preparing…",
   "issued.reprinted": "{{number}} is ready to download.",
-  "issued.reprint_error": "The stored PDF could not be opened."
+  "issued.reprint_error": "The stored PDF could not be opened.",
+  "verify.title": "Verify a document",
+  "verify.intro": "Check that a printed document was issued by this school.",
+  "verify.loading": "Checking the document…",
+  "verify.valid": "Verified",
+  "verify.valid_hint": "This document is genuine and was issued by the school.",
+  "verify.invalid_title": "Document not found",
+  "verify.invalid_description": "This code does not match any document issued by the school. Check the QR code or ask the school office.",
+  "verify.error_title": "Verification unavailable",
+  "verify.error_description": "The document could not be checked right now. Try again in a moment.",
+  "verify.retry": "Try again",
+  "verify.number": "Document number",
+  "verify.type": "Type",
+  "verify.recipient": "Issued to",
+  "verify.issued_at": "Issued",
+  "verify.privacy": "This page shows only the details needed to confirm the document. It never reveals marks, guardians or other personal information."
 }
