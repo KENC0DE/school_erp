@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 FieldKind = Literal["text", "integer", "decimal", "date", "boolean", "table"]
+FIELD_KINDS: tuple[FieldKind, ...] = ("text", "integer", "decimal", "date", "boolean", "table")
 
 
 @dataclass(frozen=True)
@@ -37,4 +38,4 @@ class DocumentField:
         }
 
 
-__all__ = ["DocumentField", "FieldKind"]
+__all__ = ["FIELD_KINDS", "DocumentField", "FieldKind"]

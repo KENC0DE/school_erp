@@ -1,0 +1,9 @@
+{
+  "title": "Document Studio",
+  "intro": "Design templates on a canvas and generate verifiable PDFs from published school data.",
+  "perm.template_design": "Design and edit document templates",
+  "perm.generate": "Generate documents from a published template",
+  "perm.approve": "Approve documents before they are issued",
+  "fields.title": "Available fields",
+  "fields.empty": "No enabled module offers document fields yet."
+}

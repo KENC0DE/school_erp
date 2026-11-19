@@ -2521,3 +2521,31 @@ figure includes the commit and the audit row):
 - **Fonts are named or uploaded.** A bundled family is identified by name with
   an optional fallback; an uploaded font carries the `file_id` of a stored file
   as a UUID. The renderer resolves both, and no layout embeds font bytes.
+
+## 2026-11-19 — P5-02 document fields registry
+
+- **The registry is the union of enabled manifests.** `GET
+  /api/v1/documents/fields` resolves the three module gates once and then reads
+  `ModuleManifest.document_fields` from every available module. Disabling
+  assessment removes all `student.marks.*` fields without the editor or the
+  route knowing what assessment is; a test proves the removal and restoration.
+- **Duplicate field keys are a manifest bug, not a merge policy.** Two enabled
+  modules claiming the same key would make a binding ambiguous, so
+  `collect_fields` refuses the request and the test suite checks uniqueness
+  across every manifest before it can reach production.
+- **Fields advertise formats; the response also fixes the vocabulary.** Each
+  field lists the formatting dimensions that make sense for its kind, while the
+  endpoint returns the closed set the renderer implements: calendar
+  `ec|gc|both`, script `am|en`, money `etb`. An unknown format or kind fails at
+  collection time rather than rendering incorrectly.
+- **The `documents` module exists from this task.** The fields route belongs to
+  the module that owns Document Studio, so the manifest is created now and
+  declares the three permissions from ARCH §9.8 (`documents.template.design`,
+  `documents.generate`, `documents.approve`). Only `template.design` gates this
+  route; generation and approval are wired in P5-08/P5-10, and default-role
+  assignments follow in P5-10. Super admins can use the endpoint until then.
+- **No navigation entry yet.** The sidebar item lands with the canvas editor in
+  P5-05 so the menu never points at a screen that does not exist.
+- **Labels stay i18n keys.** The response carries `label_key` (for example
+  `assessment.field.marks_term_total`) rather than English text, so the editor
+  renders labels from the same module bundle the rest of that module uses.

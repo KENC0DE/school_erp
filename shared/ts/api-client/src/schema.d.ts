@@ -2102,6 +2102,26 @@ export interface paths {
         patch: operations["update_custom_field_api_v1_custom_fields__field_id__patch"];
         trace?: never;
     };
+    "/api/v1/documents/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Fields Route
+         * @description Fields from enabled modules, with the formatting options they support.
+         */
+        get: operations["list_fields_route_api_v1_documents_fields_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/files": {
         parameters: {
             query?: never;
@@ -5833,6 +5853,45 @@ export interface components {
             row_version: number;
             /** Sort Order */
             sort_order?: number | null;
+        };
+        /**
+         * DocumentFieldOut
+         * @description One bindable value, attributed to the module that offers it.
+         */
+        DocumentFieldOut: {
+            /** Formats */
+            formats?: string[];
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "text" | "integer" | "decimal" | "date" | "boolean" | "table";
+            /** Label Key */
+            label_key: string;
+            /** Module */
+            module: string;
+            /** Sample */
+            sample?: unknown;
+        };
+        /** DocumentFieldsOut */
+        DocumentFieldsOut: {
+            format_options: components["schemas"]["DocumentFormatOptions"];
+            /** Items */
+            items?: components["schemas"]["DocumentFieldOut"][];
+        };
+        /**
+         * DocumentFormatOptions
+         * @description The formatting dimensions the renderer and the editor both understand.
+         */
+        DocumentFormatOptions: {
+            /** Calendar */
+            calendar: string[];
+            /** Money */
+            money: string[];
+            /** Script */
+            script: string[];
         };
         /** DuplicateCheck */
         DuplicateCheck: {
@@ -16020,6 +16079,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_fields_route_api_v1_documents_fields_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFieldsOut"];
                 };
             };
         };
