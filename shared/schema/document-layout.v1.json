@@ -646,6 +646,67 @@
                           "minLength": 1,
                           "maxLength": 120
                         },
+                        "group": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "computed": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "op": {
+                                  "type": "string",
+                                  "enum": [
+                                    "sum",
+                                    "average"
+                                  ]
+                                },
+                                "of": {
+                                  "minItems": 1,
+                                  "maxItems": 10,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 64,
+                                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "op",
+                                "of"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "op": {
+                                  "type": "string",
+                                  "const": "rank"
+                                },
+                                "by": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64,
+                                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
+                                },
+                                "descending": {
+                                  "default": false,
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "op",
+                                "by"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
                         "width_mm": {
                           "type": "number",
                           "exclusiveMinimum": 0,

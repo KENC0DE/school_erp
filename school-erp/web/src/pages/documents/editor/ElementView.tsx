@@ -1,4 +1,5 @@
 import type { LayoutElement, TextElement } from "@erp/documents";
+import { computeTableValues, summarizeColumn } from "@erp/documents/table";
 import type { CSSProperties } from "react";
 
 import type { FieldDefinition } from "../types";
@@ -72,21 +73,37 @@ function TableView({
 }) {
   const field = fields.get(element.table.source);
   const sampleRows = Array.isArray(field?.sample)
-    ? (field.sample as Array<Record<string, unknown>>).slice(0, 4)
+    ? (field.sample as Array<Record<string, unknown>>).slice(0, 6)
     : [];
   const rows = sampleRows.length
     ? sampleRows
     : Array.from({ length: 3 }, () =>
         Object.fromEntries(element.table.columns.map((column) => [column.key, "—"])),
       );
+  const values = computeTableValues(rows, element.table.columns);
   const totalWidth = element.table.columns.reduce(
     (sum, column) => sum + (column.width_mm ?? 30),
     0,
   );
+  const groups: Array<{ label: string | undefined; span: number }> = [];
+  for (const column of element.table.columns) {
+    const last = groups[groups.length - 1];
+    if (last && last.label === column.group) last.span += 1;
+    else groups.push({ label: column.group, span: 1 });
+  }
   return (
     <table className="doc-table" style={{ fontSize: `${element.style.font_size_pt}pt`, fontFamily: `'${element.style.font_family}', sans-serif` }}>
       {element.table.show_header ? (
         <thead>
+          {groups.some((group) => group.label) ? (
+            <tr>
+              {groups.map((group, index) => (
+                <th key={index} colSpan={group.span} style={{ textAlign: "center" }}>
+                  {group.label ?? ""}
+                </th>
+              ))}
+            </tr>
+          ) : null}
           <tr>
             {element.table.columns.map((column) => (
               <th
@@ -104,19 +121,45 @@ function TableView({
         </thead>
       ) : null}
       <tbody>
-        {rows.map((row, index) => (
+        {values.map((row, index) => (
           <tr key={index}>
             {element.table.columns.map((column) => (
               <td
                 key={column.key}
                 style={{ textAlign: column.align, color: element.style.colour }}
               >
-                {String(row[column.binding ?? column.key] ?? "—")}
+                {row[column.key] || "—"}
               </td>
             ))}
           </tr>
         ))}
       </tbody>
+      {element.table.summaries.length ? (
+        <tfoot>
+          {element.table.summaries.map((summary) => (
+            <tr key={`${summary.column}-${summary.aggregate}`}>
+              {element.table.columns.map((column, index) =>
+                index === 0 ? (
+                  <td key={column.key} style={{ textAlign: column.align, color: element.style.colour }}>
+                    {summary.label}
+                  </td>
+                ) : (
+                  <td key={column.key} style={{ textAlign: column.align, color: element.style.colour }}>
+                    {column.key === summary.column
+                      ? summarizeColumn(
+                          values,
+                          column.key,
+                          summary.aggregate,
+                          column.format?.number_decimals,
+                        )
+                      : ""}
+                  </td>
+                ),
+              )}
+            </tr>
+          ))}
+        </tfoot>
+      ) : null}
     </table>
   );
 }

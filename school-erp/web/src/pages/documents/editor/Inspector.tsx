@@ -137,6 +137,17 @@ export interface InspectorProps {
   onChange: (layout: Layout) => void;
 }
 
+type Visibility = NonNullable<LayoutElement["visible_when"]>;
+type LeafVisibility = Extract<Visibility, { op: string }> & {
+  value?: string | number | boolean;
+};
+
+function isLeafCondition(condition: Visibility): condition is LeafVisibility {
+  return !("all" in condition) && !("any" in condition);
+}
+
+const COMPARISON_OPS = ["eq", "ne", "gt", "gte", "lt", "lte", "contains"] as const;
+
 export function Inspector({ layout, element, onChange }: InspectorProps) {
   const { t } = useI18n();
   if (!element) {
@@ -352,61 +363,204 @@ export function Inspector({ layout, element, onChange }: InspectorProps) {
             />
           </div>
           <div className="doc-columns">
-            {element.table.columns.map((column, index) => (
-              <div className="doc-column" key={`${column.key}-${index}`}>
-                <Input
-                  value={column.label}
-                  aria-label={t("documents.editor.column_label")}
-                  onChange={(event) => {
-                    const columns = element.table.columns.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, label: event.target.value } : item,
-                    );
-                    patch({ table: { ...element.table, columns } });
-                  }}
-                />
-                <Input
-                  value={column.binding ?? ""}
-                  aria-label={t("documents.editor.column_binding")}
-                  placeholder={t("documents.editor.column_binding")}
-                  onChange={(event) => {
-                    const columns = element.table.columns.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, binding: event.target.value || undefined } : item,
-                    );
-                    patch({ table: { ...element.table, columns } });
-                  }}
-                />
-                <Select
-                  value={column.align}
-                  aria-label={t("documents.editor.align")}
-                  onChange={(event) => {
-                    const columns = element.table.columns.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, align: event.target.value as "left" | "center" | "right" } : item,
-                    );
-                    patch({ table: { ...element.table, columns } });
-                  }}
-                >
-                  <option value="left">{t("documents.editor.align_left")}</option>
-                  <option value="center">{t("documents.editor.align_center")}</option>
-                  <option value="right">{t("documents.editor.align_right")}</option>
-                </Select>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label={t("documents.editor.column_remove")}
-                  disabled={element.table.columns.length <= 1}
-                  onClick={() =>
-                    patch({
-                      table: {
-                        ...element.table,
-                        columns: element.table.columns.filter((_, itemIndex) => itemIndex !== index),
-                      },
-                    })
-                  }
-                >
-                  ×
-                </Button>
-              </div>
-            ))}
+            {element.table.columns.map((column, index) => {
+              const computed = column.computed;
+              const others = element.table.columns.filter(
+                (item) => item.key !== column.key && item.computed === undefined,
+              );
+              return (
+                <div className="doc-column" key={`${column.key}-${index}`}>
+                  <Input
+                    value={column.label}
+                    aria-label={t("documents.editor.column_label")}
+                    onChange={(event) => {
+                      const columns = element.table.columns.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, label: event.target.value } : item,
+                      );
+                      patch({ table: { ...element.table, columns } });
+                    }}
+                  />
+                  <Input
+                    value={column.group ?? ""}
+                    aria-label={t("documents.editor.column_group")}
+                    placeholder={t("documents.editor.column_group")}
+                    onChange={(event) => {
+                      const columns = element.table.columns.map((item, itemIndex) =>
+                        itemIndex === index
+                          ? { ...item, group: event.target.value || undefined }
+                          : item,
+                      );
+                      patch({ table: { ...element.table, columns } });
+                    }}
+                  />
+                  <Select
+                    value={computed?.op ?? "none"}
+                    aria-label={t("documents.editor.column_computed")}
+                    onChange={(event) => {
+                      const op = event.target.value;
+                      const columns = element.table.columns.map((item, itemIndex) => {
+                        if (itemIndex !== index) return item;
+                        if (op === "none") return { ...item, computed: undefined };
+                        if (op === "rank") {
+                          return {
+                            ...item,
+                            binding: undefined,
+                            computed: {
+                              op: "rank" as const,
+                              by: others[0]?.key ?? item.key,
+                              descending: true,
+                            },
+                          };
+                        }
+                        return {
+                          ...item,
+                          binding: undefined,
+                          computed: {
+                            op: op as "sum" | "average",
+                            of: others.slice(0, 1).map((other) => other.key),
+                          },
+                        };
+                      });
+                      patch({ table: { ...element.table, columns } });
+                    }}
+                  >
+                    <option value="none">{t("documents.editor.computed_none")}</option>
+                    <option value="sum" disabled={others.length === 0}>
+                      {t("documents.editor.computed_sum")}
+                    </option>
+                    <option value="average" disabled={others.length === 0}>
+                      {t("documents.editor.computed_average")}
+                    </option>
+                    <option value="rank" disabled={others.length === 0}>
+                      {t("documents.editor.computed_rank")}
+                    </option>
+                  </Select>
+                  {computed === undefined ? (
+                    <Input
+                      value={column.binding ?? ""}
+                      aria-label={t("documents.editor.column_binding")}
+                      placeholder={t("documents.editor.column_binding")}
+                      onChange={(event) => {
+                        const columns = element.table.columns.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { ...item, binding: event.target.value || undefined }
+                            : item,
+                        );
+                        patch({ table: { ...element.table, columns } });
+                      }}
+                    />
+                  ) : computed.op === "rank" ? (
+                    <>
+                      <Input
+                        value={computed.by}
+                        aria-label={t("documents.editor.computed_by")}
+                        placeholder={t("documents.editor.computed_by")}
+                        onChange={(event) => {
+                          const columns = element.table.columns.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  computed: {
+                                    op: "rank" as const,
+                                    by: event.target.value,
+                                    descending: computed.descending,
+                                  },
+                                }
+                              : item,
+                          );
+                          patch({ table: { ...element.table, columns } });
+                        }}
+                      />
+                      <Checkbox
+                        label={t("documents.editor.computed_descending")}
+                        checked={computed.descending}
+                        onChange={(event) => {
+                          const columns = element.table.columns.map((item, itemIndex) =>
+                            itemIndex === index
+                              ? {
+                                  ...item,
+                                  computed: {
+                                    op: "rank" as const,
+                                    by: computed.by,
+                                    descending: event.target.checked,
+                                  },
+                                }
+                              : item,
+                          );
+                          patch({ table: { ...element.table, columns } });
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <Input
+                      value={computed.of.join(", ")}
+                      aria-label={t("documents.editor.computed_of")}
+                      placeholder={t("documents.editor.computed_of")}
+                      onChange={(event) => {
+                        const of = event.target.value
+                          .split(",")
+                          .map((value) => value.trim())
+                          .filter(Boolean);
+                        const columns = element.table.columns.map((item, itemIndex) =>
+                          itemIndex === index
+                            ? { ...item, computed: { op: computed.op, of } }
+                            : item,
+                        );
+                        patch({ table: { ...element.table, columns } });
+                      }}
+                    />
+                  )}
+                  <Select
+                    value={column.align}
+                    aria-label={t("documents.editor.align")}
+                    onChange={(event) => {
+                      const columns = element.table.columns.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, align: event.target.value as "left" | "center" | "right" } : item,
+                      );
+                      patch({ table: { ...element.table, columns } });
+                    }}
+                  >
+                    <option value="left">{t("documents.editor.align_left")}</option>
+                    <option value="center">{t("documents.editor.align_center")}</option>
+                    <option value="right">{t("documents.editor.align_right")}</option>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={t("documents.editor.column_remove")}
+                    disabled={element.table.columns.length <= 1}
+                    onClick={() =>
+                      patch({
+                        table: {
+                          ...element.table,
+                          columns: element.table.columns
+                            .filter((_, itemIndex) => itemIndex !== index)
+                            .map((item) => {
+                              if (item.computed === undefined) return item;
+                              if (item.computed.op === "rank") {
+                                return item.computed.by === column.key
+                                  ? { ...item, computed: undefined }
+                                  : item;
+                              }
+                              const of = item.computed.of.filter(
+                                (reference) => reference !== column.key,
+                              );
+                              return of.length
+                                ? { ...item, computed: { ...item.computed, of } }
+                                : { ...item, computed: undefined };
+                            }),
+                          summaries: element.table.summaries.filter(
+                            (summary) => summary.column !== column.key,
+                          ),
+                        },
+                      })
+                    }
+                  >
+                    ×
+                  </Button>
+                </div>
+              );
+            })}
             <Button
               variant="outline"
               size="sm"
@@ -429,6 +583,93 @@ export function Inspector({ layout, element, onChange }: InspectorProps) {
               {t("documents.editor.column_add")}
             </Button>
           </div>
+          <div className="doc-inspector__row">
+            <h3 className="doc-panel__subtitle">{t("documents.editor.summaries")}</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                patch({
+                  table: {
+                    ...element.table,
+                    summaries: [
+                      ...element.table.summaries,
+                      {
+                        column: element.table.columns[0].key,
+                        aggregate: "sum",
+                        label: t("documents.editor.summary_sum"),
+                      },
+                    ],
+                  },
+                })
+              }
+            >
+              {t("documents.editor.summary_add")}
+            </Button>
+          </div>
+          {element.table.summaries.map((summary, index) => (
+            <div className="doc-column" key={`${summary.column}-${summary.aggregate}-${index}`}>
+              <Select
+                value={summary.column}
+                aria-label={t("documents.editor.summary_column")}
+                onChange={(event) => {
+                  const summaries = element.table.summaries.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, column: event.target.value } : item,
+                  );
+                  patch({ table: { ...element.table, summaries } });
+                }}
+              >
+                {element.table.columns.map((column) => (
+                  <option key={column.key} value={column.key}>
+                    {column.label}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={summary.aggregate}
+                aria-label={t("documents.editor.summary_aggregate")}
+                onChange={(event) => {
+                  const summaries = element.table.summaries.map((item, itemIndex) =>
+                    itemIndex === index
+                      ? { ...item, aggregate: event.target.value as "sum" | "average" | "count" }
+                      : item,
+                  );
+                  patch({ table: { ...element.table, summaries } });
+                }}
+              >
+                <option value="sum">{t("documents.editor.summary_sum")}</option>
+                <option value="average">{t("documents.editor.summary_average")}</option>
+                <option value="count">{t("documents.editor.summary_count")}</option>
+              </Select>
+              <Input
+                value={summary.label}
+                aria-label={t("documents.editor.summary_label")}
+                onChange={(event) => {
+                  const summaries = element.table.summaries.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, label: event.target.value } : item,
+                  );
+                  patch({ table: { ...element.table, summaries } });
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={t("documents.editor.summary_remove")}
+                onClick={() =>
+                  patch({
+                    table: {
+                      ...element.table,
+                      summaries: element.table.summaries.filter(
+                        (_, itemIndex) => itemIndex !== index,
+                      ),
+                    },
+                  })
+                }
+              >
+                ×
+              </Button>
+            </div>
+          ))}
           <h3 className="doc-panel__subtitle">{t("documents.editor.style")}</h3>
           <StyleFields style={element.style} onChange={(values) => patch({ style: { ...element.style, ...values } })} />
         </>
@@ -488,6 +729,95 @@ export function Inspector({ layout, element, onChange }: InspectorProps) {
           />
         </>
       ) : null}
+
+      <h3 className="doc-panel__subtitle">{t("documents.editor.condition")}</h3>
+      {element.visible_when === undefined ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => patch({ visible_when: { op: "exists", field: "" } })}
+        >
+          {t("documents.editor.condition_exists")}
+        </Button>
+      ) : isLeafCondition(element.visible_when) ? (
+        <div className="doc-inspector__grid">
+          <Field label={t("documents.editor.condition_field")}>
+            <Input
+              value={element.visible_when.field}
+              onChange={(event) =>
+                patch({
+                  visible_when: { ...(element.visible_when as LeafVisibility), field: event.target.value },
+                })
+              }
+            />
+          </Field>
+          <Field label={t("documents.editor.condition_operator")}>
+            <Select
+              value={element.visible_when.op}
+              onChange={(event) => {
+                const op = event.target.value;
+                if (op === "exists" || op === "empty") {
+                  patch({
+                    visible_when: {
+                      op,
+                      field: (element.visible_when as LeafVisibility).field,
+                    } as Visibility,
+                  });
+                } else {
+                  patch({
+                    visible_when: {
+                      op: op as (typeof COMPARISON_OPS)[number],
+                      field: (element.visible_when as LeafVisibility).field,
+                      value: (element.visible_when as LeafVisibility).value ?? "",
+                    } as Visibility,
+                  });
+                }
+              }}
+            >
+              <option value="exists">{t("documents.editor.condition_exists")}</option>
+              <option value="empty">{t("documents.editor.condition_empty")}</option>
+              {COMPARISON_OPS.map((op) => (
+                <option key={op} value={op}>
+                  {t(`documents.editor.condition_${op}`)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {element.visible_when.op !== "exists" && element.visible_when.op !== "empty" ? (
+            <Field label={t("documents.editor.condition_value")}>
+              <Input
+                value={String(element.visible_when.value ?? "")}
+                onChange={(event) =>
+                  patch({
+                    visible_when: {
+                      ...(element.visible_when as LeafVisibility),
+                      value: event.target.value,
+                    } as Visibility,
+                  })
+                }
+              />
+            </Field>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => patch({ visible_when: undefined })}
+          >
+            {t("documents.editor.condition_clear")}
+          </Button>
+        </div>
+      ) : (
+        <div className="doc-inspector__actions">
+          <span>{t("documents.editor.condition_complex")}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => patch({ visible_when: undefined })}
+          >
+            {t("documents.editor.condition_clear")}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

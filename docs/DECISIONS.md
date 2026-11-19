@@ -2665,3 +2665,34 @@ figure includes the commit and the audit row):
   `DEMO_MODULES` list as a fresh demo school; adding `documents` there makes the
   navigation entry and editor reachable without a manual module toggle, and
   keeps the seed representative of an installed school.
+
+## 2026-11-19 — P5-06 repeating tables and conditional blocks
+
+- **The table stays one flat row source.** A report card is a list of subject
+  rows with columns; components and terms are columns, not a nested table
+  model. Consecutive columns that share a `group` print one span header over
+  them, which covers "Term 1 / Term 2" or "Components" without introducing a
+  second data shape.
+- **Totals, averages and ranks are computed per row.** A column may bind a row
+  field or declare `computed` (`sum`, `average`, `rank`). Sum and average name
+  explicit source columns, so a designer cannot silently include the wrong
+  component; rank names one target column and uses competition ranking
+  (1, 2, 2, 4) with a direction. Computed columns never bind a field, computed
+  sources cannot nest, and a rank cannot target another rank.
+- **Arithmetic is exact in both renderers.** The PDF renderer uses Python
+  `Decimal` with half-up rounding; the canvas preview uses scaled `BigInt`
+  values, so a mark or average shown while designing is the value that prints.
+  JavaScript floats never enter a mark, total or rank path.
+- **Summaries may aggregate computed columns.** A footer total can sum row
+  totals and a footer average can average row averages. The existing
+  `sum`/`average`/`count` summaries now read the resolved row values, not just
+  bound source fields.
+- **Conditions remain element-level blocks.** "Promoted" and "Repeat" are two
+  text elements with mutually exclusive `visible_when` conditions, which keeps
+  the layout model simple and lets any element be conditional. The inspector
+  edits simple leaf conditions (field, operator, value); imported `all`/`any`
+  groups are preserved and can be cleared, but not edited field-by-field yet.
+- **The schema version does not change.** `group` and `computed` are optional
+  additions to version 1; every existing layout still validates and prints
+  identically, while new layouts gain the report-card capabilities. The
+  committed JSON Schema and both fixture suites were regenerated together.

@@ -20,7 +20,7 @@ import html
 import io
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -398,23 +398,96 @@ def _cell(row: Mapping[str, Any], binding: str | None, script: str) -> Any:
     return resolve_field(row, binding, script)
 
 
-def _summary_value(
+def _numeric(value: Any, language: str) -> Decimal | None:
+    """Read one cell as a decimal, rejecting booleans and non-numeric text."""
+    if value is MISSING or value is None or value == "" or isinstance(value, bool):
+        return None
+    text = format_with_options(value, None, default_script=language)
+    text = text.replace(",", "").replace("ETB", "").replace("ብር", "").strip()
+    if text.endswith("%"):
+        text = text[:-1].strip()
+    try:
+        return Decimal(text)
+    except InvalidOperation:
+        return None
+
+
+def _row_values(
     rows: list[Mapping[str, Any]],
+    columns: list[Any],
+    language: str,
+) -> list[dict[str, Any]]:
+    """Resolve every column for every row, including computed columns.
+
+    Base columns resolve their binding. Sum and average columns then combine
+    the named base columns, and rank columns order rows by their target. Values
+    stay raw (Decimal for computed numbers) so summaries and formatting can use
+    exact arithmetic.
+    """
+    values: list[dict[str, Any]] = []
+    for row in rows:
+        current: dict[str, Any] = {}
+        for column in columns:
+            if column.binding is not None:
+                current[column.key] = _cell(
+                    row,
+                    column.binding,
+                    _column_script(column, language),
+                )
+            else:
+                current[column.key] = ""
+        values.append(current)
+    for column in columns:
+        computed = column.computed
+        if computed is None or computed.op == "rank":
+            continue
+        for current in values:
+            numbers = [
+                number
+                for reference in computed.of
+                if (number := _numeric(current.get(reference), language)) is not None
+            ]
+            if not numbers:
+                current[column.key] = None
+            elif computed.op == "sum":
+                current[column.key] = sum(numbers, Decimal(0))
+            else:
+                places = getattr(column.format, "number_decimals", None)
+                places = 2 if places is None else places
+                current[column.key] = (sum(numbers, Decimal(0)) / len(numbers)).quantize(
+                    Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP
+                )
+    for column in columns:
+        computed = column.computed
+        if computed is None or computed.op != "rank":
+            continue
+        ranked = [
+            (index, number)
+            for index, current in enumerate(values)
+            if (number := _numeric(current.get(computed.by), language)) is not None
+        ]
+        ranked.sort(key=lambda item: item[1], reverse=computed.descending)
+        previous: Decimal | None = None
+        rank = 0
+        for position, (index, number) in enumerate(ranked, start=1):
+            if previous is None or number != previous:
+                rank = position
+                previous = number
+            values[index][column.key] = rank
+        for current in values:
+            current.setdefault(column.key, None)
+    return values
+
+
+def _summary_value(
+    values: list[Any],
     column: Any,
     aggregate: str,
     language: str,
 ) -> str:
-    script = (column.format.script if column.format else None) or language
-    values = [_cell(row, column.binding, script) for row in rows]
     if aggregate == "count":
         return str(sum(1 for value in values if value not in (None, "", MISSING)))
-    numbers: list[Decimal] = []
-    for value in values:
-        text = format_with_options(value, None, default_script=language)
-        try:
-            numbers.append(Decimal(text.replace(",", "")))
-        except (InvalidOperation, AttributeError):
-            continue
+    numbers = [number for value in values if (number := _numeric(value, language)) is not None]
     if not numbers:
         return "0"
     total = sum(numbers, Decimal(0))
@@ -422,7 +495,7 @@ def _summary_value(
         # Exact decimal division, rounded to the column's advertised precision.
         places = getattr(column.format, "number_decimals", None)
         places = 2 if places is None else places
-        total = (total / len(numbers)).quantize(Decimal(1).scaleb(-places))
+        total = (total / len(numbers)).quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
     return format_with_options(total, column.format, default_script=language)
 
 
@@ -430,10 +503,28 @@ def _column_script(column: Any, language: str) -> str:
     return (column.format.script if column.format else None) or language
 
 
+def _header_groups(columns: list[Any]) -> str:
+    """One header row that spans each run of columns sharing a group label."""
+    cells: list[str] = []
+    index = 0
+    while index < len(columns):
+        label = columns[index].group
+        span = 1
+        while index + span < len(columns) and columns[index + span].group == label:
+            span += 1
+        cells.append(
+            f'<th colspan="{span}" style="text-align:center;padding:0 1mm;'
+            f'font-weight:700;">{html.escape(label or "")}</th>'
+        )
+        index += span
+    return f"<tr>{''.join(cells)}</tr>"
+
+
 def _render_table(element: TableElement, context: RenderContext) -> str:
     table = element.table
     language = _language(context)
     rows = _table_rows(element, context)
+    values = _row_values(rows, table.columns, language)
     widths = [column.width_mm for column in table.columns]
     if all(widths):
         # Honour the author's column widths instead of stretching them to the
@@ -452,13 +543,17 @@ def _render_table(element: TableElement, context: RenderContext) -> str:
     head = ""
     if table.show_header:
         group = "table-header-group" if table.repeat_header else "table-row-group"
-        head = f'<thead style="display:{group};"><tr>{headers}</tr></thead>'
+        group_row = _header_groups(table.columns) if any(column.group for column in table.columns) else ""
+        head = f'<thead style="display:{group};">{group_row}<tr>{headers}</tr></thead>'
     body_rows = []
-    for row in rows:
+    for current in values:
         cells = []
         for column in table.columns:
-            value = _cell(row, column.binding, _column_script(column, language))
-            text = format_with_options(value, column.format, default_script=language)
+            raw = current.get(column.key)
+            if column.computed is not None and column.computed.op == "rank":
+                text = "" if raw is None else str(raw)
+            else:
+                text = format_with_options(raw, column.format, default_script=language)
             cells.append(
                 f'<td style="text-align:{column.align};height:{_mm(table.row_height_mm)};'
                 f'padding:0 1mm;">{html.escape(text)}</td>'
@@ -468,7 +563,12 @@ def _render_table(element: TableElement, context: RenderContext) -> str:
     foot_rows = []
     for summary in table.summaries:
         column = next(item for item in table.columns if item.key == summary.column)
-        value = _summary_value(rows, column, summary.aggregate, language)
+        value = _summary_value(
+            [current.get(column.key) for current in values],
+            column,
+            summary.aggregate,
+            language,
+        )
         cells = []
         for index, item in enumerate(table.columns):
             if index == 0 and item.key != summary.column:

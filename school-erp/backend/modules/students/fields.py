@@ -62,6 +62,38 @@ FIELDS: tuple[DocumentField, ...] = (
         sample="active",
     ),
     DocumentField(
+        "student.next_grade",
+        "students.field.next_grade",
+        "text",
+        formats=("script",),
+        sample="Grade 6",
+    ),
+    DocumentField(
+        "student.attendance_present",
+        "students.field.attendance_present",
+        "integer",
+        sample=172,
+    ),
+    DocumentField(
+        "student.attendance_absent",
+        "students.field.attendance_absent",
+        "integer",
+        sample=8,
+    ),
+    DocumentField(
+        "student.attendance_percent",
+        "students.field.attendance_percent",
+        "decimal",
+        sample="95.56",
+    ),
+    DocumentField(
+        "student.remarks",
+        "students.field.remarks",
+        "text",
+        formats=("script",),
+        sample="A diligent student who participates actively.",
+    ),
+    DocumentField(
         "student.admission_date",
         "students.field.admission_date",
         "date",

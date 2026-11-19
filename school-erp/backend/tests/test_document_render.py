@@ -327,6 +327,126 @@ def test_html_renders_table_columns_summaries_and_row_values() -> None:
     assert "Subjects 2" in document
 
 
+def test_html_renders_grouped_computed_and_ranked_table_rows() -> None:
+    layout = _layout(
+        [
+            {
+                "id": "marks",
+                "type": "table",
+                "rect": {"x_mm": 10, "y_mm": 10, "w_mm": 150, "h_mm": 80},
+                "table": {
+                    "source": "student.marks.subjects",
+                    "row_height_mm": 7,
+                    "columns": [
+                        {"key": "subject", "label": "Subject", "binding": "subject", "width_mm": 50},
+                        {
+                            "key": "classwork",
+                            "label": "Class work",
+                            "binding": "classwork",
+                            "group": "Term 1",
+                            "width_mm": 20,
+                            "align": "right",
+                        },
+                        {
+                            "key": "test",
+                            "label": "Test",
+                            "binding": "test",
+                            "group": "Term 1",
+                            "width_mm": 20,
+                            "align": "right",
+                        },
+                        {
+                            "key": "final",
+                            "label": "Final",
+                            "binding": "final",
+                            "group": "Term 2",
+                            "width_mm": 20,
+                            "align": "right",
+                        },
+                        {
+                            "key": "total",
+                            "label": "Total",
+                            "computed": {"op": "sum", "of": ["classwork", "test", "final"]},
+                            "width_mm": 20,
+                            "align": "right",
+                            "format": {"number_decimals": 2},
+                        },
+                        {
+                            "key": "average",
+                            "label": "Average",
+                            "computed": {"op": "average", "of": ["classwork", "test", "final"]},
+                            "width_mm": 20,
+                            "align": "right",
+                            "format": {"number_decimals": 2},
+                        },
+                        {
+                            "key": "rank",
+                            "label": "Rank",
+                            "computed": {"op": "rank", "by": "total", "descending": True},
+                            "width_mm": 15,
+                            "align": "center",
+                        },
+                        {"key": "remark", "label": "Remark", "binding": "remark", "width_mm": 35},
+                    ],
+                    "summaries": [
+                        {"column": "total", "aggregate": "sum", "label": "Class total"},
+                        {"column": "average", "aggregate": "average", "label": "Class average"},
+                    ],
+                },
+                "style": {"font_family": "Inter", "font_size_pt": 9},
+            },
+            {
+                **_text("promoted", "Promoted to Grade 9"),
+                "visible_when": {"op": "eq", "field": "student.status", "value": "promoted"},
+            },
+            {
+                **_text("repeat", "Repeat"),
+                "visible_when": {"op": "eq", "field": "student.status", "value": "repeat"},
+            },
+        ]
+    )
+    data = {
+        **DATA,
+        "student": {
+            **DATA["student"],
+            "status": "promoted",
+            "marks": {
+                "subjects": [
+                    {
+                        "subject": "Maths",
+                        "classwork": "8.5",
+                        "test": "15",
+                        "final": "60.25",
+                        "remark": "Excellent",
+                    },
+                    {
+                        "subject": "English",
+                        "classwork": "7",
+                        "test": "12",
+                        "final": "51",
+                        "remark": "Good",
+                    },
+                ]
+            },
+        },
+    }
+    document = layout_to_html(layout, RenderContext(data=data))
+    # Two grouped header cells span their component columns.
+    assert '<th colspan="2" style="text-align:center;padding:0 1mm;font-weight:700;">Term 1</th>' in document
+    assert '<th colspan="1" style="text-align:center;padding:0 1mm;font-weight:700;">Term 2</th>' in document
+    assert "Term 1" in document and "Class work" in document
+    assert "83.75" in document and "27.92" in document
+    assert "70.00" in document and "23.33" in document
+    # Maths is first, English second.
+    assert '<td style="text-align:center;height:7mm;padding:0 1mm;">1</td>' in document
+    assert '<td style="text-align:center;height:7mm;padding:0 1mm;">2</td>' in document
+    # Footer totals use the computed row values exactly.
+    assert "Class total" in document and "153.75" in document
+    assert "Class average" in document and "25.63" in document
+    assert "Promoted to Grade 9" in document
+    assert "Repeat" not in document
+
+
 def test_html_resolves_image_fields_through_assets() -> None:
     layout = _layout(
         [

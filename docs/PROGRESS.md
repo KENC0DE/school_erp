@@ -183,7 +183,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P5-03 — Renderer
 - [x] P5-04 — Template models: draft/publish lifecycle, duplicate, JSON import/export, 7 starters (12 tests)
 - [x] P5-05 — Canvas editor (web): drag/resize, text, image, shape, line, table, QR/barcode, logo/signature/stamp/photo, field insertion, snap, layers, undo/redo, zoom, page setup (Playwright + 3 editor tests)
-- [ ] P5-06 — Repeating tables
+- [x] P5-06 — Repeating tables: grouped headers, row totals/averages/ranks, summaries, attendance/remarks, conditional Promoted/Repeat blocks (4 table tests + renderer/schema fixtures)
 - [ ] P5-07 — Preview with sample or real data
 - [ ] P5-08 — Generation
 - [ ] P5-09 — Public verification page

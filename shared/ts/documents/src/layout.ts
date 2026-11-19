@@ -85,12 +85,36 @@ export const ConditionSchema: z.ZodType<Condition> = z.lazy(() =>
   ]),
 );
 
+/**
+ * A value derived from the other columns of the same repeating row.
+ *
+ * `sum` and `average` read a named set of earlier columns; `rank` orders rows
+ * by one column. Rank is competition ranking, so tied rows share a place and
+ * the next place is skipped (1, 2, 2, 4).
+ */
+export const TableComputationSchema = z.union([
+  z.strictObject({
+    op: z.enum(["sum", "average"]),
+    of: z.array(identifierSchema).min(1).max(10),
+  }),
+  z.strictObject({
+    op: z.literal("rank"),
+    by: identifierSchema,
+    descending: z.boolean().default(false),
+  }),
+]);
+
 export const TableColumnSchema = z.strictObject({
   key: identifierSchema,
   label: z.string().min(1).max(120),
   // The field this column reads from one repeating row. Omitted for a static
-  // column (a number column, a blank spacer, ...).
+  // column (a number column, a blank spacer, ...) or a computed column.
   binding: z.string().min(1).max(120).optional(),
+  // Consecutive columns with the same group label share a header cell, which
+  // is how a report card prints "Term 1" over several components.
+  group: z.string().min(1).max(60).optional(),
+  // A total, average or rank derived from the row instead of read from data.
+  computed: TableComputationSchema.optional(),
   width_mm: z.number().gt(0).max(2000).optional(),
   align: z.enum(["left", "center", "right"]).default("left"),
   format: FormatOptionsSchema.optional(),
@@ -123,6 +147,73 @@ export const TableSpecSchema = z
         });
       }
       seen.add(column.key);
+    });
+    const columns = new Map(table.columns.map((column) => [column.key, column]));
+    table.columns.forEach((column, index) => {
+      if (column.binding !== undefined && column.computed !== undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message: `column "${column.key}" cannot both bind and compute`,
+          path: ["columns", index, "computed"],
+        });
+      }
+      if (column.computed === undefined) return;
+      if (column.computed.op === "rank") {
+        const target = columns.get(column.computed.by);
+        if (column.computed.by === column.key) {
+          ctx.addIssue({
+            code: "custom",
+            message: `column "${column.key}" cannot rank itself`,
+            path: ["columns", index, "computed", "by"],
+          });
+        } else if (target === undefined) {
+          ctx.addIssue({
+            code: "custom",
+            message: `rank names unknown column "${column.computed.by}"`,
+            path: ["columns", index, "computed", "by"],
+          });
+        } else if (target.computed?.op === "rank") {
+          ctx.addIssue({
+            code: "custom",
+            message: `rank cannot use another rank column "${column.computed.by}"`,
+            path: ["columns", index, "computed", "by"],
+          });
+        }
+        return;
+      }
+      const unique = new Set<string>();
+      column.computed.of.forEach((reference, referenceIndex) => {
+        if (!unique.add(reference)) {
+          ctx.addIssue({
+            code: "custom",
+            message: `column "${column.key}" names "${reference}" twice`,
+            path: ["columns", index, "computed", "of", referenceIndex],
+          });
+          return;
+        }
+        if (reference === column.key) {
+          ctx.addIssue({
+            code: "custom",
+            message: `column "${column.key}" cannot aggregate itself`,
+            path: ["columns", index, "computed", "of", referenceIndex],
+          });
+          return;
+        }
+        const source = columns.get(reference);
+        if (source === undefined) {
+          ctx.addIssue({
+            code: "custom",
+            message: `computation names unknown column "${reference}"`,
+            path: ["columns", index, "computed", "of", referenceIndex],
+          });
+        } else if (source.computed !== undefined) {
+          ctx.addIssue({
+            code: "custom",
+            message: `computation cannot nest column "${reference}"`,
+            path: ["columns", index, "computed", "of", referenceIndex],
+          });
+        }
+      });
     });
     table.summaries.forEach((summary, index) => {
       if (!seen.has(summary.column)) {
@@ -298,6 +389,8 @@ export type QrElement = z.infer<typeof QrElementSchema>;
 export type BarcodeElement = z.infer<typeof BarcodeElementSchema>;
 export type Page = z.infer<typeof PageSchema>;
 export type TableSpec = z.infer<typeof TableSpecSchema>;
+export type TableColumn = z.infer<typeof TableColumnSchema>;
+export type TableComputation = z.infer<typeof TableComputationSchema>;
 export type FormatOptions = z.infer<typeof FormatOptionsSchema>;
 export type TextStyle = z.infer<typeof TextStyleSchema>;
 

@@ -122,10 +122,26 @@ class Condition(_Closed):
 Condition.model_rebuild()
 
 
+class _RowAggregate(_Closed):
+    op: Literal["sum", "average"]
+    of: Annotated[list[Identifier], Field(min_length=1, max_length=10)]
+
+
+class _RowRank(_Closed):
+    op: Literal["rank"]
+    by: Identifier
+    descending: bool = False
+
+
+TableComputation = Annotated[_RowAggregate | _RowRank, Field(discriminator="op")]
+
+
 class TableColumn(_Closed):
     key: Identifier
     label: Annotated[str, Field(min_length=1, max_length=120)]
     binding: FieldKey | None = None
+    group: Annotated[str, Field(min_length=1, max_length=60)] | None = None
+    computed: TableComputation | None = None
     width_mm: Annotated[float, Field(gt=0, le=2000)] | None = None
     align: Literal["left", "center", "right"] = "left"
     format: FormatOptions | None = None
@@ -152,6 +168,32 @@ class TableSpec(_Closed):
             if column.key in seen:
                 raise ValueError(f'duplicate table column "{column.key}"')
             seen.add(column.key)
+        columns = {column.key: column for column in self.columns}
+        for column in self.columns:
+            computed = column.computed
+            if computed is None:
+                continue
+            if column.binding is not None:
+                raise ValueError(f'column "{column.key}" cannot both bind and compute')
+            if isinstance(computed, _RowRank):
+                if computed.by == column.key:
+                    raise ValueError(f'column "{column.key}" cannot rank itself')
+                target = columns.get(computed.by)
+                if target is None:
+                    raise ValueError(f'rank names unknown column "{computed.by}"')
+                if isinstance(target.computed, _RowRank):
+                    raise ValueError(f'rank cannot use another rank column "{computed.by}"')
+                continue
+            if len(set(computed.of)) != len(computed.of):
+                raise ValueError(f'column "{column.key}" names a column twice')
+            for reference in computed.of:
+                if reference == column.key:
+                    raise ValueError(f'column "{column.key}" cannot aggregate itself')
+                source = columns.get(reference)
+                if source is None:
+                    raise ValueError(f'computation names unknown column "{reference}"')
+                if source.computed is not None:
+                    raise ValueError(f'computation cannot nest column "{reference}"')
         for summary in self.summaries:
             if summary.column not in seen:
                 raise ValueError(f'summary names unknown column "{summary.column}"')
@@ -313,6 +355,7 @@ __all__ = [
     "ShapeElement",
     "Stroke",
     "TableColumn",
+    "TableComputation",
     "TableElement",
     "TableSpec",
     "TableSummary",
