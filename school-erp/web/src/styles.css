@@ -606,7 +606,62 @@ body {
 .doc-preview {
   overflow: auto;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.doc-preview__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: flex-start;
+  width: 100%;
+}
+
+.doc-preview__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.doc-preview__modes legend {
+  padding: 0;
+  margin-inline-end: var(--space-sm);
+}
+
+.doc-preview__mode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+}
+
+.doc-preview__student {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: flex-end;
+}
+
+.doc-preview__student .ui-field {
+  flex: 1 1 180px;
+}
+
+.doc-preview__frame-wrap {
+  overflow: hidden;
+  flex: none;
+}
+
+.doc-preview__frame {
+  border: 0;
+  transform-origin: top left;
+  box-shadow: var(--shadow-md, 0 8px 24px rgb(0 0 0 / 12%));
 }
 
 .doc-copy {

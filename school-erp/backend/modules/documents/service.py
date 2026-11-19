@@ -72,9 +72,10 @@ def _layout_json(layout: Layout) -> dict[str, Any]:
     return layout.model_dump(mode="json", exclude_none=True)
 
 
-def _validated_layout(value: Any) -> dict[str, Any]:
+def parse_layout(value: Any) -> Layout:
+    """Validate a layout payload, reporting schema errors as a 422."""
     try:
-        return _layout_json(validate_layout(value))
+        return validate_layout(value)
     except ValidationError as error:
         raise ValidationFailed(
             "The layout does not match the document schema",
@@ -83,6 +84,10 @@ def _validated_layout(value: Any) -> dict[str, Any]:
                 "errors": [{"path": list(item["loc"]), "message": item["msg"]} for item in error.errors()]
             },
         ) from error
+
+
+def _validated_layout(value: Any) -> dict[str, Any]:
+    return _layout_json(parse_layout(value))
 
 
 def _blank_layout() -> dict[str, Any]:

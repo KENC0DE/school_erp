@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from core.documents.fields import FieldKind
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 DocType = Literal[
     "report_card",
@@ -171,6 +171,33 @@ class VersionSave(BaseModel):
     layout: dict[str, Any]
     change_note: str | None = Field(default=None, max_length=500)
     row_version: int = Field(ge=1)
+
+
+class DocumentPreviewRequest(BaseModel):
+    """Preview an unsaved layout with sample data or one real student."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    layout: dict[str, Any]
+    mode: Literal["sample", "student"] = "sample"
+    student_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _student_only_in_student_mode(self) -> DocumentPreviewRequest:
+        if self.mode == "student" and self.student_id is None:
+            raise ValueError("student_id is required when previewing a student")
+        if self.mode == "sample" and self.student_id is not None:
+            raise ValueError("student_id is only allowed in student mode")
+        return self
+
+
+class DocumentPreviewOut(BaseModel):
+    mode: Literal["sample", "student"]
+    html: str
+    page_mm: list[float]
+    media_mm: list[float]
+    student_id: uuid.UUID | None = None
+    student_name: str | None = None
 
 
 class TemplateFileTemplate(BaseModel):

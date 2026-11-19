@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import uuid
 
+from app.errors import Forbidden
 from core.auth.deps import require
 from core.auth.principal import Principal
 from core.db.deps import get_session as db_session
@@ -19,11 +20,19 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.documents.preview import (
+    common_context,
+    render_preview,
+    sample_context,
+    student_context,
+)
 from modules.documents.schemas import (
     DocType,
     DocumentFieldOut,
     DocumentFieldsOut,
     DocumentFormatOptions,
+    DocumentPreviewOut,
+    DocumentPreviewRequest,
     StarterList,
     StarterOut,
     TemplateCreate,
@@ -78,6 +87,51 @@ async def list_fields_route(
             money=list(FORMAT_OPTIONS["money"]),
         ),
     )
+
+
+@router.post("/preview", response_model=DocumentPreviewOut)
+async def preview_route(
+    request: Request,
+    payload: DocumentPreviewRequest,
+    principal: Principal = Depends(require(DESIGN)),
+    session: AsyncSession = Depends(db_session),
+) -> DocumentPreviewOut:
+    """Render the unsaved layout with sample or real student data.
+
+    The response is the exact HTML the production renderer prints, so the
+    preview cannot drift from the PDF. Real student data is only read when the
+    caller may see that student's record.
+    """
+    if payload.mode == "student":
+        if not principal.can("students.view"):
+            raise Forbidden(
+                "Previewing a student needs access to student records",
+                message_key="error.permission_denied",
+                details={"permission": "students.view"},
+            )
+        assert payload.student_id is not None  # guarded by the request model
+        data, student_name = await student_context(session, principal, payload.student_id)
+        common = await common_context(session)
+        rendered = render_preview(
+            payload.layout,
+            {**data, **common},
+            locale=principal.locale,
+        )
+        return DocumentPreviewOut(
+            mode="student",
+            student_id=payload.student_id,
+            student_name=student_name,
+            **rendered,
+        )
+
+    fields = await fields_for(
+        session,
+        request.app.state.registry,
+        request.app.state.settings,
+    )
+    context = {**sample_context(fields), **await common_context(session)}
+    rendered = render_preview(payload.layout, context, locale=principal.locale)
+    return DocumentPreviewOut(mode="sample", **rendered)
 
 
 @router.get("/templates", response_model=TemplateList)

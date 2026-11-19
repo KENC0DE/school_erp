@@ -2696,3 +2696,28 @@ figure includes the commit and the audit row):
   additions to version 1; every existing layout still validates and prints
   identically, while new layouts gain the report-card capabilities. The
   committed JSON Schema and both fixture suites were regenerated together.
+
+## 2026-11-19 — P5-07 preview with sample or real data
+
+- **Preview goes through the production renderer.** `POST /api/v1/documents/preview`
+  takes the unsaved layout and returns the HTML produced by
+  `core.documents.render.layout_to_html`, plus the trimmed and media page sizes.
+  The dialog shows that HTML in an iframe, so the preview cannot drift from the
+  PDF the generator will print; the old client-side element preview is gone.
+- **The layout is not required to be saved first.** Previewing a design is a
+  read, not a save, so a designer can inspect a change before committing it to
+  the draft. The request validates the layout against the same schema save uses
+  and reports schema errors as `error.documents.layout_invalid`.
+- **Sample data is derived from the field registry.** Every registered field
+  contributes its declared sample, nested by dotted key, with the real school
+  name and issue/expiry dates layered on top. Disabling a module therefore
+  removes its samples exactly as it removes its fields.
+- **Real data is read through each module's own service.** Student identity and
+  placement come from `students.service.get_student` (which enforces student
+  scope); marks come from the latest published `ResultSnapshot` through
+  `assessment.results.list_snapshots` (so assessment scope still applies);
+  attendance totals are only included when the caller has `attendance.view`.
+  A designer without `students.view` may preview samples but not a student.
+- **Preview is not issuance.** It writes no `issued_documents` row, no snapshot
+  and no audit entry; the future generation task reuses the same data resolver
+  inside its transaction and records the snapshot there.

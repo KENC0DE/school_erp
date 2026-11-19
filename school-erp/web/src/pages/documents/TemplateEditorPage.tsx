@@ -435,7 +435,6 @@ function Editor({
       <PreviewDialog
         open={preview}
         layout={history.layout}
-        fields={fieldsByKey}
         onClose={() => setPreview(false)}
       />
 

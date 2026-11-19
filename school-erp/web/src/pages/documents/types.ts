@@ -83,6 +83,34 @@ export interface FieldsResponse {
   };
 }
 
+export interface PreviewResponse {
+  mode: "sample" | "student";
+  html: string;
+  page_mm: [number, number];
+  media_mm: [number, number];
+  student_id: string | null;
+  student_name: string | null;
+}
+
+export interface StudentOption {
+  id: string;
+  student_number: string;
+  status: string;
+  person: {
+    full_name: string;
+  };
+  enrollment: {
+    level_name: string | null;
+    section_code: string | null;
+  } | null;
+}
+
+export interface StudentList {
+  items: StudentOption[];
+  next_cursor: string | null;
+  total: number;
+}
+
 export interface Starter {
   key: string;
   doc_type: DocType;

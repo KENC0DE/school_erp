@@ -35,9 +35,16 @@ test("design a certificate on the canvas, save the draft and preview it", async 
   await expect(page.getByTestId("editor-save-state")).toContainText("All changes saved");
 
   await page.getByTestId("editor-preview").click();
-  const preview = page.getByTestId("preview-page");
-  await expect(preview).toBeVisible();
-  await expect(preview.getByText("New text Abebe Kebede Tadesse")).toBeVisible();
+  const sample = page.frameLocator('[data-testid="preview-frame"]');
+  await expect(sample.getByText("New text Abebe Kebede Tadesse")).toBeVisible();
+
+  await page.getByTestId("preview-mode-student").check();
+  await page.getByTestId("preview-student-search").fill("STU-2026-0001");
+  const student = page.getByTestId("preview-student");
+  await expect(student.locator("option")).toHaveCount(2);
+  await student.selectOption({ index: 1 });
+  const real = page.frameLocator('[data-testid="preview-frame"]');
+  await expect(real.getByText("New text Abebe Dawit Samuel")).toBeVisible();
   await page.getByTestId("preview-close").click();
 
   await page.getByTestId("editor-back").click();

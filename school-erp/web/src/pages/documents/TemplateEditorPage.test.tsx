@@ -1,5 +1,5 @@
 import type { Layout } from "@erp/documents";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -51,6 +51,16 @@ describe("document canvas editor", () => {
             }),
           );
         }
+        if (request.url.endsWith("/api/v1/documents/preview")) {
+          return json({
+            mode: "sample",
+            html: "<!doctype html><html><body><p>New text Abebe Kebede Tadesse</p></body></html>",
+            page_mm: [148, 210],
+            media_mm: [148, 210],
+            student_id: null,
+            student_name: null,
+          });
+        }
         return null;
       }),
     );
@@ -74,9 +84,68 @@ describe("document canvas editor", () => {
     expect(await screen.findByTestId("editor-notice")).toHaveTextContent("The draft was saved.");
 
     fireEvent.click(screen.getByTestId("editor-preview"));
-    const preview = await screen.findByTestId("preview-page");
-    expect(within(preview).getByText("New text Abebe Kebede Tadesse")).toBeInTheDocument();
+    const frame = await screen.findByTestId("preview-frame");
+    expect(frame.getAttribute("srcdoc")).toContain("New text Abebe Kebede Tadesse");
+    expect(screen.getByTestId("preview-mode-sample")).toBeChecked();
     expect(screen.getByTestId("editor-save-state")).toHaveTextContent("All changes saved");
+  });
+
+  it("previews one real student chosen from the student search", async () => {
+    const previews: MockRequest[] = [];
+    stubDocuments(
+      ["*"],
+      editorHandler((request) => {
+        if (request.url.includes("/api/v1/students?")) {
+          return json({
+            items: [
+              {
+                id: "stu-1",
+                student_number: "STU-2026-0001",
+                status: "active",
+                person: { full_name: "Abebe Kebede Tadesse" },
+                enrollment: { level_name: "Grade 5", section_code: "A" },
+              },
+            ],
+            next_cursor: null,
+            total: 1,
+          });
+        }
+        if (request.url.endsWith("/api/v1/documents/preview")) {
+          previews.push(request);
+          const studentMode = request.body?.mode === "student";
+          return json({
+            mode: studentMode ? "student" : "sample",
+            html: studentMode
+              ? "<!doctype html><html><body><p>Abebe Kebede Tadesse</p></body></html>"
+              : "<!doctype html><html><body><p>Sample student</p></body></html>",
+            page_mm: [148, 210],
+            media_mm: [148, 210],
+            student_id: studentMode ? "stu-1" : null,
+            student_name: studentMode ? "Abebe Kebede Tadesse" : null,
+          });
+        }
+        return null;
+      }),
+    );
+    renderDocuments("/documents/tpl-1");
+
+    await screen.findByTestId("template-editor");
+    fireEvent.click(screen.getByTestId("editor-preview"));
+    fireEvent.click(await screen.findByTestId("preview-mode-student"));
+    const select = await screen.findByTestId("preview-student");
+    await waitFor(() => expect(select.querySelectorAll("option")).toHaveLength(2));
+    fireEvent.change(select, { target: { value: "stu-1" } });
+
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("preview-frame").getAttribute("srcdoc"),
+      ).toContain("Abebe Kebede Tadesse"),
+    );
+    const studentPreview = previews.find((request) => request.body?.mode === "student");
+    expect(studentPreview?.body).toMatchObject({
+      mode: "student",
+      student_id: "stu-1",
+    });
   });
 
   it("undoes and redoes an inserted element", async () => {
