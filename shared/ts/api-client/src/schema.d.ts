@@ -2122,6 +2122,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Templates Route */
+        get: operations["list_templates_route_api_v1_documents_templates_get"];
+        put?: never;
+        /** Create Template Route */
+        post: operations["create_template_route_api_v1_documents_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/templates/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Template Route
+         * @description Import a file produced by the export route as a new template.
+         */
+        post: operations["import_template_route_api_v1_documents_templates_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/templates/starters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Starters Route
+         * @description The starter library: layouts plus the keys the client translates.
+         */
+        get: operations["list_starters_route_api_v1_documents_templates_starters_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Template Detail Route */
+        get: operations["template_detail_route_api_v1_documents_templates__template_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Template Route */
+        delete: operations["delete_template_route_api_v1_documents_templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Template Route */
+        patch: operations["update_template_route_api_v1_documents_templates__template_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/documents/templates/{template_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Template Route */
+        post: operations["duplicate_template_route_api_v1_documents_templates__template_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/templates/{template_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Template Route */
+        get: operations["export_template_route_api_v1_documents_templates__template_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/templates/{template_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Versions Route */
+        get: operations["list_versions_route_api_v1_documents_templates__template_id__versions_get"];
+        put?: never;
+        /** Create Version Route */
+        post: operations["create_version_route_api_v1_documents_templates__template_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/templates/{template_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version Detail Route */
+        get: operations["version_detail_route_api_v1_documents_templates__template_id__versions__version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Save Version Route */
+        patch: operations["save_version_route_api_v1_documents_templates__template_id__versions__version_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/documents/templates/{template_id}/versions/{version_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Version Route */
+        post: operations["publish_version_route_api_v1_documents_templates__template_id__versions__version_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/files": {
         parameters: {
             query?: never;
@@ -8986,6 +9150,32 @@ export interface components {
             /** Sort Order */
             sort_order?: number | null;
         };
+        /** StarterList */
+        StarterList: {
+            /** Items */
+            items?: components["schemas"]["StarterOut"][];
+        };
+        /**
+         * StarterOut
+         * @description A library entry; its name and description are translation keys.
+         */
+        StarterOut: {
+            /** Description Key */
+            description_key: string;
+            /**
+             * Doc Type
+             * @enum {string}
+             */
+            doc_type: "report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom";
+            /** Key */
+            key: string;
+            /** Layout */
+            layout: {
+                [key: string]: unknown;
+            };
+            /** Name Key */
+            name_key: string;
+        };
         /** StructureCreate */
         StructureCreate: {
             /** Components */
@@ -9816,6 +10006,28 @@ export interface components {
             /** Year Id */
             year_id?: string | null;
         };
+        /**
+         * TemplateCreate
+         * @description Create from a starter, an explicit layout, or an empty A4 page.
+         */
+        TemplateCreate: {
+            /** Change Note */
+            change_note?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Doc Type */
+            doc_type?: ("report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom") | null;
+            /** Key */
+            key?: string | null;
+            /** Layout */
+            layout?: {
+                [key: string]: unknown;
+            } | null;
+            /** Name */
+            name: string;
+            /** Starter */
+            starter?: string | null;
+        };
         /** TemplateCreateRequest */
         TemplateCreateRequest: {
             /** Body Key */
@@ -9845,6 +10057,180 @@ export interface components {
             namespace: string;
             /** Title Key */
             title_key: string;
+        };
+        /** TemplateDeleted */
+        TemplateDeleted: {
+            /** Deleted */
+            deleted: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Versions Deleted */
+            versions_deleted: number;
+        };
+        /** TemplateDetail */
+        TemplateDetail: {
+            /** Current Version Id */
+            current_version_id?: string | null;
+            /** Current Version Number */
+            current_version_number?: number | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Doc Type
+             * @enum {string}
+             */
+            doc_type: "report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom";
+            /** Draft Version Id */
+            draft_version_id?: string | null;
+            /** Draft Version Number */
+            draft_version_number?: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Row Version */
+            row_version: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
+            /** Versions */
+            versions?: components["schemas"]["VersionSummary"][];
+        };
+        /** TemplateDuplicate */
+        TemplateDuplicate: {
+            /** Description */
+            description?: string | null;
+            /** Key */
+            key?: string | null;
+            /** Name */
+            name: string;
+        };
+        /**
+         * TemplateFile
+         * @description The deterministic export format; import accepts exactly this shape.
+         */
+        TemplateFile: {
+            /** Exported At */
+            exported_at?: string | null;
+            /**
+             * Format
+             * @constant
+             */
+            format: "school-erp.doc-template";
+            /**
+             * Format Version
+             * @constant
+             */
+            format_version: 1;
+            template: components["schemas"]["TemplateFileTemplate"];
+            /** Versions */
+            versions: components["schemas"]["TemplateFileVersion"][];
+        };
+        /** TemplateFileTemplate */
+        TemplateFileTemplate: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Doc Type
+             * @enum {string}
+             */
+            doc_type: "report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom";
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+        };
+        /** TemplateFileVersion */
+        TemplateFileVersion: {
+            /** Change Note */
+            change_note?: string | null;
+            /** Layout */
+            layout: {
+                [key: string]: unknown;
+            };
+            /** Published At */
+            published_at?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            /** Version Number */
+            version_number: number;
+        };
+        /** TemplateList */
+        TemplateList: {
+            /** Items */
+            items?: components["schemas"]["TemplateSummary"][];
+            /** Total */
+            total: number;
+        };
+        /** TemplateSummary */
+        TemplateSummary: {
+            /** Current Version Id */
+            current_version_id?: string | null;
+            /** Current Version Number */
+            current_version_number?: number | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Doc Type
+             * @enum {string}
+             */
+            doc_type: "report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom";
+            /** Draft Version Id */
+            draft_version_id?: string | null;
+            /** Draft Version Number */
+            draft_version_number?: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Row Version */
+            row_version: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Version Count
+             * @default 0
+             */
+            version_count: number;
+        };
+        /** TemplateUpdate */
+        TemplateUpdate: {
+            /** Description */
+            description?: string | null;
+            /** Doc Type */
+            doc_type?: ("report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom") | null;
+            /** Name */
+            name?: string | null;
+            /** Row Version */
+            row_version: number;
         };
         /** TemplateUpdateRequest */
         TemplateUpdateRequest: {
@@ -10137,6 +10523,107 @@ export interface components {
             values: {
                 [key: string]: unknown;
             };
+        };
+        /**
+         * VersionCreate
+         * @description Start a draft from the current published layout, or from a layout.
+         */
+        VersionCreate: {
+            /** Change Note */
+            change_note?: string | null;
+            /** Layout */
+            layout?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** VersionDetail */
+        VersionDetail: {
+            /** Change Note */
+            change_note?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Layout */
+            layout: {
+                [key: string]: unknown;
+            };
+            /** Published At */
+            published_at?: string | null;
+            /** Row Version */
+            row_version: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version Number */
+            version_number: number;
+        };
+        /** VersionList */
+        VersionList: {
+            /** Items */
+            items?: components["schemas"]["VersionSummary"][];
+            /** Total */
+            total: number;
+        };
+        /** VersionSave */
+        VersionSave: {
+            /** Change Note */
+            change_note?: string | null;
+            /** Layout */
+            layout: {
+                [key: string]: unknown;
+            };
+            /** Row Version */
+            row_version: number;
+        };
+        /** VersionSummary */
+        VersionSummary: {
+            /** Change Note */
+            change_note?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Published At */
+            published_at?: string | null;
+            /** Row Version */
+            row_version: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version Number */
+            version_number: number;
         };
         /** WebSessionResponse */
         WebSessionResponse: {
@@ -16099,6 +16586,455 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentFieldsOut"];
+                };
+            };
+        };
+    };
+    list_templates_route_api_v1_documents_templates_get: {
+        parameters: {
+            query?: {
+                doc_type?: ("report_card" | "transcript" | "certificate_completion" | "certificate_appreciation" | "id_card" | "admission_letter" | "receipt" | "invoice" | "experience_letter" | "custom") | null;
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_template_route_api_v1_documents_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_template_route_api_v1_documents_templates_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateFile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_starters_route_api_v1_documents_templates_starters_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StarterList"];
+                };
+            };
+        };
+    };
+    template_detail_route_api_v1_documents_templates__template_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_route_api_v1_documents_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDeleted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_template_route_api_v1_documents_templates__template_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_template_route_api_v1_documents_templates__template_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateDuplicate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_template_route_api_v1_documents_templates__template_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_versions_route_api_v1_documents_templates__template_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_version_route_api_v1_documents_templates__template_id__versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["VersionCreate"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    version_detail_route_api_v1_documents_templates__template_id__versions__version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_version_route_api_v1_documents_templates__template_id__versions__version_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_version_route_api_v1_documents_templates__template_id__versions__version_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
