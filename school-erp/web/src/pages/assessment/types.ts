@@ -1,7 +1,19 @@
 export type ScopeType = "school" | "stage" | "level" | "subject";
-export type Aggregation = "average" | "weighted_average" | "best_n" | "sum_capped" | "latest";
+export type Aggregation =
+  | "average"
+  | "weighted_average"
+  | "best_n"
+  | "sum_capped"
+  | "latest";
 export type YearMode = "average" | "sum" | "weighted_average";
-export type Rounding = "half_up" | "half_even" | "half_down" | "up" | "down" | "ceiling" | "floor";
+export type Rounding =
+  | "half_up"
+  | "half_even"
+  | "half_down"
+  | "up"
+  | "down"
+  | "ceiling"
+  | "floor";
 
 export interface ComponentOut {
   id: string;
@@ -200,7 +212,10 @@ export function toMicro(value: string): bigint | null {
 /** Render micro-units as the shortest exact decimal string. */
 export function fromMicro(value: bigint): string {
   const whole = value / MICRO;
-  const fraction = (value % MICRO).toString().padStart(6, "0").replace(/0+$/, "");
+  const fraction = (value % MICRO)
+    .toString()
+    .padStart(6, "0")
+    .replace(/0+$/, "");
   return fraction ? `${whole}.${fraction}` : `${whole}`;
 }
 
@@ -216,9 +231,13 @@ export function componentsTotal(components: ComponentDraft[]): bigint | null {
   return total;
 }
 
-
 export type ScaleType = "numeric_bands" | "descriptive";
-export type ScaleContext = "assessment" | "subject" | "level" | "stage" | "default";
+export type ScaleContext =
+  | "assessment"
+  | "subject"
+  | "level"
+  | "stage"
+  | "default";
 
 export interface BandOut {
   id: string;
@@ -382,7 +401,9 @@ export function emptyScaleDraft(): ScaleDraft {
 
 export function scaleDraftFrom(scale: GradeScale): ScaleDraft {
   const ordered = [...scale.bands].sort(
-    (left, right) => left.sort_order - right.sort_order || left.min_value.localeCompare(right.min_value),
+    (left, right) =>
+      left.sort_order - right.sort_order ||
+      left.min_value.localeCompare(right.min_value),
   );
   return {
     id: scale.id,
@@ -413,7 +434,9 @@ export function scaleDraftFrom(scale: GradeScale): ScaleDraft {
 
 /** The upper edge of band ``index``: the next band's start, or the scale's top. */
 export function bandTo(draft: ScaleDraft, index: number): string {
-  return index < draft.bands.length - 1 ? draft.bands[index + 1].min_value : draft.upper_bound;
+  return index < draft.bands.length - 1
+    ? draft.bands[index + 1].min_value
+    : draft.upper_bound;
 }
 
 /** A scale's bands must start at its lower bound, keep rising and stop below the top. */
@@ -425,7 +448,8 @@ export function scaleBandsValid(draft: ScaleDraft): boolean {
   let previous: bigint | null = null;
   for (const [index, band] of draft.bands.entries()) {
     if (!band.label.trim()) return false;
-    if (band.gpa_points.trim() && toMicro(band.gpa_points) === null) return false;
+    if (band.gpa_points.trim() && toMicro(band.gpa_points) === null)
+      return false;
     const min = toMicro(band.min_value);
     if (min === null) return false;
     if (index === 0 && min !== lower) return false;
@@ -462,7 +486,9 @@ export function splitBand(draft: ScaleDraft): BandDraft[] | null {
   return next;
 }
 
-export function assignmentTargetName(assignment: ScaleAssignment): string | null {
+export function assignmentTargetName(
+  assignment: ScaleAssignment,
+): string | null {
   if (assignment.context === "assessment") return assignment.assessment_title;
   if (assignment.context === "subject") return assignment.subject_name;
   if (assignment.context === "level") return assignment.level_name;
@@ -470,7 +496,12 @@ export function assignmentTargetName(assignment: ScaleAssignment): string | null
   return null;
 }
 
-export type ScoreStatus = "present" | "absent" | "excused" | "exempt" | "not_taken";
+export type ScoreStatus =
+  | "present"
+  | "absent"
+  | "excused"
+  | "exempt"
+  | "not_taken";
 
 export const SCORE_STATUSES: ScoreStatus[] = [
   "present",
@@ -604,4 +635,81 @@ export interface AssessmentList {
   items: AssessmentListItem[];
   next_cursor: string | null;
   total: number | null;
+}
+
+// ------------------------------------------------------- manager dashboard (P4-14)
+
+export interface DashboardTeacher {
+  staff_id: string;
+  name: string;
+}
+
+export interface DashboardRow {
+  section_id: string;
+  section_code: string;
+  level_id: string;
+  level_name: string;
+  subject_id: string;
+  subject_name: string;
+  teachers: DashboardTeacher[];
+  assessments: number;
+  students: number;
+  expected: number;
+  entered: number;
+  missing: number;
+  completion_percent: string;
+  status: string;
+  deadline: string | null;
+  window_state: "open" | "closed" | "scheduled" | null;
+  overdue: boolean;
+}
+
+export type DashboardAnomalyKind = "identical" | "average_outlier";
+
+export interface DashboardAnomaly {
+  kind: DashboardAnomalyKind;
+  assessment_id: string;
+  title: string;
+  section_id: string;
+  section_code: string;
+  subject_id: string;
+  subject_name: string;
+  count: number;
+  value: string | null;
+  threshold: string | null;
+  average_percent: string | null;
+  norm_percent: string | null;
+}
+
+export interface DashboardSummary {
+  sections: number;
+  assessments: number;
+  expected: number;
+  entered: number;
+  completion_percent: string;
+  overdue: number;
+  anomalies: number;
+}
+
+export interface DashboardOut {
+  year_id: string;
+  term_id: string;
+  rows: DashboardRow[];
+  anomalies: DashboardAnomaly[];
+  summary: DashboardSummary;
+}
+
+export interface ReminderRecipient {
+  user_id: string;
+  staff_id: string;
+  name: string;
+  section_id: string;
+  subject_id: string;
+}
+
+export interface ReminderResult {
+  rows: number;
+  sent: number;
+  skipped: number;
+  recipients: ReminderRecipient[];
 }

@@ -3,13 +3,14 @@ import { useState } from "react";
 
 import { useAuth } from "../../providers/AuthProvider";
 import { useI18n } from "../../providers/I18nProvider";
+import { AssessmentDashboardPanel } from "./AssessmentDashboardPanel";
 import { GradePanel } from "./GradePanel";
 import { MarkEntryPanel } from "./MarkEntryPanel";
 import { StructurePanel } from "./StructurePanel";
 
-type Panel = "structure" | "marks" | "grades";
+type Panel = "structure" | "marks" | "grades" | "dashboard";
 
-const PANELS: Panel[] = ["structure", "marks", "grades"];
+const PANELS: Panel[] = ["structure", "marks", "grades", "dashboard"];
 
 export function AssessmentPage() {
   const { t } = useI18n();
@@ -26,8 +27,15 @@ export function AssessmentPage() {
   if (!allowed) {
     return (
       <Page>
-        <PageHeader title={t("assessment.title")} description={t("assessment.intro")} />
-        <p role="alert" className="text-sm text-destructive" data-testid="assessment-permission">
+        <PageHeader
+          title={t("assessment.title")}
+          description={t("assessment.intro")}
+        />
+        <p
+          role="alert"
+          className="text-sm text-destructive"
+          data-testid="assessment-permission"
+        >
           {t("error.permission_denied")}
         </p>
       </Page>
@@ -37,8 +45,15 @@ export function AssessmentPage() {
   return (
     <Page>
       <div className="space-y-5" data-testid="assessment-page">
-        <PageHeader title={t("assessment.title")} description={t("assessment.intro")} />
-        <div role="tablist" aria-label={t("assessment.title")} className="flex flex-wrap gap-2">
+        <PageHeader
+          title={t("assessment.title")}
+          description={t("assessment.intro")}
+        />
+        <div
+          role="tablist"
+          aria-label={t("assessment.title")}
+          className="flex flex-wrap gap-2"
+        >
           {PANELS.map((item) => (
             <Button
               key={item}
@@ -52,11 +67,16 @@ export function AssessmentPage() {
             </Button>
           ))}
         </div>
-        {panel === "structure" ? <StructurePanel canManage={canManage} /> : null}
+        {panel === "structure" ? (
+          <StructurePanel canManage={canManage} />
+        ) : null}
         {panel === "marks" ? (
           <MarkEntryPanel canEnter={canEnter} canCorrect={canCorrect} />
         ) : null}
         {panel === "grades" ? <GradePanel canManage={canManage} /> : null}
+        {panel === "dashboard" ? (
+          <AssessmentDashboardPanel canManage={canManage} />
+        ) : null}
       </div>
     </Page>
   );

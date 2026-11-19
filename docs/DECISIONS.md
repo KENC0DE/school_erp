@@ -2320,3 +2320,46 @@ and recorded here (date, decision, reason).
   archived assessment, non-draft submission (submitted/approved/published/
   locked), then a closed marking window. A read-only screen disables the input
   and status buttons but still shows the marks.
+
+## 2026-11-19 — P4-14 manager marks-progress dashboard
+
+- **The dashboard is a read model over the existing tables, not a new store.**
+  One row per `(section, subject)` pair for a year and term, built from live
+  `active` assessments so archived or soft-deleted assessments never inflate the
+  work a manager is chasing. `expected` is students actively enrolled in the
+  section multiplied by the number of assessments in the pair.
+- **`entered` counts any live score row, including absent/excused/exempt.**
+  A teacher who marks a student absent has done the entry; the mark sheet's own
+  statistics remain the place that distinguishes present marks. This keeps the
+  dashboard focused on "is the class done?" rather than on score values.
+- **A row is overdue only when all three are true:** a marking window closed
+  before now, completion is under 100%, and the submission is still `draft` or
+  absent (`missing`). Submitted, approved, published and locked work is with the
+  next person in the workflow, so it is not the teacher's overdue item. No
+  window means the school set no deadline, so nothing is ever overdue.
+- **The deadline is the latest close across the applicable `all`, `level:` and
+  `section:` windows.** Windows are optional control, so a section without one
+  shows "no deadline" instead of a fabricated date.
+- **Anomalies are warnings, never blocks.** Two rules ship: an assessment whose
+  recorded raw marks are all identical once at least five marks exist (small
+  classes can legitimately tie), and an assessment whose converted average is at
+  least 25 percentage points away from the mean of its own section/subject
+  assessments when at least three assessments exist. Both are surfaced to every
+  caller who may read marks; nothing is rejected or locked because of them.
+- **Reminders are an explicit audited action, not a hidden side effect.**
+  `POST /assessment/dashboard/remind` re-reads the dashboard, messages the
+  linked teacher of every overdue pair through the seeded
+  `assessment.entry_reminder` template, counts a teacher without a linked user as
+  skipped instead of dropping the row silently, and writes one summary audit
+  entry (`assessment.dashboard.remind`). Calling it twice sends twice: a manager
+  or a scheduler decides when to chase, and the audit trail says when.
+- **Reading uses `assessment.view` with the normal scope rules; reminding uses
+  `assessment.manage`.** A teacher sees only their own assigned pairs on the
+  dashboard, while academic heads and directors can chase the whole school. The
+  dashboard keeps an existing contract additive: new schemas, actions and routes,
+  no change to the assessment, score or submission payloads.
+- **The web panel is a fourth assessment tab.** It offers year, term, section and
+  subject filters, summary cards (completion, overdue, anomalies, assessments),
+  a table whose teacher column names who to chase, and an anomaly list. The
+  reminder button is hidden without `assessment.manage` so nobody is offered an
+  action they cannot take.

@@ -6,6 +6,7 @@ import uuid
 
 from core.actions.registry import ActionContext, action
 
+from modules.assessment import dashboard as progress
 from modules.assessment import results, scales, service, workflow
 from modules.assessment.schemas import (
     AssessmentCreate,
@@ -18,10 +19,14 @@ from modules.assessment.schemas import (
     CorrectionList,
     CorrectionOut,
     CorrectionQuery,
+    DashboardOut,
+    DashboardQuery,
     GradeScaleCreate,
     GradeScaleList,
     GradeScaleOut,
     GradeScaleUpdate,
+    ReminderRequest,
+    ReminderResult,
     ResultSnapshotList,
     ResultSnapshotOut,
     ResultSnapshotQuery,
@@ -797,6 +802,34 @@ async def delete_scale_assignment(ctx: ActionContext, payload: dict) -> dict:
     )
 
 
+@action(
+    key="assessment.dashboard.get",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="Read completion, overdue marks and anomaly warnings for a term",
+    input=DashboardQuery,
+    output=DashboardOut,
+)
+async def dashboard(ctx: ActionContext, payload: dict | None = None) -> DashboardOut:
+    query = DashboardQuery.model_validate(payload or {})
+    return await progress.dashboard(ctx.session, ctx.principal, query)
+
+
+@action(
+    key="assessment.dashboard.remind",
+    module="assessment",
+    permission="assessment.manage",
+    risk="write",
+    describe="Send mark-entry reminders to teachers with overdue classes",
+    input=ReminderRequest,
+    output=ReminderResult,
+)
+async def remind_teachers(ctx: ActionContext, payload: dict) -> ReminderResult:
+    request = ReminderRequest.model_validate(payload)
+    return await progress.send_reminders(ctx.session, ctx.principal, request, via=ctx.via)
+
+
 __all__ = [
     "approve_correction",
     "approve_marks",
@@ -806,6 +839,7 @@ __all__ = [
     "create_scale_assignment",
     "create_structure",
     "create_window",
+    "dashboard",
     "delete_assessment",
     "delete_grade_scale",
     "delete_scale_assignment",
@@ -826,6 +860,7 @@ __all__ = [
     "recalculate_structure",
     "reject_correction",
     "reject_marks",
+    "remind_teachers",
     "republish_term_results",
     "republish_year_results",
     "score_sheet",

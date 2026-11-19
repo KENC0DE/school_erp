@@ -8,6 +8,9 @@ import assessmentEn from "../../../../backend/modules/assessment/i18n/en.json";
 import { AppProviders, AppRoutes } from "../../App";
 import type {
   AssessmentListItem,
+  DashboardAnomaly,
+  DashboardOut,
+  DashboardRow,
   GradeScale,
   MarkingWindow,
   ScaleAssignment,
@@ -19,7 +22,10 @@ import type {
 export const assessmentMessages: Record<string, string> = {
   ...coreEn,
   ...Object.fromEntries(
-    Object.entries(assessmentEn).map(([key, value]) => [`assessment.${key}`, value]),
+    Object.entries(assessmentEn).map(([key, value]) => [
+      `assessment.${key}`,
+      value,
+    ]),
   ),
 };
 
@@ -77,7 +83,9 @@ export function stubAssessment(
       return handler({
         url,
         method: (init?.method ?? "GET").toUpperCase(),
-        body: init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : null,
+        body: init?.body
+          ? (JSON.parse(String(init.body)) as Record<string, unknown>)
+          : null,
       });
     }),
   );
@@ -87,7 +95,9 @@ export function renderAssessment() {
   return render(
     <AppProviders
       initialMessages={assessmentMessages}
-      queryClient={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      queryClient={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
     >
       <MemoryRouter initialEntries={["/assessment"]}>
         <AppRoutes />
@@ -164,6 +174,28 @@ export const STAGES = {
       name: "Primary",
       name_am: null,
       sort_order: 1,
+      is_active: true,
+      row_version: 1,
+    },
+  ],
+  total: 1,
+};
+
+export const SECTIONS = {
+  items: [
+    {
+      id: "sec-1",
+      year_id: "year-1",
+      year_code: "2026",
+      level_id: "lvl-1",
+      level_code: "g5",
+      level_name: "Grade 5",
+      code: "G5A",
+      name: null,
+      name_am: null,
+      capacity: 40,
+      homeroom_user_id: null,
+      homeroom_name: null,
       is_active: true,
       row_version: 1,
     },
@@ -252,11 +284,13 @@ export function structure(overrides: Partial<Structure> = {}): Structure {
 /** The endpoints every assessment screen reads before its own handler runs. */
 export function baseRoutes(request: MockRequest): Response {
   const { url } = request;
-  if (url.includes("/api/v1/assessment/structures")) return json({ items: [], next_cursor: null, total: 0 });
+  if (url.includes("/api/v1/assessment/structures"))
+    return json({ items: [], next_cursor: null, total: 0 });
   if (url.includes("/api/v1/academics/academic-years")) return json(YEARS);
   if (url.includes("/api/v1/academics/levels")) return json(LEVELS);
   if (url.includes("/api/v1/academics/stages")) return json(STAGES);
   if (url.includes("/api/v1/academics/subjects")) return json(SUBJECTS);
+  if (url.includes("/api/v1/academics/sections")) return json(SECTIONS);
   throw new Error(`Unexpected request: ${request.method} ${url}`);
 }
 
@@ -469,9 +503,33 @@ function assessment(
 
 export const MARK_ASSESSMENTS = {
   items: [
-    assessment("exam-1", "Quiz 1", "Quizzes", "comp-1", "10", "15", "2026-10-05"),
-    assessment("exam-2", "Quiz 2", "Quizzes", "comp-1", "10", "13", "2026-11-09"),
-    assessment("exam-3", "Midterm", "Midterm exam", "comp-2", "30", "30", "2026-11-25"),
+    assessment(
+      "exam-1",
+      "Quiz 1",
+      "Quizzes",
+      "comp-1",
+      "10",
+      "15",
+      "2026-10-05",
+    ),
+    assessment(
+      "exam-2",
+      "Quiz 2",
+      "Quizzes",
+      "comp-1",
+      "10",
+      "13",
+      "2026-11-09",
+    ),
+    assessment(
+      "exam-3",
+      "Midterm",
+      "Midterm exam",
+      "comp-2",
+      "30",
+      "30",
+      "2026-11-25",
+    ),
   ],
   next_cursor: null,
   total: 3,
@@ -531,7 +589,9 @@ export function scoreSheet(overrides: Partial<ScoreSheet> = {}): ScoreSheet {
   return sheet;
 }
 
-export function markingWindow(overrides: Partial<MarkingWindow> = {}): MarkingWindow {
+export function markingWindow(
+  overrides: Partial<MarkingWindow> = {},
+): MarkingWindow {
   return {
     id: "window-1",
     year_id: "year-1",
@@ -549,7 +609,9 @@ export function markingWindow(overrides: Partial<MarkingWindow> = {}): MarkingWi
   };
 }
 
-export function markSubmission(overrides: Partial<Submission> = {}): Submission {
+export function markSubmission(
+  overrides: Partial<Submission> = {},
+): Submission {
   return {
     id: "submission-1",
     year_id: "year-1",
@@ -583,23 +645,33 @@ export interface MarkRouteOptions {
 }
 
 /** Routes for the mark-entry grid: assessments, sheets, windows, submissions. */
-export function markRoutes(request: MockRequest, options: MarkRouteOptions = {}): Response {
+export function markRoutes(
+  request: MockRequest,
+  options: MarkRouteOptions = {},
+): Response {
   const { url, method, body } = request;
   const sheets = options.sheets ?? {};
 
-  const scores = url.match(/\/api\/v1\/assessment\/assessments\/([^/]+)\/scores$/);
+  const scores = url.match(
+    /\/api\/v1\/assessment\/assessments\/([^/]+)\/scores$/,
+  );
   if (scores) {
     const assessmentId = scores[1];
     if (method === "PUT") {
       options.saved?.push(request);
       const custom = options.onSave?.(request);
       if (custom) return custom;
-      const changes = ((body?.items as Record<string, unknown>[]) ?? []).map((item) => item);
-      const base = sheets[assessmentId] ?? scoreSheet({ assessment_id: assessmentId });
+      const changes = ((body?.items as Record<string, unknown>[]) ?? []).map(
+        (item) => item,
+      );
+      const base =
+        sheets[assessmentId] ?? scoreSheet({ assessment_id: assessmentId });
       const updated: ScoreSheet = {
         ...base,
         items: base.items.map((item) => {
-          const change = changes.find((entry) => entry.student_id === item.student_id);
+          const change = changes.find(
+            (entry) => entry.student_id === item.student_id,
+          );
           if (!change) return item;
           const raw = (change.raw_score as string | null) ?? null;
           const converted =
@@ -607,12 +679,15 @@ export function markRoutes(request: MockRequest, options: MarkRouteOptions = {})
               ? null
               : String(
                   Math.round(
-                    (Number(raw) / Number(base.out_of)) * Number(base.component_max_points) * 100,
+                    (Number(raw) / Number(base.out_of)) *
+                      Number(base.component_max_points) *
+                      100,
                   ) / 100,
                 );
           return {
             ...item,
-            score_id: item.score_id ?? `score-${assessmentId}-${item.student_id}`,
+            score_id:
+              item.score_id ?? `score-${assessmentId}-${item.student_id}`,
             raw_score: raw,
             status: change.status as ScoreSheet["items"][number]["status"],
             converted,
@@ -622,9 +697,16 @@ export function markRoutes(request: MockRequest, options: MarkRouteOptions = {})
         }),
       };
       sheets[assessmentId] = updated;
-      return json({ sheet: updated, created: 0, updated: changes.length, unchanged: 0 });
+      return json({
+        sheet: updated,
+        created: 0,
+        updated: changes.length,
+        unchanged: 0,
+      });
     }
-    return json(sheets[assessmentId] ?? scoreSheet({ assessment_id: assessmentId }));
+    return json(
+      sheets[assessmentId] ?? scoreSheet({ assessment_id: assessmentId }),
+    );
   }
   if (url.includes("/api/v1/assessment/windows")) {
     const windows = options.windows ?? [markingWindow()];
@@ -632,7 +714,11 @@ export function markRoutes(request: MockRequest, options: MarkRouteOptions = {})
   }
   if (url.includes("/api/v1/assessment/submissions")) {
     const submissions = options.submissions ?? [markSubmission()];
-    return json({ items: submissions, next_cursor: null, total: submissions.length });
+    return json({
+      items: submissions,
+      next_cursor: null,
+      total: submissions.length,
+    });
   }
   if (url.endsWith("/api/v1/assessment/corrections") && method === "POST") {
     options.saved?.push(request);
@@ -647,7 +733,11 @@ export function markRoutes(request: MockRequest, options: MarkRouteOptions = {})
 export function threeSheets(): Record<string, ScoreSheet> {
   return {
     "exam-1": scoreSheet(),
-    "exam-2": scoreSheet({ assessment_id: "exam-2", title: "Quiz 2", out_of: "13" }),
+    "exam-2": scoreSheet({
+      assessment_id: "exam-2",
+      title: "Quiz 2",
+      out_of: "13",
+    }),
     "exam-3": scoreSheet({
       assessment_id: "exam-3",
       title: "Midterm",
@@ -659,4 +749,105 @@ export function threeSheets(): Record<string, ScoreSheet> {
 
 export function openMarks() {
   return null;
+}
+
+// ---------------------------------------------------- manager dashboard (P4-14)
+
+export function dashboardRow(
+  overrides: Partial<DashboardRow> = {},
+): DashboardRow {
+  return {
+    section_id: "sec-1",
+    section_code: "G5A",
+    level_id: "lvl-1",
+    level_name: "Grade 5",
+    subject_id: "sub-1",
+    subject_name: "Mathematics",
+    teachers: [{ staff_id: "staff-1", name: "Hanna Girma" }],
+    assessments: 3,
+    students: 10,
+    expected: 30,
+    entered: 21,
+    missing: 9,
+    completion_percent: "70",
+    status: "draft",
+    deadline: "2026-11-30T00:00:00Z",
+    window_state: "open",
+    overdue: false,
+    ...overrides,
+  };
+}
+
+export function dashboardAnomaly(
+  overrides: Partial<DashboardAnomaly> = {},
+): DashboardAnomaly {
+  return {
+    kind: "identical",
+    assessment_id: "exam-1",
+    title: "Quiz 1",
+    section_id: "sec-1",
+    section_code: "G5A",
+    subject_id: "sub-1",
+    subject_name: "Mathematics",
+    count: 10,
+    value: "5",
+    threshold: "5",
+    average_percent: null,
+    norm_percent: null,
+    ...overrides,
+  };
+}
+
+export function dashboard(overrides: Partial<DashboardOut> = {}): DashboardOut {
+  return {
+    year_id: "year-1",
+    term_id: "term-1",
+    rows: [dashboardRow()],
+    anomalies: [],
+    summary: {
+      sections: 1,
+      assessments: 3,
+      expected: 30,
+      entered: 21,
+      completion_percent: "70",
+      overdue: 0,
+      anomalies: 0,
+    },
+    ...overrides,
+  };
+}
+
+export interface DashboardRouteOptions {
+  data?: DashboardOut;
+  reminded?: MockRequest[];
+}
+
+/** Routes for the progress dashboard: the read model and the reminder action. */
+export function dashboardRoutes(
+  request: MockRequest,
+  options: DashboardRouteOptions = {},
+): Response {
+  const { url, method } = request;
+  if (url.includes("/api/v1/assessment/dashboard/remind")) {
+    if (method !== "POST") throw new Error(`Unexpected ${method} ${url}`);
+    options.reminded?.push(request);
+    return json({
+      rows: 1,
+      sent: 1,
+      skipped: 0,
+      recipients: [
+        {
+          user_id: "user-1",
+          staff_id: "staff-1",
+          name: "Hanna Girma",
+          section_id: "sec-1",
+          subject_id: "sub-1",
+        },
+      ],
+    });
+  }
+  if (url.includes("/api/v1/assessment/dashboard")) {
+    return json(options.data ?? dashboard());
+  }
+  return baseRoutes(request);
 }

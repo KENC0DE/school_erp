@@ -59,6 +59,17 @@ DEFAULT_TEMPLATES: tuple[dict[str, Any], ...] = (
         "body_key": "notifications.overdue.body",
         "default_channels": ["in_app", "email", "sms"],
     },
+    {
+        "key": "assessment.entry_reminder",
+        "name": "Mark entry reminder",
+        "description": "Reminds a teacher that marks are overdue for a class.",
+        "category": "academic",
+        "namespace": "assessment",
+        "module": "assessment",
+        "title_key": "notifications.entry_reminder.title",
+        "body_key": "notifications.entry_reminder.body",
+        "default_channels": ["in_app"],
+    },
 )
 
 
@@ -198,13 +209,13 @@ async def ensure_default_templates(session: AsyncSession) -> list[NotificationTe
                 name=spec["name"],
                 description=spec["description"],
                 category=spec["category"],
-                namespace="core",
+                namespace=spec.get("namespace", "core"),
                 title_key=spec["title_key"],
                 body_key=spec["body_key"],
                 default_channels=list(spec["default_channels"]),
                 is_active=True,
                 is_system=True,
-                module="core",
+                module=spec.get("module", "core"),
             )
             session.add(row)
             created.append(row)

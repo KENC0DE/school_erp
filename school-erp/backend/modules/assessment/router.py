@@ -22,6 +22,7 @@ from modules.assessment.actions import (
     create_scale_assignment,
     create_structure,
     create_window,
+    dashboard,
     delete_assessment,
     delete_grade_scale,
     delete_scale_assignment,
@@ -42,6 +43,7 @@ from modules.assessment.actions import (
     recalculate_structure,
     reject_correction,
     reject_marks,
+    remind_teachers,
     republish_term_results,
     republish_year_results,
     score_sheet,
@@ -77,10 +79,14 @@ from modules.assessment.schemas import (
     CorrectionOut,
     CorrectionQuery,
     CorrectionStatus,
+    DashboardOut,
+    DashboardQuery,
     GradeScaleCreate,
     GradeScaleList,
     GradeScaleOut,
     GradeScaleUpdate,
+    ReminderRequest,
+    ReminderResult,
     ResultSnapshotList,
     ResultSnapshotOut,
     ResultSnapshotQuery,
@@ -834,6 +840,35 @@ async def get_result_snapshot_route(
     session: AsyncSession = Depends(db_session),
 ) -> ResultSnapshotOut:
     return await get_result_snapshot(_context(principal, session, request), {"snapshot_id": str(snapshot_id)})
+
+
+@router.get("/dashboard", response_model=DashboardOut)
+async def dashboard_route(
+    request: Request,
+    year_id: uuid.UUID = Query(...),
+    term_id: uuid.UUID = Query(...),
+    section_id: uuid.UUID | None = Query(None),
+    subject_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> DashboardOut:
+    query = DashboardQuery(
+        year_id=year_id,
+        term_id=term_id,
+        section_id=section_id,
+        subject_id=subject_id,
+    )
+    return await dashboard(_context(principal, session, request), query.model_dump(mode="json"))
+
+
+@router.post("/dashboard/remind", response_model=ReminderResult)
+async def remind_teachers_route(
+    payload: ReminderRequest,
+    request: Request,
+    principal: Principal = Depends(require("assessment.manage")),
+    session: AsyncSession = Depends(db_session),
+) -> ReminderResult:
+    return await remind_teachers(_context(principal, session, request), payload.model_dump(mode="json"))
 
 
 __all__ = ["router"]

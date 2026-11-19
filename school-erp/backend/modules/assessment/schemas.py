@@ -875,6 +875,96 @@ class ScaleAssignmentList(BaseModel):
     total: int
 
 
+DashboardAnomalyKind = Literal["identical", "average_outlier"]
+
+
+class DashboardQuery(BaseModel):
+    year_id: uuid.UUID
+    term_id: uuid.UUID
+    section_id: uuid.UUID | None = None
+    subject_id: uuid.UUID | None = None
+
+
+class DashboardTeacher(BaseModel):
+    staff_id: str
+    name: str
+
+
+class DashboardRow(BaseModel):
+    section_id: str
+    section_code: str
+    level_id: str
+    level_name: str
+    subject_id: str
+    subject_name: str
+    teachers: list[DashboardTeacher] = Field(default_factory=list)
+    assessments: int
+    students: int
+    expected: int
+    entered: int
+    missing: int
+    completion_percent: str
+    status: str
+    deadline: datetime | None = None
+    window_state: str | None = None
+    overdue: bool
+
+
+class DashboardAnomaly(BaseModel):
+    kind: DashboardAnomalyKind
+    assessment_id: str
+    title: str
+    section_id: str
+    section_code: str
+    subject_id: str
+    subject_name: str
+    count: int
+    value: str | None = None
+    threshold: str | None = None
+    average_percent: str | None = None
+    norm_percent: str | None = None
+
+
+class DashboardSummary(BaseModel):
+    sections: int
+    assessments: int
+    expected: int
+    entered: int
+    completion_percent: str
+    overdue: int
+    anomalies: int
+
+
+class DashboardOut(BaseModel):
+    year_id: str
+    term_id: str
+    rows: list[DashboardRow] = Field(default_factory=list)
+    anomalies: list[DashboardAnomaly] = Field(default_factory=list)
+    summary: DashboardSummary
+
+
+class ReminderRequest(BaseModel):
+    year_id: uuid.UUID
+    term_id: uuid.UUID
+    section_id: uuid.UUID | None = None
+    subject_id: uuid.UUID | None = None
+
+
+class ReminderRecipient(BaseModel):
+    user_id: str
+    staff_id: str
+    name: str
+    section_id: str
+    subject_id: str
+
+
+class ReminderResult(BaseModel):
+    rows: int
+    sent: int
+    skipped: int
+    recipients: list[ReminderRecipient] = Field(default_factory=list)
+
+
 __all__ = [
     "Aggregation",
     "AssessmentCreate",
@@ -891,6 +981,13 @@ __all__ = [
     "CorrectionOut",
     "CorrectionQuery",
     "CorrectionStatus",
+    "DashboardAnomaly",
+    "DashboardAnomalyKind",
+    "DashboardOut",
+    "DashboardQuery",
+    "DashboardRow",
+    "DashboardSummary",
+    "DashboardTeacher",
     "BandInput",
     "BandOut",
     "GradeScaleCreate",
@@ -901,6 +998,9 @@ __all__ = [
     "Mark",
     "PositiveMark",
     "RecalculationResult",
+    "ReminderRecipient",
+    "ReminderRequest",
+    "ReminderResult",
     "ResultSnapshotList",
     "ResultSnapshotOut",
     "ResultSnapshotQuery",

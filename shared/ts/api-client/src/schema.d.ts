@@ -943,6 +943,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assessment/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard Route */
+        get: operations["dashboard_route_api_v1_assessment_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assessment/dashboard/remind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remind Teachers Route */
+        post: operations["remind_teachers_route_api_v1_assessment_dashboard_remind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assessment/results/snapshots": {
         parameters: {
             query?: never;
@@ -5511,6 +5545,109 @@ export interface components {
              */
             subject_id: string;
         };
+        /** DashboardAnomaly */
+        DashboardAnomaly: {
+            /** Assessment Id */
+            assessment_id: string;
+            /** Average Percent */
+            average_percent?: string | null;
+            /** Count */
+            count: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "identical" | "average_outlier";
+            /** Norm Percent */
+            norm_percent?: string | null;
+            /** Section Code */
+            section_code: string;
+            /** Section Id */
+            section_id: string;
+            /** Subject Id */
+            subject_id: string;
+            /** Subject Name */
+            subject_name: string;
+            /** Threshold */
+            threshold?: string | null;
+            /** Title */
+            title: string;
+            /** Value */
+            value?: string | null;
+        };
+        /** DashboardOut */
+        DashboardOut: {
+            /** Anomalies */
+            anomalies?: components["schemas"]["DashboardAnomaly"][];
+            /** Rows */
+            rows?: components["schemas"]["DashboardRow"][];
+            summary: components["schemas"]["DashboardSummary"];
+            /** Term Id */
+            term_id: string;
+            /** Year Id */
+            year_id: string;
+        };
+        /** DashboardRow */
+        DashboardRow: {
+            /** Assessments */
+            assessments: number;
+            /** Completion Percent */
+            completion_percent: string;
+            /** Deadline */
+            deadline?: string | null;
+            /** Entered */
+            entered: number;
+            /** Expected */
+            expected: number;
+            /** Level Id */
+            level_id: string;
+            /** Level Name */
+            level_name: string;
+            /** Missing */
+            missing: number;
+            /** Overdue */
+            overdue: boolean;
+            /** Section Code */
+            section_code: string;
+            /** Section Id */
+            section_id: string;
+            /** Status */
+            status: string;
+            /** Students */
+            students: number;
+            /** Subject Id */
+            subject_id: string;
+            /** Subject Name */
+            subject_name: string;
+            /** Teachers */
+            teachers?: components["schemas"]["DashboardTeacher"][];
+            /** Window State */
+            window_state?: string | null;
+        };
+        /** DashboardSummary */
+        DashboardSummary: {
+            /** Anomalies */
+            anomalies: number;
+            /** Assessments */
+            assessments: number;
+            /** Completion Percent */
+            completion_percent: string;
+            /** Entered */
+            entered: number;
+            /** Expected */
+            expected: number;
+            /** Overdue */
+            overdue: number;
+            /** Sections */
+            sections: number;
+        };
+        /** DashboardTeacher */
+        DashboardTeacher: {
+            /** Name */
+            name: string;
+            /** Staff Id */
+            staff_id: string;
+        };
         /** DecisionInput */
         DecisionInput: {
             /** Entrance Test Score */
@@ -7280,6 +7417,47 @@ export interface components {
         RefreshRequest: {
             /** Refresh Token */
             refresh_token: string;
+        };
+        /** ReminderRecipient */
+        ReminderRecipient: {
+            /** Name */
+            name: string;
+            /** Section Id */
+            section_id: string;
+            /** Staff Id */
+            staff_id: string;
+            /** Subject Id */
+            subject_id: string;
+            /** User Id */
+            user_id: string;
+        };
+        /** ReminderRequest */
+        ReminderRequest: {
+            /** Section Id */
+            section_id?: string | null;
+            /** Subject Id */
+            subject_id?: string | null;
+            /**
+             * Term Id
+             * Format: uuid
+             */
+            term_id: string;
+            /**
+             * Year Id
+             * Format: uuid
+             */
+            year_id: string;
+        };
+        /** ReminderResult */
+        ReminderResult: {
+            /** Recipients */
+            recipients?: components["schemas"]["ReminderRecipient"][];
+            /** Rows */
+            rows: number;
+            /** Sent */
+            sent: number;
+            /** Skipped */
+            skipped: number;
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -13033,6 +13211,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CorrectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dashboard_route_api_v1_assessment_dashboard_get: {
+        parameters: {
+            query: {
+                year_id: string;
+                term_id: string;
+                section_id?: string | null;
+                subject_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remind_teachers_route_api_v1_assessment_dashboard_remind_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderResult"];
                 };
             };
             /** @description Validation Error */

@@ -5,6 +5,7 @@ import type { LevelList, SubjectList, YearList } from "../academics/types";
 import type {
   AssessmentList,
   AssessmentSummaryList,
+  DashboardOut,
   GradeScaleList,
   MarkingWindowList,
   ScaleAssignmentList,
@@ -34,7 +35,10 @@ export function useStructures(yearId: string | null) {
     queryKey: ["assessment", "structures", yearId],
     queryFn: () =>
       api.get<StructureList>(
-        withQuery(`${ASSESSMENT}/structures`, { year_id: yearId ?? undefined, limit: 200 }),
+        withQuery(`${ASSESSMENT}/structures`, {
+          year_id: yearId ?? undefined,
+          limit: 200,
+        }),
       ),
     enabled: Boolean(yearId),
     retry: false,
@@ -87,7 +91,8 @@ export function useScales() {
 export function useScaleAssignments() {
   return useQuery({
     queryKey: ["assessment", "scale-assignments"],
-    queryFn: () => api.get<ScaleAssignmentList>(`${ASSESSMENT}/scale-assignments`),
+    queryFn: () =>
+      api.get<ScaleAssignmentList>(`${ASSESSMENT}/scale-assignments`),
     retry: false,
   });
 }
@@ -97,7 +102,10 @@ export function useScaleAssessments(yearId: string | null) {
     queryKey: ["assessment", "assessments", yearId],
     queryFn: () =>
       api.get<AssessmentSummaryList>(
-        withQuery(`${ASSESSMENT}/assessments`, { year_id: yearId ?? undefined, limit: 200 }),
+        withQuery(`${ASSESSMENT}/assessments`, {
+          year_id: yearId ?? undefined,
+          limit: 200,
+        }),
       ),
     enabled: Boolean(yearId),
     retry: false,
@@ -109,7 +117,10 @@ export function useMarkAssessments(yearId: string | null) {
     queryKey: ["assessment", "mark-assessments", yearId],
     queryFn: () =>
       api.get<AssessmentList>(
-        withQuery(`${ASSESSMENT}/assessments`, { year_id: yearId ?? undefined, limit: 200 }),
+        withQuery(`${ASSESSMENT}/assessments`, {
+          year_id: yearId ?? undefined,
+          limit: 200,
+        }),
       ),
     enabled: Boolean(yearId),
     retry: false,
@@ -121,14 +132,19 @@ export function useMarkSheets(assessmentIds: string[]) {
     queryKey: ["assessment", "mark-sheets", assessmentIds],
     queryFn: () =>
       Promise.all(
-        assessmentIds.map((id) => api.get<ScoreSheet>(`${ASSESSMENT}/assessments/${id}/scores`)),
+        assessmentIds.map((id) =>
+          api.get<ScoreSheet>(`${ASSESSMENT}/assessments/${id}/scores`),
+        ),
       ),
     enabled: assessmentIds.length > 0,
     retry: false,
   });
 }
 
-export function useMarkWindows(yearId: string | null, sectionId: string | null) {
+export function useMarkWindows(
+  yearId: string | null,
+  sectionId: string | null,
+) {
   return useQuery({
     queryKey: ["assessment", "mark-windows", yearId, sectionId],
     queryFn: () =>
@@ -161,6 +177,28 @@ export function useMarkSubmission(
         }),
       ),
     enabled: Boolean(yearId && sectionId && subjectId),
+    retry: false,
+  });
+}
+
+export function useAssessmentDashboard(
+  yearId: string | null,
+  termId: string | null,
+  sectionId?: string | null,
+  subjectId?: string | null,
+) {
+  return useQuery({
+    queryKey: ["assessment", "dashboard", yearId, termId, sectionId, subjectId],
+    queryFn: () =>
+      api.get<DashboardOut>(
+        withQuery(`${ASSESSMENT}/dashboard`, {
+          year_id: yearId ?? undefined,
+          term_id: termId ?? undefined,
+          section_id: sectionId ?? undefined,
+          subject_id: subjectId ?? undefined,
+        }),
+      ),
+    enabled: Boolean(yearId && termId),
     retry: false,
   });
 }
