@@ -190,6 +190,9 @@ importers:
       '@erp/calendar':
         specifier: workspace:*
         version: link:../../shared/ts/calendar
+      '@erp/documents':
+        specifier: workspace:*
+        version: link:../../shared/ts/documents
       '@erp/i18n':
         specifier: workspace:*
         version: link:../../shared/ts/i18n

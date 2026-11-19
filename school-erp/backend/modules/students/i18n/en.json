@@ -268,5 +268,20 @@
   "register.number_manual": "The student will use number {{number}}.",
   "date_format": "YYYY-MM-DD",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "field.full_name": "Full name",
+  "field.short_name": "Short name",
+  "field.first_name": "First name",
+  "field.middle_name": "Father's name",
+  "field.last_name": "Grandfather's name",
+  "field.student_number": "Student number",
+  "field.status": "Status",
+  "field.admission_date": "Admission date",
+  "field.grade": "Grade",
+  "field.section": "Section",
+  "field.academic_year": "Academic year",
+  "field.guardian_name": "Guardian",
+  "field.school_name": "School name",
+  "field.photo": "Student photo",
+  "field.signature": "Student signature"
 }

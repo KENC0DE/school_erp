@@ -1,0 +1,213 @@
+import type { Layout } from "@erp/documents";
+import { QueryClient } from "@tanstack/react-query";
+import { render } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { vi } from "vitest";
+
+import coreEn from "../../../../backend/core/i18n/en.json";
+import documentsEn from "../../../../backend/modules/documents/i18n/en.json";
+import studentsEn from "../../../../backend/modules/students/i18n/en.json";
+import { AppProviders, AppRoutes } from "../../App";
+import type { FieldDefinition, TemplateDetail, VersionDetail } from "./types";
+
+function prefix(prefix: string, bundle: Record<string, string>) {
+  return Object.fromEntries(Object.entries(bundle).map(([key, value]) => [`${prefix}.${key}`, value]));
+}
+
+export const documentMessages: Record<string, string> = {
+  ...coreEn,
+  ...prefix("documents", documentsEn),
+  ...prefix("students", studentsEn),
+};
+
+export interface MockRequest {
+  url: string;
+  method: string;
+  body: Record<string, unknown> | null;
+}
+
+export function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export function session(permissions: string[] = ["*"], roles: string[] = ["super_admin"]) {
+  return {
+    id: "u-1",
+    email: "superadmin@demo.school",
+    display_name: "Super Admin",
+    locale: "en",
+    roles,
+    permissions,
+    is_controller: false,
+  };
+}
+
+function navigation() {
+  return {
+    items: [
+      {
+        key: "documents",
+        label_key: "documents.nav",
+        path: "/documents",
+        module: "documents",
+      },
+    ],
+    modules: ["documents"],
+    locale: "en",
+    languages: ["en", "am"],
+  };
+}
+
+export function stubDocuments(
+  permissions: string[],
+  handler: (request: MockRequest) => Response,
+): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) return json(session(permissions));
+      if (url.endsWith("/api/v1/auth/me/navigation")) return json(navigation());
+      return handler({
+        url,
+        method: (init?.method ?? "GET").toUpperCase(),
+        body: init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : null,
+      });
+    }),
+  );
+}
+
+export function renderDocuments(path = "/documents") {
+  return render(
+    <AppProviders
+      initialMessages={documentMessages}
+      queryClient={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </AppProviders>,
+  );
+}
+
+export const LAYOUT: Layout = {
+  version: 1,
+  page: {
+    size: "A4",
+    orientation: "landscape",
+    margins_mm: { top: 12, right: 12, bottom: 12, left: 12 },
+    bleed_mm: 0,
+  },
+  fonts: [],
+  elements: [],
+};
+
+export const FIELDS: FieldDefinition[] = [
+  {
+    key: "student.full_name",
+    label_key: "students.field.full_name",
+    kind: "text",
+    formats: ["script"],
+    sample: "Abebe Kebede Tadesse",
+    module: "students",
+  },
+  {
+    key: "student.student_number",
+    label_key: "students.field.student_number",
+    kind: "text",
+    formats: [],
+    sample: "DEMO-2026-0001",
+    module: "students",
+  },
+  {
+    key: "student.marks.subjects",
+    label_key: "assessment.field.marks_subjects",
+    kind: "table",
+    formats: [],
+    sample: [
+      {
+        subject: "Mathematics",
+        total: "35.69",
+        grade: "C+",
+      },
+    ],
+    module: "assessment",
+  },
+];
+
+export function fieldsResponse() {
+  return {
+    items: FIELDS,
+    format_options: { calendar: ["ec", "gc", "both"], script: ["am", "en"], money: ["etb"] },
+  };
+}
+
+export function template(overrides: Partial<TemplateDetail> = {}): TemplateDetail {
+  return {
+    id: "tpl-1",
+    key: "certificate-completion",
+    name: "Certificate of completion",
+    description: null,
+    doc_type: "certificate_completion",
+    row_version: 1,
+    current_version_id: "ver-1",
+    current_version_number: 1,
+    draft_version_id: "ver-1",
+    draft_version_number: 1,
+    version_count: 1,
+    updated_at: "2026-11-19T09:00:00Z",
+    versions: [
+      {
+        id: "ver-1",
+        version_number: 1,
+        status: "draft",
+        change_note: null,
+        published_at: null,
+        row_version: 1,
+        created_at: "2026-11-19T09:00:00Z",
+        updated_at: "2026-11-19T09:00:00Z",
+      },
+    ],
+    ...overrides,
+  };
+}
+
+export function version(overrides: Partial<VersionDetail> = {}): VersionDetail {
+  return {
+    id: "ver-1",
+    template_id: "tpl-1",
+    version_number: 1,
+    status: "draft",
+    change_note: null,
+    published_at: null,
+    row_version: 1,
+    created_at: "2026-11-19T09:00:00Z",
+    updated_at: "2026-11-19T09:00:00Z",
+    layout: LAYOUT,
+    ...overrides,
+  };
+}
+
+export function starters() {
+  return {
+    items: [
+      {
+        key: "certificate_completion",
+        doc_type: "certificate_completion",
+        name_key: "documents.starter.certificate_completion.name",
+        description_key: "documents.starter.certificate_completion.description",
+        layout: LAYOUT,
+      },
+      {
+        key: "id_card",
+        doc_type: "id_card",
+        name_key: "documents.starter.id_card.name",
+        description_key: "documents.starter.id_card.description",
+        layout: LAYOUT,
+      },
+    ],
+  };
+}

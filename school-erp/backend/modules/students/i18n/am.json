@@ -268,5 +268,20 @@
   "register.number_manual": "ተማሪው ቁጥር {{number}} ይጠቀማል።",
   "date_format": "YYYY-MM-DD",
   "yes": "አዎ",
-  "no": "አይ"
+  "no": "አይ",
+  "field.full_name": "ሙሉ ስም",
+  "field.short_name": "አጭር ስም",
+  "field.first_name": "የመጀመሪያ ስም",
+  "field.middle_name": "የአባት ስም",
+  "field.last_name": "የአያት ስም",
+  "field.student_number": "የተማሪ ቁጥር",
+  "field.status": "ሁኔታ",
+  "field.admission_date": "የቅበላ ቀን",
+  "field.grade": "ደረጃ",
+  "field.section": "ክፍል",
+  "field.academic_year": "የትምህርት ዓመት",
+  "field.guardian_name": "አሳዳጊ",
+  "field.school_name": "የትምህርት ቤት ስም",
+  "field.photo": "የተማሪ ፎቶ",
+  "field.signature": "የተማሪ ፊርማ"
 }

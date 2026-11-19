@@ -2630,3 +2630,38 @@ figure includes the commit and the audit row):
   version (layout, note, publish time). Import validates every layout and the
   draft/published shape before inserting, so a hand-edited file cannot create a
   template the editor could not have produced.
+
+## 2026-11-19 — P5-05 canvas editor
+
+- **One geometry for screen and paper.** The editor is a DOM/CSS canvas whose
+  elements are positioned in millimetres and scaled with the same conversion as
+  the HTML renderer (`96 / 25.4`). A design therefore looks the same while
+  editing, in preview, and in the printed browser output; no second layout
+  model can drift from the one the renderer executes.
+- **Editing is an immutable history.** Every insert, move, resize, style change
+  and page change commits a new layout object, which gives undo/redo for free
+  and means a failed save leaves the previous state intact. Saves send the
+  server `row_version`, so a second editor gets a visible conflict instead of
+  overwriting the first.
+- **Snap guides are computed, not stored.** Dragging snaps to page margins,
+  page centre, the edges/centres of other elements and a 1 mm grid; holding the
+  toggle off leaves free positioning. Guides are ephemeral UI, never part of the
+  layout JSON.
+- **Fields insert as tokens, previews resolve samples.** Clicking a field in the
+  palette appends `{{student.full_name}}` (or the chosen script/calendar
+  variant) to the selected text, or creates a new text element when nothing is
+  selected. Preview substitutes the registered sample so a designer sees real
+  spacing before any student data exists.
+- **Placeholders name their source field.** Logo, signature, stamp and photo
+  elements store a field source (`school.logo`, `student.signature`, …) rather
+  than an uploaded binary in the layout. The renderer resolves the field at
+  generation time, keeping layouts portable and the data snapshot authoritative.
+- **Published versions are read-only; drafts are copies.** Opening a published
+  version shows the canvas without editing controls, and "Start a draft" copies
+  the published layout into a new draft. This is the client side of the P5-04
+  draft/publish contract, so freezing a design is enforced by both the service
+  and the UI.
+- **The demo seed licenses Document Studio.** The e2e stack seeds the same
+  `DEMO_MODULES` list as a fresh demo school; adding `documents` there makes the
+  navigation entry and editor reachable without a manual module toggle, and
+  keeps the seed representative of an installed school.

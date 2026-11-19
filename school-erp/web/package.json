@@ -14,6 +14,7 @@
   "dependencies": {
     "@erp/api-client": "workspace:*",
     "@erp/calendar": "workspace:*",
+    "@erp/documents": "workspace:*",
     "@erp/i18n": "workspace:*",
     "@erp/module-sdk": "workspace:*",
     "@erp/money": "workspace:*",

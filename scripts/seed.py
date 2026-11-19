@@ -60,6 +60,7 @@ DEMO_MODULES: tuple[str, ...] = (
     "staff",
     "attendance",
     "assessment",
+    "documents",
     "sample",
 )
 # School-layer translation overrides. They prove the default < central < school

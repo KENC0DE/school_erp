@@ -182,7 +182,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P5-02 — Fields registry
 - [x] P5-03 — Renderer
 - [x] P5-04 — Template models: draft/publish lifecycle, duplicate, JSON import/export, 7 starters (12 tests)
-- [ ] P5-05 — Canvas editor (web)
+- [x] P5-05 — Canvas editor (web): drag/resize, text, image, shape, line, table, QR/barcode, logo/signature/stamp/photo, field insertion, snap, layers, undo/redo, zoom, page setup (Playwright + 3 editor tests)
 - [ ] P5-06 — Repeating tables
 - [ ] P5-07 — Preview with sample or real data
 - [ ] P5-08 — Generation

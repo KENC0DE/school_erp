@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from core.modules.manifest import ModuleManifest, Perm
+from core.modules.manifest import ModuleManifest, Nav, Perm
 
 from modules.documents import models as _models  # noqa: F401 - register tables
 from modules.documents.router import router
@@ -17,6 +17,16 @@ MANIFEST = ModuleManifest(
         Perm("documents.template.design", "documents.perm.template_design"),
         Perm("documents.generate", "documents.perm.generate"),
         Perm("documents.approve", "documents.perm.approve"),
+    ],
+    nav=[
+        Nav(
+            key="documents",
+            label_key="documents.nav",
+            path="/documents",
+            perm="documents.template.design",
+            icon="file-text",
+            order=35,
+        )
     ],
     router=router,
     i18n_namespaces=["documents"],
