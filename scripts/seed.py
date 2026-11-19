@@ -714,6 +714,85 @@ async def _ensure_demo_person(
     return created.id
 
 
+async def seed_portal_links(session, principal, *, users_by_email: dict, summary: dict) -> None:
+    """P4-16: link the demo parent and student accounts to the roster.
+
+    ``parent1@demo.school`` owns the two sibling guardian rows, so the parent
+    portal shows both children; ``student1@demo.school`` is the first student
+    profile, so the student portal shows exactly one. Re-running links nothing
+    new because both lookups only select rows without an account.
+    """
+    from core.audit.service import record
+    from core.people.models import Person
+    from modules.students.models import StudentGuardian, StudentProfile
+    from sqlalchemy import select
+
+    linked = 0
+    parent_user = users_by_email.get("parent1@demo.school")
+    if parent_user is not None:
+        parent = (
+            await session.execute(
+                select(Person).where(
+                    Person.email == "parent1@demo.school",
+                    Person.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        if parent is not None:
+            rows = (
+                (
+                    await session.execute(
+                        select(StudentGuardian).where(
+                            StudentGuardian.person_id == parent.id,
+                            StudentGuardian.user_id.is_(None),
+                            StudentGuardian.deleted_at.is_(None),
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            for row in rows:
+                row.user_id = parent_user.id
+                await record(
+                    session,
+                    action="students.portal.link_guardian",
+                    module="students",
+                    entity_type="student_guardian",
+                    entity_id=str(row.id),
+                    after={"user_id": str(parent_user.id)},
+                    actor=principal,
+                    via="api",
+                )
+                linked += 1
+
+    student_user = users_by_email.get("student1@demo.school")
+    if student_user is not None:
+        profile = (
+            await session.execute(
+                select(StudentProfile).where(
+                    StudentProfile.student_number == f"STU-{DEMO_YEAR_START.year}-0001",
+                    StudentProfile.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        if profile is not None and profile.user_id != student_user.id:
+            profile.user_id = student_user.id
+            await record(
+                session,
+                action="students.portal.link_student",
+                module="students",
+                entity_type="student_profile",
+                entity_id=str(profile.id),
+                after={"user_id": str(student_user.id)},
+                actor=principal,
+                via="api",
+            )
+            linked += 1
+
+    summary["portal_links"] = linked
+
+
 async def seed_demo_data(session, principal, *, users_by_email: dict | None = None) -> dict:
     """Seed the Phase 2 demo academic year, crew and 60-student roster.
 
@@ -950,6 +1029,8 @@ async def seed_demo_data(session, principal, *, users_by_email: dict | None = No
             via="api",
         )
         summary["students_created"] += 1
+
+    await seed_portal_links(session, principal, users_by_email=users_by_email, summary=summary)
 
     summary["students"] = int(
         (

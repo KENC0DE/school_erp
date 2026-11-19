@@ -8,6 +8,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from core.audit.models import AuditLog
+from core.auth.models import User
 from core.auth.principal import Principal
 from core.events.models import DomainEvent
 from core.people.models import Person
@@ -181,6 +182,64 @@ async def test_demo_seed_builds_year_sections_students_and_guardians(app) -> Non
         event_types = (await session.execute(select(DomainEvent.event_type))).scalars().all()
         assert event_types.count("student.admitted") == 60
         assert event_types.count("student.enrolled") == 60
+
+
+async def test_demo_seed_links_portal_accounts(app) -> None:
+    """P4-16: the demo accounts resolve to their own children and profile."""
+    from core.auth.security import hash_password
+
+    principal = _principal()
+    async with app.state.db.session() as session:
+        parent_user = User(
+            email="parent1@demo.school",
+            display_name="Parent One",
+            password_hash=hash_password("DevPass#2026"),
+        )
+        student_user = User(
+            email="student1@demo.school",
+            display_name="Student One",
+            password_hash=hash_password("DevPass#2026"),
+        )
+        session.add_all([parent_user, student_user])
+        await session.flush()
+        summary = await seed.seed_demo_data(
+            session,
+            principal,
+            users_by_email={
+                "parent1@demo.school": parent_user,
+                "student1@demo.school": student_user,
+            },
+        )
+        assert summary["portal_links"] == 3
+
+        parent_one = (
+            await session.execute(select(Person).where(Person.email == "parent1@demo.school"))
+        ).scalar_one()
+        parent_links = (
+            (await session.execute(select(StudentGuardian).where(StudentGuardian.person_id == parent_one.id)))
+            .scalars()
+            .all()
+        )
+        assert len(parent_links) == 2
+        assert {link.user_id for link in parent_links} == {parent_user.id}
+
+        first_student = (
+            await session.execute(
+                select(StudentProfile).where(
+                    StudentProfile.student_number == f"STU-{seed.DEMO_YEAR_START.year}-0001"
+                )
+            )
+        ).scalar_one()
+        assert first_student.user_id == student_user.id
+
+        other = (
+            await session.execute(
+                select(StudentProfile).where(
+                    StudentProfile.student_number == f"STU-{seed.DEMO_YEAR_START.year}-0002"
+                )
+            )
+        ).scalar_one()
+        assert other.user_id is None
 
 
 async def test_demo_seed_rerun_is_a_noop(app) -> None:
