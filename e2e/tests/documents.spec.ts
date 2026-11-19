@@ -47,7 +47,27 @@ test("design a certificate on the canvas, save the draft and preview it", async 
   await expect(real.getByText("New text Abebe Dawit Samuel")).toBeVisible();
   await page.getByTestId("preview-close").click();
 
+  await page.getByTestId("editor-publish-open").click();
+  await page.getByTestId("editor-publish").click();
+  await expect(page.getByTestId("editor-notice")).toContainText("Version 1 published.");
+
   await page.getByTestId("editor-back").click();
   await expect(page.getByTestId("documents-page")).toBeVisible();
   await expect(page.getByText(name, { exact: true })).toBeVisible();
+
+  // The published template can now be generated from the list. The e2e stack
+  // has no Redis worker, so this checks authorisation and target selection
+  // rather than waiting for a batch that cannot run here.
+  const card = page.locator("article.doc-card").filter({ hasText: name });
+  await card.getByRole("button", { name: "Generate" }).click();
+  await expect(page.getByTestId("generation-dialog")).toBeVisible();
+  await page.getByTestId("generation-student-search").fill("STU-2026-0001");
+  const picker = page.getByTestId("generation-student");
+  await expect(picker.locator("option")).toHaveCount(2);
+  await picker.selectOption({ index: 1 });
+  await expect(page.getByTestId("generation-start")).toBeEnabled();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+
+  await page.getByRole("link", { name: "Issued documents" }).click();
+  await expect(page.getByTestId("issued-page")).toBeVisible();
 });

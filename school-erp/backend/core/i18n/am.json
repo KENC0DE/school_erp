@@ -667,6 +667,7 @@
   "design.stat.attendance": "የዛሬ ክትትል",
   "design.stat.fees": "በዚህ ወቅት የተሰበሰበ",
   "jobs.error.assessment": "ነጥቦቹ እንደገና ሊሰሉ አልቻሉም። እንደገና ይሞክሩ፤ ደጋግሞ ካልተሳካ ድጋፍን ያግኙ።",
+  "jobs.error.documents": "ሰነዶቹ ሊመነጩ አልቻሉም። አብነቱንና የመረጧቸውን ተማሪዎች ያረጋግጡ፣ ከዚያ አዲስ ስብስብ ይጀምሩ።",
   "error.documents.template_not_found": "የሰነድ አብነቱ አልተገኘም",
   "error.documents.template_key_taken": "ይህ የአብነት ቁልፍ አስቀድሞ አለ",
   "error.documents.draft_exists": "ይህ አብነት አስቀድሞ ረቂቅ ቅጂ አለው",

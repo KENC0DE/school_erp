@@ -21,6 +21,7 @@ import { api } from "../../lib/api";
 import { requestIdOf } from "../../lib/errors";
 import { useAuth } from "../../providers/AuthProvider";
 import { useI18n } from "../../providers/I18nProvider";
+import { GenerationDialog } from "./GenerationDialog";
 import { useStarters, useTemplates } from "./queries";
 import {
   DOC_TYPES,
@@ -33,11 +34,13 @@ import {
 
 function TemplateCard({
   template,
+  onGenerate,
   onDuplicate,
   onDelete,
   onExport,
 }: {
   template: TemplateSummary;
+  onGenerate: (template: TemplateSummary) => void;
   onDuplicate: (template: TemplateSummary) => void;
   onDelete: (template: TemplateSummary) => void;
   onExport: (template: TemplateSummary) => void;
@@ -75,6 +78,16 @@ function TemplateCard({
         <Link className="ui-btn ui-btn--primary ui-btn--sm" to={`/documents/${template.id}`}>
           {t("documents.list.open")}
         </Link>
+        {template.current_version_id ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onGenerate(template)}
+            data-testid={`template-generate-${template.key}`}
+          >
+            {t("documents.list.generate")}
+          </Button>
+        ) : null}
         <Button variant="outline" size="sm" onClick={() => onDuplicate(template)}>
           {t("documents.list.duplicate")}
         </Button>
@@ -113,6 +126,7 @@ export function DocumentsPage() {
   const [duplicating, setDuplicating] = useState<TemplateSummary | null>(null);
   const [duplicateName, setDuplicateName] = useState("");
   const [deleting, setDeleting] = useState<TemplateSummary | null>(null);
+  const [generating, setGenerating] = useState<TemplateSummary | null>(null);
 
   const canDesign =
     (user?.permissions ?? []).includes("*") ||
@@ -246,6 +260,7 @@ export function DocumentsPage() {
                 ref={fileInput}
                 type="file"
                 accept="application/json,.json"
+                aria-label={t("documents.list.import")}
                 className="ui-visually-hidden"
                 data-testid="template-import-input"
                 onChange={(event) => {
@@ -257,6 +272,9 @@ export function DocumentsPage() {
               <Button variant="outline" onClick={() => fileInput.current?.click()}>
                 {t("documents.list.import")}
               </Button>
+              <Link className="ui-btn ui-btn--outline ui-btn--sm" to="/documents/issued">
+                {t("documents.list.issued")}
+              </Link>
               <Button onClick={openCreate} data-testid="template-new">
                 {t("documents.list.new")}
               </Button>
@@ -323,6 +341,7 @@ export function DocumentsPage() {
               <TemplateCard
                 key={template.id}
                 template={template}
+                onGenerate={setGenerating}
                 onDuplicate={(value) => {
                   setDuplicating(value);
                   setDuplicateName(`${value.name} copy`);
@@ -440,6 +459,13 @@ export function DocumentsPage() {
       >
         <p className="doc-copy">{deleting?.name}</p>
       </Dialog>
+
+      <GenerationDialog
+        open={Boolean(generating)}
+        onClose={() => setGenerating(null)}
+        templates={templates.data?.items ?? []}
+        initialTemplateId={generating?.id}
+      />
     </Page>
   );
 }

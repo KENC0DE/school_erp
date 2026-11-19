@@ -55,6 +55,8 @@ const AXE_SCREENS = [
   "/jobs",
   "/sample",
   "/design",
+  "/documents",
+  "/documents/issued",
 ] as const;
 
 async function login(page: Page): Promise<void> {

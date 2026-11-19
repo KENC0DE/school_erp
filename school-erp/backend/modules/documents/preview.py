@@ -64,8 +64,9 @@ async def common_context(session: AsyncSession) -> dict[str, Any]:
     core = await load_model(session, "core", CoreSettings)
     issued = date.today()
     expires = issued + timedelta(days=365)
+    name = core.school_profile.name
     return {
-        "school": {"name": core.school_profile.name},
+        "school": {"name": name, "short_name": name, "logo_file_id": core.school_profile.logo_file_id},
         "date": {"issued": issued.isoformat(), "expires": expires.isoformat()},
     }
 
@@ -247,6 +248,7 @@ async def student_context(
     _assign(data, "student.last_name_am", person.grandfather_name_am or None)
     _assign(data, "student.student_number", detail.student_number)
     _assign(data, "student.status", detail.status)
+    _assign(data, "student.photo", person.photo_file_id)
     _assign(
         data, "student.admission_date", detail.admission_date.isoformat() if detail.admission_date else None
     )

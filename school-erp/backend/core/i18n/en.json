@@ -667,6 +667,7 @@
   "design.stat.attendance": "Attendance today",
   "design.stat.fees": "Collected this term",
   "jobs.error.assessment": "The marks could not be recalculated. Retry, and contact support if it keeps failing.",
+  "jobs.error.documents": "The documents could not be generated. Check the template and the chosen students, then start a new batch.",
   "error.documents.template_not_found": "The document template does not exist",
   "error.documents.template_key_taken": "That template key is already in use",
   "error.documents.draft_exists": "This template already has a draft version",

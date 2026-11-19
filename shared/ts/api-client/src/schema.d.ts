@@ -2122,6 +2122,196 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/generation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Route
+         * @description Validate a target, record the batch and queue the worker.
+         *
+         *     The response returns immediately with the job and batch ids; the client
+         *     polls the batch for progress. A bulk of hundreds of students therefore never
+         *     ties up the request.
+         */
+        post: operations["generate_route_api_v1_documents_generation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/generation/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Batches Route */
+        get: operations["list_batches_route_api_v1_documents_generation_batches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/generation/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Batch Route */
+        get: operations["get_batch_route_api_v1_documents_generation_batches__batch_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/generation/batches/{batch_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Batch Download Route */
+        get: operations["batch_download_route_api_v1_documents_generation_batches__batch_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/generation/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Generation Students Route */
+        get: operations["generation_students_route_api_v1_documents_generation_students_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/generation/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Generation Targets Route
+         * @description The current year's levels and sections for the generation dialog.
+         */
+        get: operations["generation_targets_route_api_v1_documents_generation_targets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/issued": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Issued Route */
+        get: operations["list_issued_route_api_v1_documents_issued_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/issued/{issued_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Issued Route */
+        get: operations["get_issued_route_api_v1_documents_issued__issued_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/issued/{issued_id}/reprint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reprint Route
+         * @description Serve the stored artifact again; never re-render today's data.
+         */
+        get: operations["reprint_route_api_v1_documents_issued__issued_id__reprint_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Route
+         * @description Render the unsaved layout with sample or real student data.
+         *
+         *     The response is the exact HTML the production renderer prints, so the
+         *     preview cannot drift from the PDF. Real student data is only read when the
+         *     caller may see that student's record.
+         */
+        post: operations["preview_route_api_v1_documents_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents/templates": {
         parameters: {
             query?: never;
@@ -6057,6 +6247,78 @@ export interface components {
             /** Script */
             script: string[];
         };
+        /** DocumentGenerationOut */
+        DocumentGenerationOut: {
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Count */
+            count: number;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Status */
+            status: string;
+        };
+        /**
+         * DocumentGenerationRequest
+         * @description Generate from a published version; defaults to the latest one.
+         */
+        DocumentGenerationRequest: {
+            /**
+             * Combine
+             * @default false
+             */
+            combine: boolean;
+            target: components["schemas"]["GenerationTarget"];
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /** Version Id */
+            version_id?: string | null;
+        };
+        /** DocumentPreviewOut */
+        DocumentPreviewOut: {
+            /** Html */
+            html: string;
+            /** Media Mm */
+            media_mm: number[];
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "sample" | "student";
+            /** Page Mm */
+            page_mm: number[];
+            /** Student Id */
+            student_id?: string | null;
+            /** Student Name */
+            student_name?: string | null;
+        };
+        /**
+         * DocumentPreviewRequest
+         * @description Preview an unsaved layout with sample data or one real student.
+         */
+        DocumentPreviewRequest: {
+            /** Layout */
+            layout: {
+                [key: string]: unknown;
+            };
+            /**
+             * Mode
+             * @default sample
+             * @enum {string}
+             */
+            mode: "sample" | "student";
+            /** Student Id */
+            student_id?: string | null;
+        };
         /** DuplicateCheck */
         DuplicateCheck: {
             person: components["schemas"]["PersonInput"];
@@ -6147,6 +6409,20 @@ export interface components {
             /** Value */
             value: string;
         };
+        /**
+         * FileLinkOut
+         * @description A short-lived link to a stored artifact (a batch's combined PDF).
+         */
+        FileLinkOut: {
+            /** Checksum Sha256 */
+            checksum_sha256?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Filename */
+            filename?: string | null;
+            /** Url */
+            url?: string | null;
+        };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
             /**
@@ -6154,6 +6430,131 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** GenerationBatchList */
+        GenerationBatchList: {
+            /** Items */
+            items?: components["schemas"]["GenerationBatchOut"][];
+        };
+        /** GenerationBatchOut */
+        GenerationBatchOut: {
+            /** Combine */
+            combine: boolean;
+            /** Count */
+            count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Download Url */
+            download_url?: string | null;
+            /** Failed Count */
+            failed_count: number;
+            /** Failure Summary */
+            failure_summary?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Id */
+            id: string;
+            /** Issued At */
+            issued_at?: string | null;
+            /** Issued Count */
+            issued_count: number;
+            /** Mode */
+            mode: string;
+            /** Progress */
+            progress: number;
+            /** Status */
+            status: string;
+            /** Template Id */
+            template_id: string;
+            /** Template Name */
+            template_name: string;
+            /** Template Version Id */
+            template_version_id: string;
+            /** Template Version Number */
+            template_version_number: number;
+        };
+        /** GenerationLevelOut */
+        GenerationLevelOut: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Name Am */
+            name_am?: string | null;
+        };
+        /** GenerationSectionOut */
+        GenerationSectionOut: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /** Level Id */
+            level_id: string;
+            /** Name */
+            name?: string | null;
+            /** Year Id */
+            year_id: string;
+        };
+        /** GenerationStudentList */
+        GenerationStudentList: {
+            /** Items */
+            items?: components["schemas"]["GenerationStudentOut"][];
+        };
+        /** GenerationStudentOut */
+        GenerationStudentOut: {
+            /** Full Name */
+            full_name: string;
+            /** Id */
+            id: string;
+            /** Level Name */
+            level_name?: string | null;
+            /** Section Code */
+            section_code?: string | null;
+            /** Student Number */
+            student_number: string;
+        };
+        /**
+         * GenerationTarget
+         * @description Who a batch is for: one student, one section or a whole grade.
+         */
+        GenerationTarget: {
+            /** Level Id */
+            level_id?: string | null;
+            /** Section Id */
+            section_id?: string | null;
+            /** Student Id */
+            student_id?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "student" | "section" | "level";
+            /** Year Id */
+            year_id?: string | null;
+        };
+        /** GenerationTargetsOut */
+        GenerationTargetsOut: {
+            /** Levels */
+            levels?: components["schemas"]["GenerationLevelOut"][];
+            /** Sections */
+            sections?: components["schemas"]["GenerationSectionOut"][];
+            year?: components["schemas"]["GenerationYearOut"] | null;
+        };
+        /** GenerationYearOut */
+        GenerationYearOut: {
+            /** Code */
+            code: string;
+            /** Id */
+            id: string;
+            /** Is Current */
+            is_current: boolean;
+            /** Name */
+            name: string;
         };
         /** GradeScaleCreate */
         GradeScaleCreate: {
@@ -6403,6 +6804,91 @@ export interface components {
              * @default approved
              */
             status: string;
+        };
+        /** IssuedDocumentDetail */
+        IssuedDocumentDetail: {
+            /** Batch Id */
+            batch_id?: string | null;
+            /** Data Snapshot */
+            data_snapshot: {
+                [key: string]: unknown;
+            };
+            /** Doc Type */
+            doc_type: string;
+            /** Download Url */
+            download_url?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Issued At
+             * Format: date-time
+             */
+            issued_at: string;
+            /** Layout */
+            layout: {
+                [key: string]: unknown;
+            };
+            /** Number */
+            number: string;
+            /** Recipient Id */
+            recipient_id?: string | null;
+            /** Recipient Name */
+            recipient_name: string;
+            /** Recipient Type */
+            recipient_type: string;
+            /** Template Id */
+            template_id: string;
+            /** Template Name */
+            template_name: string;
+            /** Template Version Number */
+            template_version_number: number;
+            /** Verification Code */
+            verification_code: string;
+        };
+        /** IssuedDocumentList */
+        IssuedDocumentList: {
+            /** Items */
+            items?: components["schemas"]["IssuedDocumentSummary"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+            /** Total */
+            total?: number | null;
+        };
+        /** IssuedDocumentSummary */
+        IssuedDocumentSummary: {
+            /** Batch Id */
+            batch_id?: string | null;
+            /** Doc Type */
+            doc_type: string;
+            /** Download Url */
+            download_url?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Issued At
+             * Format: date-time
+             */
+            issued_at: string;
+            /** Number */
+            number: string;
+            /** Recipient Id */
+            recipient_id?: string | null;
+            /** Recipient Name */
+            recipient_name: string;
+            /** Recipient Type */
+            recipient_type: string;
+            /** Template Id */
+            template_id: string;
+            /** Template Name */
+            template_name: string;
+            /** Template Version Number */
+            template_version_number: number;
+            /** Verification Code */
+            verification_code: string;
         };
         /** LeaveBalanceInput */
         LeaveBalanceInput: {
@@ -7749,6 +8235,22 @@ export interface components {
             sent: number;
             /** Skipped */
             skipped: number;
+        };
+        /**
+         * ReprintOut
+         * @description The stored artifact behind a reprint, with a short-lived download URL.
+         */
+        ReprintOut: {
+            /** Checksum Sha256 */
+            checksum_sha256?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** Id */
+            id: string;
+            /** Number */
+            number: string;
+            /** Url */
+            url?: string | null;
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -16586,6 +17088,318 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentFieldsOut"];
+                };
+            };
+        };
+    };
+    generate_route_api_v1_documents_generation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentGenerationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentGenerationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_batches_route_api_v1_documents_generation_batches_get: {
+        parameters: {
+            query?: {
+                template_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationBatchList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_batch_route_api_v1_documents_generation_batches__batch_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_download_route_api_v1_documents_generation_batches__batch_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generation_students_route_api_v1_documents_generation_students_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationStudentList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generation_targets_route_api_v1_documents_generation_targets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationTargetsOut"];
+                };
+            };
+        };
+    };
+    list_issued_route_api_v1_documents_issued_get: {
+        parameters: {
+            query?: {
+                template_id?: string | null;
+                batch_id?: string | null;
+                recipient_id?: string | null;
+                q?: string | null;
+                limit?: number;
+                cursor?: string | null;
+                sort?: string | null;
+                order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedDocumentList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_issued_route_api_v1_documents_issued__issued_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issued_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuedDocumentDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reprint_route_api_v1_documents_issued__issued_id__reprint_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issued_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReprintOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_route_api_v1_documents_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

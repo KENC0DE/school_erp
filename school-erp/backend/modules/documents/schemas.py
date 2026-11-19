@@ -200,6 +200,169 @@ class DocumentPreviewOut(BaseModel):
     student_name: str | None = None
 
 
+class GenerationTarget(BaseModel):
+    """Who a batch is for: one student, one section or a whole grade."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["student", "section", "level"]
+    student_id: uuid.UUID | None = None
+    section_id: uuid.UUID | None = None
+    level_id: uuid.UUID | None = None
+    year_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _exactly_one_target(self) -> GenerationTarget:
+        chosen = {
+            "student": self.student_id,
+            "section": self.section_id,
+            "level": self.level_id,
+        }[self.type]
+        if chosen is None:
+            raise ValueError(f"{self.type}_id is required for a {self.type} target")
+        extras = [
+            field
+            for field, value in (
+                ("student_id", self.student_id),
+                ("section_id", self.section_id),
+                ("level_id", self.level_id),
+            )
+            if value is not None and field != f"{self.type}_id"
+        ]
+        if extras:
+            raise ValueError(f"{', '.join(extras)} is not allowed for a {self.type} target")
+        return self
+
+
+class DocumentGenerationRequest(BaseModel):
+    """Generate from a published version; defaults to the latest one."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    template_id: uuid.UUID
+    version_id: uuid.UUID | None = None
+    target: GenerationTarget
+    combine: bool = False
+
+
+class DocumentGenerationOut(BaseModel):
+    job_id: uuid.UUID
+    batch_id: uuid.UUID
+    count: int
+    status: str
+
+
+class GenerationYearOut(BaseModel):
+    id: str
+    code: str
+    name: str
+    is_current: bool
+
+
+class GenerationLevelOut(BaseModel):
+    id: str
+    code: str
+    name: str
+    name_am: str | None = None
+
+
+class GenerationSectionOut(BaseModel):
+    id: str
+    year_id: str
+    level_id: str
+    code: str
+    name: str | None = None
+
+
+class GenerationTargetsOut(BaseModel):
+    year: GenerationYearOut | None = None
+    levels: list[GenerationLevelOut] = Field(default_factory=list)
+    sections: list[GenerationSectionOut] = Field(default_factory=list)
+
+
+class GenerationStudentOut(BaseModel):
+    id: str
+    student_number: str
+    full_name: str
+    level_name: str | None = None
+    section_code: str | None = None
+
+
+class GenerationStudentList(BaseModel):
+    items: list[GenerationStudentOut] = Field(default_factory=list)
+
+
+class GenerationBatchOut(BaseModel):
+    id: str
+    template_id: str
+    template_name: str
+    template_version_id: str
+    template_version_number: int
+    mode: str
+    combine: bool
+    count: int
+    issued_count: int
+    failed_count: int
+    progress: int
+    status: str
+    file_id: str | None = None
+    download_url: str | None = None
+    failure_summary: str | None = None
+    created_at: datetime
+    issued_at: datetime | None = None
+
+
+class GenerationBatchList(BaseModel):
+    items: list[GenerationBatchOut] = Field(default_factory=list)
+
+
+class IssuedDocumentSummary(BaseModel):
+    id: str
+    number: str
+    verification_code: str
+    template_id: str
+    template_name: str
+    doc_type: str
+    template_version_number: int
+    recipient_type: str
+    recipient_id: str | None = None
+    recipient_name: str
+    batch_id: str | None = None
+    file_id: str | None = None
+    download_url: str | None = None
+    issued_at: datetime
+
+
+class IssuedDocumentDetail(IssuedDocumentSummary):
+    layout: dict[str, Any]
+    data_snapshot: dict[str, Any]
+
+
+class IssuedDocumentList(BaseModel):
+    items: list[IssuedDocumentSummary] = Field(default_factory=list)
+    next_cursor: str | None = None
+    total: int | None = None
+
+
+class ReprintOut(BaseModel):
+    """The stored artifact behind a reprint, with a short-lived download URL."""
+
+    id: str
+    number: str
+    file_id: str | None = None
+    url: str | None = None
+    checksum_sha256: str | None = None
+
+
+class FileLinkOut(BaseModel):
+    """A short-lived link to a stored artifact (a batch's combined PDF)."""
+
+    file_id: str | None = None
+    filename: str | None = None
+    url: str | None = None
+    checksum_sha256: str | None = None
+
+
 class TemplateFileTemplate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -236,6 +399,22 @@ __all__ = [
     "DocumentFieldOut",
     "DocumentFieldsOut",
     "DocumentFormatOptions",
+    "DocumentGenerationOut",
+    "DocumentGenerationRequest",
+    "FileLinkOut",
+    "GenerationBatchList",
+    "GenerationBatchOut",
+    "GenerationLevelOut",
+    "GenerationSectionOut",
+    "GenerationStudentList",
+    "GenerationStudentOut",
+    "GenerationTarget",
+    "GenerationTargetsOut",
+    "GenerationYearOut",
+    "IssuedDocumentDetail",
+    "IssuedDocumentList",
+    "IssuedDocumentSummary",
+    "ReprintOut",
     "StarterList",
     "StarterOut",
     "TemplateCreate",

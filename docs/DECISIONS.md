@@ -2721,3 +2721,52 @@ figure includes the commit and the audit row):
 - **Preview is not issuance.** It writes no `issued_documents` row, no snapshot
   and no audit entry; the future generation task reuses the same data resolver
   inside its transaction and records the snapshot there.
+
+## 2026-11-19 — P5-08 document generation and issuance
+
+- **Issuance copies, it does not reference.** An `issued_documents` row stores
+  the template version's layout and the exact data it rendered beside the PDF.
+  A reprint serves that stored artifact, never a re-render, so a later name
+  change, mark correction or template redesign cannot alter a document that was
+  already handed out. The public verification page (P5-09) reads the same
+  snapshot and decides which parts it may reveal.
+- **The API only authorises; the worker renders.** `POST /documents/generation`
+  validates the target, resolves the student list once, records the batch and
+  job, returns `202`, and only then hands the batch id to Celery. The batch row
+  owns progress, counts and the combined PDF; the test environment never talks
+  to Redis, so tests either run the worker body directly or call the task.
+- **A target list is frozen at request time.** Section and grade targets are
+  expanded once when the batch is created, using placed enrollment statuses.
+  A student enrolled after the click is not silently added; an empty target is
+  rejected synchronously instead of producing an empty job.
+- **The worker acts as the requester, with a system principal.** The route
+  already checked `documents.generate`; the batch stores the requester's actor,
+  display name, locale and role keys, and the worker reconstructs a principal
+  with `*` permissions and `via="automation"`. Data reads are therefore not
+  narrowed a second time by a teacher's section scopes, which would make a
+  grade-wide batch silently skip students. The audit entries still name the
+  requester and the automation channel.
+- **One document failure does not lose the batch.** Each document is numbered,
+  stored, audited and committed on its own; a failed record increments
+  `failed_count`, logs, and the run continues. The batch succeeds if at least
+  one document was issued and records a translated-safe count summary
+  otherwise.
+- **Numbers are yearly and never reused.** `doc_number_sequences` is an atomic
+  per-scope counter exactly like student and admission numbers, formatted as
+  `DOC-{year}-{seq:05d}`. A rolled-back transaction may leave a gap; it can
+  never reissue a number that reached paper. The public verification code is a
+  separate random URL-safe token, because a serial must not let anyone
+  enumerate verification pages.
+- **Separate files are the default; combined is an option.** Every document is
+  individually downloadable. `combine=true` additionally merges the rendered
+  pages into one PDF with pypdf and stores it on the batch, so a class pack is
+  one download without giving up per-student reprints.
+- **`documents.generate` is not retryable from the UI.** Retrying a failed run
+  would issue a second set of numbered documents. A failed batch is left for a
+  new request, which is explicit and auditable.
+- **The e2e stack has no Redis worker.** The documents spec publishes the
+  template and checks the generation dialog's authorisation and target
+  selection, then opens the issued list; completed issuance, numbering,
+  combined PDFs and reprints are covered by the backend tests. This keeps the
+  spec honest about what the disposable stack can actually run instead of
+  waiting forever on a queued batch.

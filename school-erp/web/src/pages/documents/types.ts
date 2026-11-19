@@ -162,3 +162,124 @@ export function pageSizeMm(page: Layout["page"]): { width: number; height: numbe
 export function isDraft(template: TemplateDetail | TemplateSummary): boolean {
   return Boolean(template.draft_version_id);
 }
+
+export interface GenerationYear {
+  id: string;
+  code: string;
+  name: string;
+  is_current: boolean;
+}
+
+export interface GenerationLevel {
+  id: string;
+  code: string;
+  name: string;
+  name_am: string | null;
+}
+
+export interface GenerationSection {
+  id: string;
+  year_id: string;
+  level_id: string;
+  code: string;
+  name: string | null;
+}
+
+export interface GenerationTargets {
+  year: GenerationYear | null;
+  levels: GenerationLevel[];
+  sections: GenerationSection[];
+}
+
+export interface GenerationStudent {
+  id: string;
+  student_number: string;
+  full_name: string;
+  level_name: string | null;
+  section_code: string | null;
+}
+
+export interface GenerationStudentList {
+  items: GenerationStudent[];
+}
+
+export type GenerationTargetType = "student" | "section" | "level";
+
+export interface GenerationRequest {
+  template_id: string;
+  version_id?: string | null;
+  combine: boolean;
+  target:
+    | { type: "student"; student_id: string; year_id?: string | null }
+    | { type: "section"; section_id: string; year_id?: string | null }
+    | { type: "level"; level_id: string; year_id?: string | null };
+}
+
+export interface GenerationStarted {
+  job_id: string;
+  batch_id: string;
+  count: number;
+  status: string;
+}
+
+export interface GenerationBatch {
+  id: string;
+  template_id: string;
+  template_name: string;
+  template_version_id: string;
+  template_version_number: number;
+  mode: GenerationTargetType;
+  combine: boolean;
+  count: number;
+  issued_count: number;
+  failed_count: number;
+  progress: number;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  file_id: string | null;
+  download_url: string | null;
+  failure_summary: string | null;
+  created_at: string;
+  issued_at: string | null;
+}
+
+export interface GenerationBatchList {
+  items: GenerationBatch[];
+}
+
+export interface IssuedDocument {
+  id: string;
+  number: string;
+  verification_code: string;
+  template_id: string;
+  template_name: string;
+  doc_type: DocType;
+  template_version_number: number;
+  recipient_type: string;
+  recipient_id: string | null;
+  recipient_name: string;
+  batch_id: string | null;
+  file_id: string | null;
+  download_url: string | null;
+  issued_at: string;
+}
+
+export interface IssuedDocumentList {
+  items: IssuedDocument[];
+  next_cursor: string | null;
+  total: number | null;
+}
+
+export interface FileLink {
+  file_id: string | null;
+  filename: string | null;
+  url: string | null;
+  checksum_sha256: string | null;
+}
+
+export interface ReprintResult {
+  id: string;
+  number: string;
+  file_id: string | null;
+  url: string | null;
+  checksum_sha256: string | null;
+}

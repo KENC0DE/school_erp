@@ -156,6 +156,51 @@ def assessment_recalculate_task(job_id: str, structure_id: str) -> dict:
     return {"job_id": job_id, "ok": True}
 
 
+@celery_app.task(name="erp.documents_generate")
+def documents_generate_task(job_id: str, batch_id: str) -> dict:
+    """Issue a document batch and report progress on its job (P5-08).
+
+    Only the batch id is trusted from the queue. The requester's actor and
+    locale come from the batch row, and the worker reads with a system
+    principal because the API already authorised the request.
+    """
+    asyncio.run(_mark_job(job_id, "running"))
+
+    async def work(session):
+        from core.events.models import Job
+        from core.files.storage import build_storage
+        from modules.documents.generation import generate_batch, system_principal
+        from modules.documents.models import DocumentBatch
+
+        batch = await session.get(DocumentBatch, uuid.UUID(batch_id))
+        if batch is None:
+            raise RuntimeError("The document batch no longer exists")
+
+        async def progress(done: int, total: int) -> None:
+            job = await session.get(Job, uuid.UUID(job_id))
+            if job is not None:
+                job.progress = 5 + int(90 * done / max(total, 1))
+
+        settings = get_settings()
+        return await generate_batch(
+            session,
+            batch_id=batch.id,
+            principal=system_principal(batch),
+            storage=build_storage(settings),
+            settings=settings,
+            on_progress=progress,
+        )
+
+    try:
+        result = asyncio.run(_run_in_session(work))
+    except Exception as exc:  # pragma: no cover - data and render failures are operational
+        logger.warning("document generation failed: %s", exc)
+        asyncio.run(_mark_job(job_id, "failed", error="The documents could not be generated"))
+        return {"job_id": job_id, "ok": False}
+    asyncio.run(_mark_job(job_id, "succeeded", result=result))
+    return {"job_id": job_id, "ok": True}
+
+
 @celery_app.task(name="erp.heartbeat")
 def heartbeat_task() -> dict:
     from core.controller_link.service import heartbeat

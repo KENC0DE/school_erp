@@ -147,6 +147,20 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         snapshot_columns = {
             row[1] for row in connection.execute("PRAGMA table_info(assessment_result_snapshots)")
         }
+        doc_template_columns = {row[1] for row in connection.execute("PRAGMA table_info(doc_templates)")}
+        doc_template_version_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(doc_template_versions)")
+        }
+        doc_batch_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(doc_generation_batches)")
+        }
+        issued_columns = {row[1] for row in connection.execute("PRAGMA table_info(issued_documents)")}
+        document_sequence_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(doc_number_sequences)")
+        }
+        document_sequence_sql = connection.execute(
+            "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'doc_number_sequences'"
+        ).fetchone()[0]
         mark_type = connection.execute(
             "SELECT type FROM pragma_table_info('assessment_assessments') WHERE name = 'out_of'"
         ).fetchone()
@@ -222,9 +236,14 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "assessment_submissions",
         "assessment_term_results",
         "assessment_result_snapshots",
+        "doc_templates",
+        "doc_template_versions",
+        "doc_generation_batches",
+        "issued_documents",
+        "doc_number_sequences",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0029_portal_links"
+    assert version == "0031_document_generation"
 
     assert {
         "failed_login_count",
@@ -740,3 +759,44 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
     # Marks are stored as integer micro-units, never as SQL floats (ARCH §9.5).
     assert mark_type is not None
     assert mark_type[0] == "BIGINT"
+
+    assert {"key", "name", "doc_type", "description"} <= doc_template_columns
+    assert {
+        "template_id",
+        "version_number",
+        "status",
+        "layout",
+        "published_at",
+        "published_by",
+    } <= doc_template_version_columns
+    assert {
+        "template_id",
+        "template_version_id",
+        "job_id",
+        "mode",
+        "combine",
+        "count",
+        "issued_count",
+        "failed_count",
+        "progress",
+        "status",
+        "context",
+    } <= doc_batch_columns
+    assert {
+        "template_id",
+        "template_version_id",
+        "template_version_number",
+        "doc_type",
+        "layout",
+        "data_snapshot",
+        "number",
+        "verification_code",
+        "issued_at",
+        "file_id",
+        "batch_id",
+        "recipient_type",
+        "recipient_id",
+        "recipient_name",
+    } <= issued_columns
+    assert {"scope", "value"} <= document_sequence_columns
+    assert "uq_doc_number_sequences_scope" in document_sequence_sql

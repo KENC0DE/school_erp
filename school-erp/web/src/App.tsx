@@ -21,6 +21,7 @@ import { AssessmentPage } from "./pages/assessment/AssessmentPage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
 import { DocumentsPage } from "./pages/documents/DocumentsPage";
+import { IssuedDocumentsPage } from "./pages/documents/IssuedDocumentsPage";
 import { TemplateEditorPage } from "./pages/documents/TemplateEditorPage";
 import { DesignReferencePage } from "./pages/design/DesignReferencePage";
 import { JobsPage } from "./pages/JobsPage";
@@ -120,6 +121,7 @@ export function AppRoutes() {
             element={<ApplicationFormPage mode="edit" />}
           />
           <Route path="documents" element={<DocumentsPage />} />
+          <Route path="documents/issued" element={<IssuedDocumentsPage />} />
           <Route path="documents/:templateId" element={<TemplateEditorPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />

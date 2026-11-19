@@ -211,3 +211,74 @@ export function starters() {
     ],
   };
 }
+
+export function generationTargets() {
+  return {
+    year: { id: "year-1", code: "2026-2027", name: "2026/27", is_current: true },
+    levels: [{ id: "lvl-5", code: "g5", name: "Grade 5", name_am: "5ኛ ክፍል" }],
+    sections: [
+      { id: "sec-a", year_id: "year-1", level_id: "lvl-5", code: "A", name: null },
+    ],
+  };
+}
+
+export function generationStudents() {
+  return {
+    items: [
+      {
+        id: "stu-1",
+        student_number: "STU-2026-0001",
+        full_name: "Abebe Dawit Samuel",
+        level_name: "Grade 5",
+        section_code: "A",
+      },
+    ],
+  };
+}
+
+export function generationBatch(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "batch-1",
+    template_id: "tpl-1",
+    template_name: "Certificate of completion",
+    template_version_id: "ver-1",
+    template_version_number: 1,
+    mode: "student",
+    combine: false,
+    count: 1,
+    issued_count: 1,
+    failed_count: 0,
+    progress: 100,
+    status: "succeeded",
+    file_id: null,
+    download_url: null,
+    failure_summary: null,
+    created_at: "2026-11-19T09:00:00Z",
+    issued_at: "2026-11-19T09:01:00Z",
+    ...overrides,
+  };
+}
+
+export function issuedDocument(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "issued-1",
+    number: "DOC-2026-00001",
+    verification_code: "abc123def456",
+    template_id: "tpl-1",
+    template_name: "Certificate of completion",
+    doc_type: "certificate_completion",
+    template_version_number: 1,
+    recipient_type: "student",
+    recipient_id: "stu-1",
+    recipient_name: "Abebe Dawit Samuel",
+    batch_id: "batch-1",
+    file_id: "file-1",
+    download_url: "http://localhost/files/doc.pdf",
+    issued_at: "2026-11-19T09:01:00Z",
+    ...overrides,
+  };
+}
+
+export function issuedList(items = [issuedDocument()]) {
+  return { items, next_cursor: null, total: items.length };
+}

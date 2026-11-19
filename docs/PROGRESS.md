@@ -185,7 +185,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P5-05 — Canvas editor (web): drag/resize, text, image, shape, line, table, QR/barcode, logo/signature/stamp/photo, field insertion, snap, layers, undo/redo, zoom, page setup (Playwright + 3 editor tests)
 - [x] P5-06 — Repeating tables: grouped headers, row totals/averages/ranks, summaries, attendance/remarks, conditional Promoted/Repeat blocks (4 table tests + renderer/schema fixtures)
 - [x] P5-07 — Preview with sample or real student data through the production renderer (7 backend tests + editor preview test + Playwright)
-- [ ] P5-08 — Generation
+- [x] P5-08 — Generation: single, section and grade batches as separate or one combined PDF through background jobs with progress; issued documents snapshot layout + data, yearly numbers, random verification codes, audited reprints (12 backend tests incl. a 300-document stress, generation/issued web tests, Playwright publish + dialog + issued page)
 - [ ] P5-09 — Public verification page
 - [ ] P5-10 — Permissions and workflow
 - [ ] P5-11 — Wire existing modules

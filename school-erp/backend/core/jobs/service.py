@@ -34,6 +34,7 @@ ERROR_KEYS: dict[str, str] = {
     "notifications.delivery": "jobs.error.notification",
     "ping": "jobs.error.generic",
     "assessment.recalculate": "jobs.error.assessment",
+    "documents.generate": "jobs.error.documents",
 }
 
 

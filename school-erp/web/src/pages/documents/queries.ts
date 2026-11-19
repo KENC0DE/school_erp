@@ -5,6 +5,11 @@ import { api } from "../../lib/api";
 import type {
   DocType,
   FieldsResponse,
+  GenerationBatch,
+  GenerationBatchList,
+  GenerationStudentList,
+  GenerationTargets,
+  IssuedDocumentList,
   PreviewResponse,
   StarterList,
   StudentList,
@@ -85,5 +90,65 @@ export function useStudents(query: string, enabled: boolean) {
     queryFn: () => api.get<StudentList>(`/api/v1/students?${params.toString()}`),
     enabled,
     staleTime: 60_000,
+  });
+}
+
+export function useGenerationTargets(enabled: boolean) {
+  return useQuery({
+    queryKey: ["documents", "generation", "targets"],
+    queryFn: () => api.get<GenerationTargets>("/api/v1/documents/generation/targets"),
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
+export function useGenerationStudents(query: string, enabled: boolean) {
+  const params = new URLSearchParams({ limit: "25" });
+  if (query.trim()) params.set("q", query.trim());
+  return useQuery({
+    queryKey: ["documents", "generation", "students", query],
+    queryFn: () =>
+      api.get<GenerationStudentList>(
+        `/api/v1/documents/generation/students?${params.toString()}`,
+      ),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+export function useBatch(batchId: string | null) {
+  return useQuery({
+    queryKey: ["documents", "generation", "batch", batchId],
+    queryFn: () => api.get<GenerationBatch>(`/api/v1/documents/generation/batches/${batchId}`),
+    enabled: Boolean(batchId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "queued" || status === "running" ? 1500 : false;
+    },
+  });
+}
+
+export function useBatches(templateId: string | null, enabled: boolean) {
+  const params = new URLSearchParams({ limit: "10" });
+  if (templateId) params.set("template_id", templateId);
+  return useQuery({
+    queryKey: ["documents", "generation", "batches", templateId],
+    queryFn: () =>
+      api.get<GenerationBatchList>(
+        `/api/v1/documents/generation/batches?${params.toString()}`,
+      ),
+    enabled,
+    staleTime: 15_000,
+  });
+}
+
+export function useIssuedDocuments(query: string, templateId: string | null) {
+  const params = new URLSearchParams({ limit: "50", sort: "issued_at", order: "desc" });
+  if (query.trim()) params.set("q", query.trim());
+  if (templateId) params.set("template_id", templateId);
+  return useQuery({
+    queryKey: ["documents", "issued", query, templateId],
+    queryFn: () => api.get<IssuedDocumentList>(`/api/v1/documents/issued?${params.toString()}`),
+    staleTime: 15_000,
   });
 }

@@ -1,25 +1,48 @@
-"""HTTP routes for Document Studio (P5-02 fields, P5-04 templates).
+"""HTTP routes for Document Studio (P5-02 fields, P5-04 templates, P5-08 generation).
 
 Static paths are declared before ``/templates/{template_id}`` so
 ``/templates/starters`` and ``/templates/import`` can never be read as an id.
-Every route is gated by the design permission while the only actors are
-designers; generation gets its own permission in P5-08.
+Design routes need ``documents.template.design``; generation and everything
+that reads an issued artifact need ``documents.generate``. P5-10 adds the
+approval workflow and narrows these further.
+
+Generation is asynchronous: the route validates the target and records the
+batch, then hands the expensive rendering to the worker. Tests and brokers are
+deliberately decoupled, so nothing here talks to Celery in the test environment.
 """
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import uuid
 
 from app.errors import Forbidden
+from core.api.pagination import PageParams, page_params
 from core.auth.deps import require
 from core.auth.principal import Principal
 from core.db.deps import get_session as db_session
 from core.documents.registry import FORMAT_OPTIONS
 from core.documents.service import fields_for
+from core.files.deps import get_app_settings, get_storage
+from core.files.storage import Storage
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.documents.generation import (
+    create_batch,
+    generation_targets,
+    search_generation_students,
+)
+from modules.documents.issued import (
+    batch_download,
+    get_batch,
+    get_issued,
+    list_batches,
+    list_issued,
+    reprint,
+)
 from modules.documents.preview import (
     common_context,
     render_preview,
@@ -31,8 +54,18 @@ from modules.documents.schemas import (
     DocumentFieldOut,
     DocumentFieldsOut,
     DocumentFormatOptions,
+    DocumentGenerationOut,
+    DocumentGenerationRequest,
     DocumentPreviewOut,
     DocumentPreviewRequest,
+    FileLinkOut,
+    GenerationBatchList,
+    GenerationBatchOut,
+    GenerationStudentList,
+    GenerationTargetsOut,
+    IssuedDocumentDetail,
+    IssuedDocumentList,
+    ReprintOut,
     StarterList,
     StarterOut,
     TemplateCreate,
@@ -63,8 +96,11 @@ from modules.documents.service import (
 )
 from modules.documents.starters import STARTERS, starter_view
 
+logger = logging.getLogger("erp.documents")
+
 router = APIRouter(tags=["documents"])
 DESIGN = "documents.template.design"
+GENERATE = "documents.generate"
 
 
 @router.get("/fields", response_model=DocumentFieldsOut)
@@ -280,6 +316,159 @@ async def publish_version_route(
     session: AsyncSession = Depends(db_session),
 ) -> VersionDetail:
     return await publish_version(session, principal, template_id, version_id, via=principal.via)
+
+
+# --- generation -------------------------------------------------------------
+# Static generation paths come before any ``/generation/batches/{id}`` route so
+# neither can be read as the other.
+
+
+@router.get("/generation/targets", response_model=GenerationTargetsOut)
+async def generation_targets_route(
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+) -> GenerationTargetsOut:
+    """The current year's levels and sections for the generation dialog."""
+    return await generation_targets(session)
+
+
+@router.get("/generation/students", response_model=GenerationStudentList)
+async def generation_students_route(
+    q: str | None = Query(None, max_length=120),
+    limit: int = Query(20, ge=1, le=50),
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+) -> GenerationStudentList:
+    return await search_generation_students(
+        session,
+        q=q,
+        limit=limit,
+        locale=principal.locale,
+    )
+
+
+@router.post("/generation", response_model=DocumentGenerationOut, status_code=202)
+async def generate_route(
+    request: Request,
+    payload: DocumentGenerationRequest,
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+) -> DocumentGenerationOut:
+    """Validate a target, record the batch and queue the worker.
+
+    The response returns immediately with the job and batch ids; the client
+    polls the batch for progress. A bulk of hundreds of students therefore never
+    ties up the request.
+    """
+    batch, job = await create_batch(session, principal, payload)
+    settings = request.app.state.settings
+    if settings.app_env != "test":
+        try:
+            from core.events.celery_app import documents_generate_task
+
+            await asyncio.to_thread(
+                documents_generate_task.delay,
+                str(job.id),
+                str(batch.id),
+            )
+        except Exception as exc:  # pragma: no cover - broker outages are operational
+            logger.warning("document batch enqueue failed for %s: %s", batch.id, exc)
+    return DocumentGenerationOut(
+        job_id=job.id,
+        batch_id=batch.id,
+        count=batch.count,
+        status=batch.status,
+    )
+
+
+@router.get("/generation/batches", response_model=GenerationBatchList)
+async def list_batches_route(
+    template_id: uuid.UUID | None = Query(None),
+    limit: int = Query(25, ge=1, le=100),
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> GenerationBatchList:
+    return await list_batches(
+        session,
+        storage,
+        settings,
+        template_id=template_id,
+        limit=limit,
+    )
+
+
+@router.get("/generation/batches/{batch_id}", response_model=GenerationBatchOut)
+async def get_batch_route(
+    batch_id: uuid.UUID,
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> GenerationBatchOut:
+    return await get_batch(session, storage, settings, batch_id)
+
+
+@router.get("/generation/batches/{batch_id}/download", response_model=FileLinkOut)
+async def batch_download_route(
+    batch_id: uuid.UUID,
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> FileLinkOut:
+    return await batch_download(session, storage, settings, batch_id)
+
+
+# --- issued documents -------------------------------------------------------
+
+
+@router.get("/issued", response_model=IssuedDocumentList)
+async def list_issued_route(
+    template_id: uuid.UUID | None = Query(None),
+    batch_id: uuid.UUID | None = Query(None),
+    recipient_id: uuid.UUID | None = Query(None),
+    q: str | None = Query(None, max_length=120),
+    params: PageParams = Depends(page_params),
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> IssuedDocumentList:
+    return await list_issued(
+        session,
+        storage,
+        settings,
+        params,
+        template_id=template_id,
+        batch_id=batch_id,
+        recipient_id=recipient_id,
+        q=q,
+    )
+
+
+@router.get("/issued/{issued_id}", response_model=IssuedDocumentDetail)
+async def get_issued_route(
+    issued_id: uuid.UUID,
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> IssuedDocumentDetail:
+    return await get_issued(session, storage, settings, issued_id)
+
+
+@router.get("/issued/{issued_id}/reprint", response_model=ReprintOut)
+async def reprint_route(
+    issued_id: uuid.UUID,
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> ReprintOut:
+    """Serve the stored artifact again; never re-render today's data."""
+    return await reprint(session, principal, storage, settings, issued_id)
 
 
 __all__ = ["router"]
