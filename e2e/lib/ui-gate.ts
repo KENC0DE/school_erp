@@ -31,6 +31,7 @@ export const DATA_SCREENS = [
   "school-erp/web/src/pages/admissions/PublicApplicationPage.tsx",
   "school-erp/web/src/pages/documents/DocumentsPage.tsx",
   "school-erp/web/src/pages/documents/IssuedDocumentsPage.tsx",
+  "school-erp/web/src/pages/documents/DocumentApprovalsPage.tsx",
 ] as const;
 
 const REQUIRED_STATES = ["LoadingState", "EmptyState", "ErrorState"] as const;

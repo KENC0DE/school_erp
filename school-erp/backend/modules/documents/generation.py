@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any
 
-from app.errors import NotFound, ValidationFailed
+from app.errors import Conflict, NotFound, ValidationFailed
 from app.settings import Settings
 from core.audit.service import record
 from core.auth.principal import Principal
@@ -42,6 +42,7 @@ from core.files.models import StoredFile
 from core.files.service import upload_file
 from core.files.storage import Storage
 from core.people.models import Person, full_name, normalize_name
+from core.settings.service import load_model
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,6 +67,7 @@ from modules.documents.schemas import (
     GenerationYearOut,
 )
 from modules.documents.service import parse_layout
+from modules.documents.settings import DocumentSettings
 from modules.students.lookups import AcademicLabels
 from modules.students.models import StudentEnrollment, StudentProfile
 
@@ -73,6 +75,10 @@ logger = logging.getLogger("erp.documents")
 
 MODULE = "documents"
 PLACED_STATUSES = ("active", "promoted", "repeating")
+# A certificate is a claim the school makes, so a school may ask for a second
+# pair of eyes before one is numbered. Report cards, receipts and ID cards are
+# operational paperwork and are never held by this switch.
+APPROVAL_DOC_TYPES = ("certificate_completion", "certificate_appreciation")
 ProgressCallback = Callable[[int, int], Awaitable[None]]
 
 
@@ -229,6 +235,17 @@ async def _published_version(
     return version
 
 
+async def approval_required(
+    session: AsyncSession,
+    template: DocTemplate,
+) -> bool:
+    """Whether this template's documents must wait for ``documents.approve``."""
+    if template.doc_type not in APPROVAL_DOC_TYPES:
+        return False
+    settings = await load_model(session, MODULE, DocumentSettings)
+    return bool(settings.require_certificate_approval)
+
+
 async def create_batch(
     session: AsyncSession,
     principal: Principal,
@@ -254,6 +271,7 @@ async def create_batch(
             message_key="error.documents.target_empty",
         )
     year_id = payload.target.year_id or targets[0].year_id
+    needs_approval = await approval_required(session, template)
 
     batch = DocumentBatch(
         template_id=template.id,
@@ -265,7 +283,8 @@ async def create_batch(
         student_id=payload.target.student_id,
         combine=payload.combine,
         count=len(targets),
-        status="queued",
+        approval_required=needs_approval,
+        status="pending_approval" if needs_approval else "queued",
         context={
             "actor_id": principal.actor_id,
             "display_name": principal.display_name,
@@ -282,7 +301,7 @@ async def create_batch(
     job = await create_job(
         session,
         "documents.generate",
-        {"batch_id": str(batch.id)},
+        {"batch_id": str(batch.id), "approval_required": needs_approval},
         created_by=principal.actor_id,
     )
     batch.job_id = job.id
@@ -298,6 +317,7 @@ async def create_batch(
             "mode": payload.target.type,
             "combine": payload.combine,
             "count": len(targets),
+            "approval_required": needs_approval,
         },
         actor=principal,
         via=principal.via,
@@ -312,6 +332,122 @@ def _actor(principal: Principal) -> uuid.UUID | None:
         return uuid.UUID(principal.actor_id)
     except (TypeError, ValueError):
         return None
+
+
+async def _batch_for_decision(
+    session: AsyncSession,
+    batch_id: uuid.UUID,
+) -> DocumentBatch:
+    """Load a batch under a row lock so two approvers cannot race."""
+    row = (
+        await session.execute(
+            select(DocumentBatch)
+            .where(
+                DocumentBatch.id == batch_id,
+                DocumentBatch.deleted_at.is_(None),
+            )
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise NotFound(
+            "The generation batch does not exist",
+            message_key="error.documents.batch_not_found",
+        )
+    return row
+
+
+def _ensure_pending(row: DocumentBatch) -> None:
+    if row.status != "pending_approval":
+        raise Conflict(
+            "This batch is not waiting for approval",
+            message_key="error.documents.batch_not_pending",
+            details={"status": row.status},
+        )
+
+
+async def approve_batch(
+    session: AsyncSession,
+    principal: Principal,
+    batch_id: uuid.UUID,
+    *,
+    note: str | None = None,
+) -> tuple[DocumentBatch, Job | None]:
+    """Release a held certificate batch to the worker."""
+    row = await _batch_for_decision(session, batch_id)
+    _ensure_pending(row)
+    now = datetime.now(UTC)
+    row.status = "queued"
+    row.approved_by = _actor(principal)
+    row.approved_at = now
+    row.rejection_reason = None
+    row.updated_by = _actor(principal)
+    job = await session.get(Job, row.job_id) if row.job_id else None
+    if job is not None:
+        job.status = "queued"
+        job.progress = 0
+        job.started_at = None
+        job.finished_at = None
+        job.result = None
+        job.error = None
+    await record(
+        session,
+        action="documents.batch.approve",
+        module=MODULE,
+        entity_type="doc_generation_batch",
+        entity_id=str(row.id),
+        after={
+            "template_id": str(row.template_id),
+            "count": row.count,
+            "note": note,
+            "approved_at": now.isoformat(),
+        },
+        actor=principal,
+        via=principal.via,
+    )
+    await session.commit()
+    await session.refresh(row)
+    return row, job
+
+
+async def reject_batch(
+    session: AsyncSession,
+    principal: Principal,
+    batch_id: uuid.UUID,
+    *,
+    reason: str,
+) -> DocumentBatch:
+    """Stop a held certificate batch; nothing is numbered or printed."""
+    row = await _batch_for_decision(session, batch_id)
+    _ensure_pending(row)
+    now = datetime.now(UTC)
+    row.status = "rejected"
+    row.rejection_reason = reason
+    row.approved_by = None
+    row.approved_at = None
+    row.updated_by = _actor(principal)
+    job = await session.get(Job, row.job_id) if row.job_id else None
+    if job is not None:
+        job.status = "cancelled"
+        job.finished_at = now
+        job.error = reason
+    await record(
+        session,
+        action="documents.batch.reject",
+        module=MODULE,
+        entity_type="doc_generation_batch",
+        entity_id=str(row.id),
+        after={
+            "template_id": str(row.template_id),
+            "count": row.count,
+            "reason": reason,
+        },
+        actor=principal,
+        via=principal.via,
+    )
+    await session.commit()
+    await session.refresh(row)
+    return row
 
 
 def system_principal(batch: DocumentBatch) -> Principal:
@@ -485,6 +621,16 @@ async def generate_batch(
     batch = await session.get(DocumentBatch, batch_id)
     if batch is None:
         raise NotFound("The generation batch does not exist", message_key="error.documents.batch_not_found")
+    if batch.status == "pending_approval":
+        raise Conflict(
+            "This batch is waiting for approval before anything is printed",
+            message_key="error.documents.batch_pending_approval",
+        )
+    if batch.status == "rejected":
+        raise Conflict(
+            "This batch was rejected and cannot be generated",
+            message_key="error.documents.batch_rejected",
+        )
     if batch.status in {"succeeded", "cancelled"}:
         return _batch_result(batch)
 
@@ -760,11 +906,15 @@ class _PdfWriter:
 
 
 __all__ = [
+    "APPROVAL_DOC_TYPES",
     "PLACED_STATUSES",
     "Target",
+    "approval_required",
+    "approve_batch",
     "create_batch",
     "generate_batch",
     "generation_targets",
+    "reject_batch",
     "resolve_targets",
     "search_generation_students",
     "system_principal",

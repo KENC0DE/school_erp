@@ -678,5 +678,10 @@
   "error.documents.starter_type_mismatch": "That starter belongs to a different document type",
   "error.documents.starter_layout_conflict": "Choose a starter or a layout, not both",
   "error.documents.import_invalid": "The file is not a valid document template export",
-  "error.documents.verification_not_found": "This document could not be verified"
+  "error.documents.verification_not_found": "This document could not be verified",
+  "error.documents.batch_pending_approval": "This batch is waiting for approval before anything is printed",
+  "error.documents.batch_rejected": "This batch was rejected and cannot be generated",
+  "error.documents.batch_not_pending": "This batch is not waiting for approval",
+  "settings.module.documents": "Document Studio",
+  "settings.documents.require_certificate_approval": "Require approval before issuing certificates"
 }

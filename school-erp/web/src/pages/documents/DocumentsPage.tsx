@@ -131,6 +131,9 @@ export function DocumentsPage() {
   const canDesign =
     (user?.permissions ?? []).includes("*") ||
     (user?.permissions ?? []).includes("documents.template.design");
+  const canApprove =
+    (user?.permissions ?? []).includes("*") ||
+    (user?.permissions ?? []).includes("documents.approve");
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["documents"] });
 
@@ -275,6 +278,11 @@ export function DocumentsPage() {
               <Link className="ui-btn ui-btn--outline ui-btn--sm" to="/documents/issued">
                 {t("documents.list.issued")}
               </Link>
+              {canApprove ? (
+                <Link className="ui-btn ui-btn--outline ui-btn--sm" to="/documents/approvals">
+                  {t("documents.approvals.nav")}
+                </Link>
+              ) : null}
               <Button onClick={openCreate} data-testid="template-new">
                 {t("documents.list.new")}
               </Button>

@@ -2807,3 +2807,40 @@ figure includes the commit and the audit row):
 - **Axe now includes the public page.** The UI quality gate sweeps
   `/verify/not-a-real-code`, so the unauthenticated layout is checked for
   contrast, landmarks and heading structure like the authenticated screens.
+
+## 2026-11-19 — P5-10 certificate approval workflow
+
+- **Only certificates can be held.** `documents.require_certificate_approval`
+  affects `certificate_completion` and `certificate_appreciation` only. A report
+  card, receipt or ID card is operational paperwork; making every document wait
+  would turn a typo in a class list into a school-wide queue.
+- **The policy is copied onto the batch at request time.** A batch stores
+  `approval_required` and starts in `pending_approval` when the policy is on.
+  Turning the setting off later cannot release a held batch, and turning it on
+  cannot strand an already queued one. Each batch therefore has one auditable
+  answer to "why did this wait?".
+- **Holding means the job is recorded but not dispatched.** Creation still
+  writes the batch and job so the request is visible in the approval queue, but
+  the worker is not enqueued. `generate_batch` refuses `pending_approval` and
+  `rejected`, so a stray or retried task cannot number a document that nobody
+  released.
+- **Approval resets the job and dispatches once.** Approving moves the batch to
+  `queued`, clears any stale job progress/error, clears the job for dispatch,
+  audits `documents.batch.approve`, and enqueues outside the test environment.
+  The batch row is locked during the decision, so two approvers cannot both
+  release it.
+- **Rejection is terminal and audited.** Rejecting requires a reason, moves the
+  batch to `rejected`, cancels the job and audits `documents.batch.reject`.
+  Nothing is numbered or stored; the reason is shown on the batch so the
+  requester can correct the target and ask again.
+- **Approval is its own permission.** Designing needs
+  `documents.template.design`, generating needs `documents.generate`, and the
+  queue plus approve/reject need `documents.approve`. A designer cannot
+  generate, a generator cannot approve, and an approver cannot design or
+  generate; the audit names the approver as the actor.
+- **The approval queue is a small screen, not a second generation UI.** The
+  web route `/documents/approvals` lists only held batches, shows who asked and
+  how many documents are involved, and offers approve or reject with a required
+  reason. The generation dialog now renders `pending_approval` as a warning and
+  shows the rejection reason instead of pretending a held batch is still
+  running.

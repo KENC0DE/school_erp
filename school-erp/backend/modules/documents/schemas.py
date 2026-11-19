@@ -305,11 +305,29 @@ class GenerationBatchOut(BaseModel):
     failed_count: int
     progress: int
     status: str
+    approval_required: bool = False
+    requested_by: str | None = None
+    approved_at: datetime | None = None
+    rejection_reason: str | None = None
     file_id: str | None = None
     download_url: str | None = None
     failure_summary: str | None = None
     created_at: datetime
     issued_at: datetime | None = None
+
+
+class BatchDecision(BaseModel):
+    """An approver's note, or the reason a certificate batch was rejected."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    note: str | None = Field(None, max_length=500)
+
+
+class BatchRejection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=3, max_length=500)
 
 
 class GenerationBatchList(BaseModel):
@@ -410,6 +428,8 @@ class TemplateFile(BaseModel):
 
 
 __all__ = [
+    "BatchDecision",
+    "BatchRejection",
     "DocType",
     "DocumentFieldOut",
     "DocumentFieldsOut",

@@ -243,7 +243,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "doc_number_sequences",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0031_document_generation"
+    assert version == "0032_document_approval"
 
     assert {
         "failed_login_count",

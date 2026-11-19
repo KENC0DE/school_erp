@@ -234,7 +234,18 @@ export interface GenerationBatch {
   issued_count: number;
   failed_count: number;
   progress: number;
-  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  status:
+    | "pending_approval"
+    | "queued"
+    | "running"
+    | "succeeded"
+    | "failed"
+    | "cancelled"
+    | "rejected";
+  approval_required: boolean;
+  requested_by: string | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
   file_id: string | null;
   download_url: string | null;
   failure_summary: string | null;

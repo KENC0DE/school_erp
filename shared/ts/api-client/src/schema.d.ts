@@ -2146,6 +2146,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/generation/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Approval Queue Route
+         * @description Certificate batches waiting for somebody with ``documents.approve``.
+         */
+        get: operations["approval_queue_route_api_v1_documents_generation_approvals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents/generation/batches": {
         parameters: {
             query?: never;
@@ -2180,6 +2200,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/generation/batches/{batch_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve Batch Route
+         * @description Release a held certificate batch and submit it to the worker.
+         */
+        post: operations["approve_batch_route_api_v1_documents_generation_batches__batch_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents/generation/batches/{batch_id}/download": {
         parameters: {
             query?: never;
@@ -2191,6 +2231,26 @@ export interface paths {
         get: operations["batch_download_route_api_v1_documents_generation_batches__batch_id__download_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/generation/batches/{batch_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Batch Route
+         * @description Stop a held certificate batch without numbering anything.
+         */
+        post: operations["reject_batch_route_api_v1_documents_generation_batches__batch_id__reject_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5447,6 +5507,19 @@ export interface components {
          * @enum {string}
          */
         Basis: "basic" | "gross" | "taxable" | "pensionable";
+        /**
+         * BatchDecision
+         * @description An approver's note, or the reason a certificate batch was rejected.
+         */
+        BatchDecision: {
+            /** Note */
+            note?: string | null;
+        };
+        /** BatchRejection */
+        BatchRejection: {
+            /** Reason */
+            reason: string;
+        };
         /** Body_upload_api_v1_files_post */
         Body_upload_api_v1_files_post: {
             /** File */
@@ -6482,6 +6555,13 @@ export interface components {
         };
         /** GenerationBatchOut */
         GenerationBatchOut: {
+            /**
+             * Approval Required
+             * @default false
+             */
+            approval_required: boolean;
+            /** Approved At */
+            approved_at?: string | null;
             /** Combine */
             combine: boolean;
             /** Count */
@@ -6509,6 +6589,10 @@ export interface components {
             mode: string;
             /** Progress */
             progress: number;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /** Requested By */
+            requested_by?: string | null;
             /** Status */
             status: string;
             /** Template Id */
@@ -17169,6 +17253,37 @@ export interface operations {
             };
         };
     };
+    approval_queue_route_api_v1_documents_generation_approvals_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationBatchList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_batches_route_api_v1_documents_generation_batches_get: {
         parameters: {
             query?: {
@@ -17232,6 +17347,41 @@ export interface operations {
             };
         };
     };
+    approve_batch_route_api_v1_documents_generation_batches__batch_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BatchDecision"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     batch_download_route_api_v1_documents_generation_batches__batch_id__download_get: {
         parameters: {
             query?: never;
@@ -17250,6 +17400,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FileLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_batch_route_api_v1_documents_generation_batches__batch_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchRejection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationBatchOut"];
                 };
             };
             /** @description Validation Error */

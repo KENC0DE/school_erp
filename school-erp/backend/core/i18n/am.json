@@ -678,5 +678,10 @@
   "error.documents.starter_type_mismatch": "የመነሻ አብነቱ ለሌላ የሰነድ ዓይነት ነው",
   "error.documents.starter_layout_conflict": "የመነሻ አብነት ወይም አቀራረብ ይምረጡ፣ ሁለቱንም አይደለም",
   "error.documents.import_invalid": "ፋይሉ ትክክለኛ የሰነድ አብነት ውጤት አይደለም",
-  "error.documents.verification_not_found": "ይህ ሰነድ ሊረጋገጥ አልቻለም"
+  "error.documents.verification_not_found": "ይህ ሰነድ ሊረጋገጥ አልቻለም",
+  "error.documents.batch_pending_approval": "ይህ ስብስብ ከመታተሙ በፊት ማረጋገጫ ይጠብቃል",
+  "error.documents.batch_rejected": "ይህ ስብስብ ተገልብጦ ስለሆነ ሊመነጭ አይችልም",
+  "error.documents.batch_not_pending": "ይህ ስብስብ ማረጋገጫ አይጠብቅም",
+  "settings.module.documents": "የሰነድ ስቱዲዮ",
+  "settings.documents.require_certificate_approval": "ሰርተፊኬቶች ከመሰጠታቸው በፊት ማረጋገጫ ይፈልጉ"
 }

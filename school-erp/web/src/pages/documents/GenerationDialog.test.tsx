@@ -85,6 +85,44 @@ describe("document generation dialog", () => {
     expect(screen.getByText("The batch finished. Open an issued document to download or reprint it.")).toBeInTheDocument();
   });
 
+  it("shows a held certificate batch as awaiting approval", async () => {
+    stubDocuments(
+      ["*"],
+      handler((request) => {
+        if (request.method === "POST" && request.url.endsWith("/api/v1/documents/generation")) {
+          return json(
+            { job_id: "job-1", batch_id: "batch-1", count: 1, status: "pending_approval" },
+            202,
+          );
+        }
+        if (request.url.endsWith("/api/v1/documents/generation/batches/batch-1")) {
+          return json(
+            generationBatch({
+              status: "pending_approval",
+              approval_required: true,
+              progress: 0,
+              issued_count: 0,
+              issued_at: null,
+            }),
+          );
+        }
+        return null;
+      }),
+    );
+    renderDocuments();
+
+    fireEvent.click(await screen.findByTestId("template-generate-certificate-completion"));
+    const student = await screen.findByTestId("generation-student");
+    await waitFor(() => expect(student.querySelectorAll("option")).toHaveLength(2));
+    fireEvent.change(student, { target: { value: "stu-1" } });
+    fireEvent.click(screen.getByTestId("generation-start"));
+
+    expect(await screen.findByTestId("generation-awaiting-approval")).toHaveTextContent(
+      "This certificate batch is waiting for approval before anything is issued.",
+    );
+    expect(screen.getByText("Awaiting approval")).toBeInTheDocument();
+  });
+
   it("offers section and grade targets from the current year", async () => {
     stubDocuments(["*"], handler());
     renderDocuments();

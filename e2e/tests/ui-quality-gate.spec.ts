@@ -57,6 +57,7 @@ const AXE_SCREENS = [
   "/design",
   "/documents",
   "/documents/issued",
+  "/documents/approvals",
   "/verify/not-a-real-code",
 ] as const;
 

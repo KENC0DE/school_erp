@@ -145,6 +145,13 @@ class DocumentBatch(BusinessModel):
     section_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
     student_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
     combine: Mapped[bool] = mapped_column(default=False, nullable=False)
+    # Certificates may need a second pair of eyes before anything is numbered.
+    # The flag is copied at request time so changing the school policy later
+    # cannot strand or silently release an already requested batch.
+    approval_required: Mapped[bool] = mapped_column(default=False, nullable=False)
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
     count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     issued_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

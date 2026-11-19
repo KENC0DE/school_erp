@@ -171,7 +171,17 @@ export function GenerationDialog({
               className="w-full"
             />
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <Badge variant={status === "succeeded" ? "success" : status === "failed" ? "danger" : "neutral"}>
+              <Badge
+                variant={
+                  status === "succeeded"
+                    ? "success"
+                    : status === "failed" || status === "rejected"
+                      ? "danger"
+                      : status === "pending_approval"
+                        ? "warning"
+                        : "neutral"
+                }
+              >
                 {t(`documents.generation.status.${status ?? "queued"}`)}
               </Badge>
               <span className="ui-num">
@@ -182,6 +192,16 @@ export function GenerationDialog({
                 })}
               </span>
             </div>
+            {status === "pending_approval" ? (
+              <p role="status" className="text-sm text-muted-foreground" data-testid="generation-awaiting-approval">
+                {t("documents.generation.awaiting_approval")}
+              </p>
+            ) : null}
+            {status === "rejected" && batch.data?.rejection_reason ? (
+              <p role="status" className="text-sm text-destructive" data-testid="generation-rejected">
+                {batch.data.rejection_reason}
+              </p>
+            ) : null}
             {batch.data?.failure_summary ? (
               <p role="status" className="text-sm text-destructive">
                 {batch.data.failure_summary}

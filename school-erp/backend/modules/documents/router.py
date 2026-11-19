@@ -1,10 +1,11 @@
-"""HTTP routes for Document Studio (P5-02 fields, P5-04 templates, P5-08 generation).
+"""HTTP routes for Document Studio (P5-02 fields, P5-04 templates, P5-08 generation,
+P5-10 approval).
 
 Static paths are declared before ``/templates/{template_id}`` so
 ``/templates/starters`` and ``/templates/import`` can never be read as an id.
 Design routes need ``documents.template.design``; generation and everything
-that reads an issued artifact need ``documents.generate``. P5-10 adds the
-approval workflow and narrows these further.
+that reads an issued artifact need ``documents.generate``; approving or
+rejecting a held certificate batch needs ``documents.approve``.
 
 Generation is asynchronous: the route validates the target and records the
 batch, then hands the expensive rendering to the worker. Tests and brokers are
@@ -31,8 +32,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.documents.generation import (
+    approve_batch,
     create_batch,
     generation_targets,
+    reject_batch,
     search_generation_students,
 )
 from modules.documents.issued import (
@@ -50,6 +53,8 @@ from modules.documents.preview import (
     student_context,
 )
 from modules.documents.schemas import (
+    BatchDecision,
+    BatchRejection,
     DocType,
     DocumentFieldOut,
     DocumentFieldsOut,
@@ -103,6 +108,19 @@ logger = logging.getLogger("erp.documents")
 router = APIRouter(tags=["documents"])
 DESIGN = "documents.template.design"
 GENERATE = "documents.generate"
+APPROVE = "documents.approve"
+
+
+async def _dispatch(batch: uuid.UUID, job: uuid.UUID | None, settings) -> None:  # type: ignore[no-untyped-def]
+    """Hand an approved/queued batch to the worker outside the test process."""
+    if job is None or settings.app_env == "test":
+        return
+    try:
+        from core.events.celery_app import documents_generate_task
+
+        await asyncio.to_thread(documents_generate_task.delay, str(job), str(batch))
+    except Exception as exc:  # pragma: no cover - broker outages are operational
+        logger.warning("document batch enqueue failed for %s: %s", batch, exc)
 
 
 # --- public verification ----------------------------------------------------
@@ -383,23 +401,66 @@ async def generate_route(
     """
     batch, job = await create_batch(session, principal, payload)
     settings = request.app.state.settings
-    if settings.app_env != "test":
-        try:
-            from core.events.celery_app import documents_generate_task
-
-            await asyncio.to_thread(
-                documents_generate_task.delay,
-                str(job.id),
-                str(batch.id),
-            )
-        except Exception as exc:  # pragma: no cover - broker outages are operational
-            logger.warning("document batch enqueue failed for %s: %s", batch.id, exc)
+    await _dispatch(batch.id, job.id, settings)
     return DocumentGenerationOut(
         job_id=job.id,
         batch_id=batch.id,
         count=batch.count,
         status=batch.status,
     )
+
+
+@router.get("/generation/approvals", response_model=GenerationBatchList)
+async def approval_queue_route(
+    limit: int = Query(100, ge=1, le=100),
+    principal: Principal = Depends(require(APPROVE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> GenerationBatchList:
+    """Certificate batches waiting for somebody with ``documents.approve``."""
+    return await list_batches(
+        session,
+        storage,
+        settings,
+        status="pending_approval",
+        limit=limit,
+    )
+
+
+@router.post("/generation/batches/{batch_id}/approve", response_model=GenerationBatchOut)
+async def approve_batch_route(
+    request: Request,
+    batch_id: uuid.UUID,
+    payload: BatchDecision | None = None,
+    principal: Principal = Depends(require(APPROVE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> GenerationBatchOut:
+    """Release a held certificate batch and submit it to the worker."""
+    batch, _job = await approve_batch(
+        session,
+        principal,
+        batch_id,
+        note=payload.note if payload else None,
+    )
+    await _dispatch(batch.id, batch.job_id, request.app.state.settings)
+    return await get_batch(session, storage, settings, batch.id)
+
+
+@router.post("/generation/batches/{batch_id}/reject", response_model=GenerationBatchOut)
+async def reject_batch_route(
+    batch_id: uuid.UUID,
+    payload: BatchRejection,
+    principal: Principal = Depends(require(APPROVE)),
+    session: AsyncSession = Depends(db_session),
+    storage: Storage = Depends(get_storage),
+    settings=Depends(get_app_settings),  # type: ignore[no-untyped-def]
+) -> GenerationBatchOut:
+    """Stop a held certificate batch without numbering anything."""
+    batch = await reject_batch(session, principal, batch_id, reason=payload.reason)
+    return await get_batch(session, storage, settings, batch.id)
 
 
 @router.get("/generation/batches", response_model=GenerationBatchList)

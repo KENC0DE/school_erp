@@ -1,5 +1,5 @@
 import type { Layout } from "@erp/documents";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "../../lib/api";
 import type {
@@ -165,5 +165,40 @@ export function useDocumentVerification(code: string) {
     enabled: Boolean(code),
     retry: false,
     staleTime: 60_000,
+  });
+}
+
+/** Certificate batches held for review by somebody with `documents.approve`. */
+export function useApprovalQueue(enabled = true) {
+  return useQuery({
+    queryKey: ["documents", "generation", "approvals"],
+    queryFn: () =>
+      api.get<GenerationBatchList>("/api/v1/documents/generation/approvals?limit=100"),
+    enabled,
+    staleTime: 10_000,
+  });
+}
+
+export function useApproveBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ batchId, note }: { batchId: string; note?: string }) =>
+      api.post<GenerationBatch>(
+        `/api/v1/documents/generation/batches/${batchId}/approve`,
+        { note: note ?? null },
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
+  });
+}
+
+export function useRejectBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ batchId, reason }: { batchId: string; reason: string }) =>
+      api.post<GenerationBatch>(
+        `/api/v1/documents/generation/batches/${batchId}/reject`,
+        { reason },
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
   });
 }

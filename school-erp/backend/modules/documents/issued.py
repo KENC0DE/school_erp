@@ -224,6 +224,10 @@ def _batch_out(row: DocumentBatch, template_name: str, download_url: str | None)
         failed_count=row.failed_count,
         progress=row.progress,
         status=row.status,
+        approval_required=row.approval_required,
+        requested_by=row.context.get("display_name") if isinstance(row.context, dict) else None,
+        approved_at=row.approved_at,
+        rejection_reason=row.rejection_reason,
         file_id=str(row.file_id) if row.file_id else None,
         download_url=download_url,
         failure_summary=row.failure_summary,
@@ -238,11 +242,14 @@ async def list_batches(
     settings: Settings,
     *,
     template_id: uuid.UUID | None = None,
+    status: str | None = None,
     limit: int = 25,
 ) -> GenerationBatchList:
     stmt = select(DocumentBatch).where(DocumentBatch.deleted_at.is_(None))
     if template_id is not None:
         stmt = stmt.where(DocumentBatch.template_id == template_id)
+    if status is not None:
+        stmt = stmt.where(DocumentBatch.status == status)
     rows = list(
         (await session.execute(stmt.order_by(DocumentBatch.created_at.desc()).limit(max(1, min(limit, 100)))))
         .scalars()

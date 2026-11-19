@@ -21,6 +21,7 @@ import { AssessmentPage } from "./pages/assessment/AssessmentPage";
 import { ControllerLoginPage } from "./pages/ControllerLogin";
 import { DashboardPage } from "./pages/Dashboard";
 import { DocumentsPage } from "./pages/documents/DocumentsPage";
+import { DocumentApprovalsPage } from "./pages/documents/DocumentApprovalsPage";
 import { IssuedDocumentsPage } from "./pages/documents/IssuedDocumentsPage";
 import { TemplateEditorPage } from "./pages/documents/TemplateEditorPage";
 import { VerifyDocumentPage } from "./pages/documents/VerifyDocumentPage";
@@ -124,6 +125,7 @@ export function AppRoutes() {
           />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="documents/issued" element={<IssuedDocumentsPage />} />
+          <Route path="documents/approvals" element={<DocumentApprovalsPage />} />
           <Route path="documents/:templateId" element={<TemplateEditorPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/modules" element={<ModulesPage />} />
