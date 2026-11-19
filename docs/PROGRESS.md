@@ -180,7 +180,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 
 - [x] P5-01 — Layout JSON schema
 - [x] P5-02 — Fields registry
-- [ ] P5-03 — Renderer
+- [x] P5-03 — Renderer
 - [ ] P5-04 — Template models
 - [ ] P5-05 — Canvas editor (web)
 - [ ] P5-06 — Repeating tables

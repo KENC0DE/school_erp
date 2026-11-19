@@ -2549,3 +2549,57 @@ figure includes the commit and the audit row):
 - **Labels stay i18n keys.** The response carries `label_key` (for example
   `assessment.field.marks_term_total`) rather than English text, so the editor
   renders labels from the same module bundle the rest of that module uses.
+
+## 2026-11-19 — P5-03 document renderer
+
+- **Chromium through its command line, not Python Playwright.** The API process
+  needs a renderer, but it should not depend on a Python browser package that is
+  absent from the venv. `core/documents/chromium.py` finds a binary
+  (`DOCUMENTS_CHROMIUM_PATH`, then `CHROMIUM_PATH`, then PATH, then the Playwright
+  browser cache), prints one HTML file with CSS page sizes honoured and returns
+  the bytes. The P0-23 note that "this host has no Chromium" no longer applies;
+  the ReportLab spike remains a Phase 0 artifact rather than a second renderer.
+- **Static Inter faces instead of the variable font.** The web app loads
+  `Inter-Variable.woff2`, but Chromium prints text in a variable face as Type 3
+  glyph outlines, so the PDF would carry no named, replaceable body font. The
+  backend therefore bundles the static Inter Regular and Bold faces (OFL, license
+  in `app/assets/fonts`) and Chromium embeds proper TrueType subsets
+  (`FontFile2`). Amharic comes from the bundled Noto Sans Ethiopic, embedded only
+  when text uses it. Uploaded fonts are embedded as data URIs and become normal
+  embedded faces too.
+- **Contextual alternates are disabled in document text.** Inter's `calt`
+  feature substitutes the hyphen with an alternate glyph that has no reverse
+  cmap entry; Chromium then writes a private-use code point, so "SN-0001"
+  extracted as "SN\uE0880001". Documents are searchable text first, so every text
+  and table style sets `font-feature-settings: 'calt' 0`. Features that map back
+  to Unicode (for example `fi`) are unaffected.
+- **Custom pages are authored; presets are oriented.** `orientation` rotates
+  A4, A5 and Letter. A custom page uses its own width and height exactly as
+  authored, because those numbers already are the page — an 85.6 × 54 mm ID card
+  does not become 54 × 85.6 because its orientation says portrait.
+- **Bleed expands the media box; margins position content.** The printed page is
+  trim size plus 2 × bleed, and the content box is inset by bleed + margins, so
+  a full-bleed background reaches the paper edge while elements keep their
+  margin. Chromium rounds the page box to its internal units (≈0.2 mm), which is
+  why the golden corpus compares sizes with a 0.6 mm tolerance.
+- **Barcodes are vector, captions are ours.** reportlab renders Code128, Code39,
+  EAN13 and EAN8 as filled rectangles inside an SVG, so bars stay crisp at any
+  print resolution and recolour through the SVG root fill. `humanReadable` is
+  disabled and the caption is an HTML line using the template's font, avoiding a
+  duplicate number in reportlab's own face. QR codes are raster PNGs generated
+  with the declared error-correction level.
+- **Only web and inline image URLs.** The browser runs with local file access,
+  so a layout may not name a `file://` source; only `http(s)` and `data:image`
+  URLs pass, and uploaded images must be named by file id in
+  `RenderContext.assets`. Missing or empty field values render nothing, which is
+  what an optional photograph wants.
+- **The document language is the default script.** `RenderContext.locale = "am"`
+  prefers `*_am` data variants and formats booleans and Ethiopian dates in
+  Amharic even when an element names no script; an explicit `format.script` or
+  `|am`/`|en` filter still wins. QR and barcode payloads stay script-neutral so
+  a verification URL never changes with the interface language.
+- **Golden properties, not golden pixels.** `tests/golden/document_render.json`
+  pins the page box, media box and extractable text for four known layouts
+  (A4 landscape with bleed, A4 portrait, custom ID card, Letter landscape with
+  bleed). A renderer or font change that moves the page or drops text fails the
+  test, while harmless antialiasing differences do not.
