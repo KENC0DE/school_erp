@@ -409,6 +409,19 @@ async def test_impact_preview_and_recalculation_rewrite_only_converted_values(
         assert {"assessment.structure.create", "assessment.structure.update"} <= actions
         assert "assessment.structure.recalculate" in actions
 
+    # The checkpoint property: recalculating again is a no-op. Raw marks and
+    # converted values are stable, so a retried job cannot drift a report.
+    from modules.assessment.service import recalculate_structure
+
+    async with app.state.db.session() as session:
+        again = await recalculate_structure(session, uuid.UUID(structure["id"]))
+    assert again.changed == 0
+    assert again.scores == 2
+    async with app.state.db.session() as session:
+        score = await session.get(Score, score_ids[0])
+        assert score is not None
+        assert score.converted == Decimal("10.000000")
+
 
 async def test_component_in_use_and_stale_version_are_rejected(
     client, app, superadmin_headers, seeded

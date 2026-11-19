@@ -264,3 +264,37 @@ def test_floats_are_rejected_everywhere():
         aggregate([0.5], AggregationMode.AVERAGE)
     with pytest.raises(TypeError, match="Decimal"):
         Component(key="quiz", max_points=10.0)
+
+
+def test_converted_values_always_stay_within_the_component_scale():
+    """The checkpoint property: a non-bonus mark never leaves [0, max_points]."""
+    for out_of in ("1", "3", "7.5", "13", "15", "100"):
+        out_of_value = Decimal(out_of)
+        for fraction in (Decimal("0"), Decimal("0.25"), Decimal("0.5"), Decimal("0.75"), Decimal("1")):
+            raw = out_of_value * fraction
+            for max_points in ("1", "5", "10", "20", "40", "100"):
+                for precision in (0, 1, 2, 4):
+                    converted = converted_score(
+                        Score(out_of=out_of, raw=raw),
+                        max_points=max_points,
+                        precision=precision,
+                    )
+                    assert converted is not None
+                    assert Decimal(0) <= converted <= Decimal(max_points)
+
+
+def test_absent_counts_as_zero_stays_in_scale_and_excluded_stays_none():
+    component = Component(key="quiz", max_points=10, absent_counts_as_zero=True)
+    converted = converted_score(
+        quiz(None, status=ScoreStatus.ABSENT),
+        max_points=component.max_points,
+        absent_counts_as_zero=True,
+    )
+    assert converted == Decimal("0")
+    assert converted is not None and Decimal(0) <= converted <= component.max_points
+
+    excluded = converted_score(
+        quiz(None, status=ScoreStatus.EXCUSED),
+        max_points=component.max_points,
+    )
+    assert excluded is None
