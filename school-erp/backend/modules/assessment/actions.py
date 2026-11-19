@@ -7,6 +7,7 @@ import uuid
 from core.actions.registry import ActionContext, action
 
 from modules.assessment import dashboard as progress
+from modules.assessment import portal as portal_service
 from modules.assessment import results, scales, service, workflow
 from modules.assessment.schemas import (
     AssessmentCreate,
@@ -25,6 +26,8 @@ from modules.assessment.schemas import (
     GradeScaleList,
     GradeScaleOut,
     GradeScaleUpdate,
+    PortalResultQuery,
+    PortalResults,
     ReminderRequest,
     ReminderResult,
     ResultSnapshotList,
@@ -578,6 +581,20 @@ async def year_results(ctx: ActionContext, payload: dict) -> YearResultSheet:
 
 
 @action(
+    key="assessment.results.portal",
+    module="assessment",
+    permission="assessment.view",
+    risk="read",
+    describe="Read the signed-in student's or parent's published results",
+    input=PortalResultQuery,
+    output=PortalResults,
+)
+async def portal_results(ctx: ActionContext, payload: dict | None = None) -> PortalResults:
+    query = PortalResultQuery.model_validate(payload or {})
+    return await portal_service.my_results(ctx.session, ctx.principal, year_id=query.year_id)
+
+
+@action(
     key="assessment.results.publish_term",
     module="assessment",
     permission="assessment.publish",
@@ -854,6 +871,7 @@ __all__ = [
     "get_submission",
     "get_window",
     "lock_marks",
+    "portal_results",
     "publish_marks",
     "publish_term_results",
     "publish_year_results",

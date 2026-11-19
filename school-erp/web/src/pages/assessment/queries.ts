@@ -8,6 +8,7 @@ import type {
   DashboardOut,
   GradeScaleList,
   MarkingWindowList,
+  PortalResults,
   ScaleAssignmentList,
   ScoreSheet,
   StageList,
@@ -250,6 +251,19 @@ export function useApprovalAssessments(
         }),
       ),
     enabled: Boolean(yearId && termId && sectionId && subjectId),
+    retry: false,
+  });
+}
+
+export function usePortalResults(yearId: string | null) {
+  return useQuery({
+    queryKey: ["assessment", "portal-results", yearId],
+    queryFn: () =>
+      api.get<PortalResults>(
+        withQuery(`${ASSESSMENT}/portal/results`, {
+          year_id: yearId ?? undefined,
+        }),
+      ),
     retry: false,
   });
 }

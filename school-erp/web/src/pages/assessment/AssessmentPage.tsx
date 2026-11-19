@@ -7,6 +7,7 @@ import { ApprovalsPanel } from "./ApprovalsPanel";
 import { AssessmentDashboardPanel } from "./AssessmentDashboardPanel";
 import { GradePanel } from "./GradePanel";
 import { MarkEntryPanel } from "./MarkEntryPanel";
+import { PortalResultsPanel } from "./PortalResultsPanel";
 import { StructurePanel } from "./StructurePanel";
 
 type Panel = "structure" | "marks" | "grades" | "approvals" | "dashboard";
@@ -31,6 +32,9 @@ export function AssessmentPage() {
   const canCorrect = can("assessment.correct");
   const canApprove = can("assessment.approve");
   const canPublish = can("assessment.publish");
+  const isPortal = (user?.roles ?? []).some(
+    (role) => role === "parent" || role === "student",
+  );
   const [panel, setPanel] = useState<Panel>("structure");
 
   if (!allowed) {
@@ -47,6 +51,20 @@ export function AssessmentPage() {
         >
           {t("error.permission_denied")}
         </p>
+      </Page>
+    );
+  }
+
+  if (isPortal) {
+    return (
+      <Page>
+        <div className="space-y-5" data-testid="assessment-page">
+          <PageHeader
+            title={t("assessment.portal.title")}
+            description={t("assessment.portal.intro")}
+          />
+          <PortalResultsPanel />
+        </div>
       </Page>
     );
   }

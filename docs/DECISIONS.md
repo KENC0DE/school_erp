@@ -2393,3 +2393,39 @@ and recorded here (date, decision, reason).
   `row_version` so a stale review cannot silently overwrite another head's
   decision (the API answers 409 and the message is shown), and success
   invalidates the submission queue, review sheets and dashboard reminders.
+
+## 2026-11-19 — P4-16 parent and student results
+
+- **Portal accounts link through explicit columns, not name matching.** A
+  student account is `student_profiles.user_id`; a parent account is
+  `student_guardians.user_id` on every child link. Email or person matching
+  would silently expose another family's marks, so the link is an explicit,
+  auditable column that P4-SEED and the students UI can set. The unique live
+  index keeps one student profile per account; a parent may own many rows.
+- **The portal reads `ResultSnapshot` and nothing else.** A sheet exists in the
+  portal because an authorised caller published it, so a draft, submitted or
+  approved mark never leaves the API. The snapshot is immutable, which also
+  means a later raw-score edit or scale version bump cannot rewrite what a parent
+  already saw. Reading live scores would make "published only" a convention
+  rather than a guarantee.
+- **Only the newest publish of each section/term/kind is served.** Re-publishing
+  supersedes the earlier snapshot for staff history, but a parent sees the
+  current sheet once. The endpoint still returns a `snapshot_id` so a document
+  or support request can name the exact publish.
+- **The payload is narrowed to the signed-in family on the server.** The
+  endpoint resolves the account to its own student profiles and then filters
+  each snapshot's student list to those ids before serialising. A published
+  section sheet never sends the other children's names, marks or ranks, and an
+  unlinked account gets an empty list rather than an error.
+- **The portal status is normalised to `published`.** Snapshot payloads keep the
+  workflow status they were captured with; the portal rewrites it to
+  `published`, because that is the only state a portal reader can observe. This
+  keeps clients from branching on an internal workflow value.
+- **One permission gates both portal roles.** `GET /assessment/portal/results`
+  requires `assessment.view`, which both the parent and student roles already
+  carry with `own_children`/`self` scope. The data resolver, not the scope
+  vocabulary, enforces the family boundary, so a scope bug cannot widen it.
+- **Web and mobile pick the portal view from the session roles.** A user whose
+  roles include `parent` or `student` sees the results view at `/assessment`
+  instead of the staff tabs; every other caller keeps the staff page. The views
+  share the same endpoint and no portal route is added to the staff navigation.

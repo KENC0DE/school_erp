@@ -29,6 +29,13 @@ class StudentProfile(BusinessModel):
             sqlite_where=text("deleted_at IS NULL"),
             postgresql_where=text("deleted_at IS NULL"),
         ),
+        Index(
+            "uq_student_profiles_user_live",
+            "user_id",
+            unique=True,
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
         Index("ix_student_profiles_status", "status"),
     )
 
@@ -36,6 +43,12 @@ class StudentProfile(BusinessModel):
         Uuid(as_uuid=True),
         ForeignKey("persons.id", ondelete="RESTRICT"),
         nullable=False,
+    )
+    # The student's own portal account. Guardians get their link on the link
+    # row; a person needs a student profile before either can read results.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
     )
     student_number: Mapped[str] = mapped_column(String(40), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="applicant")
@@ -89,6 +102,7 @@ class StudentGuardian(BusinessModel):
             postgresql_where=text("deleted_at IS NULL"),
         ),
         Index("ix_student_guardians_person", "person_id"),
+        Index("ix_student_guardians_user", "user_id"),
     )
 
     student_id: Mapped[uuid.UUID] = mapped_column(
@@ -100,6 +114,11 @@ class StudentGuardian(BusinessModel):
         Uuid(as_uuid=True),
         ForeignKey("persons.id", ondelete="RESTRICT"),
         nullable=False,
+    )
+    # A parent portal account sees every student linked to it across these rows.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
     )
     relationship: Mapped[str] = mapped_column(String(40), nullable=False, default="guardian")
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

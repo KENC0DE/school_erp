@@ -977,6 +977,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assessment/portal/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Portal Results Route */
+        get: operations["portal_results_route_api_v1_assessment_portal_results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assessment/results/snapshots": {
         parameters: {
             query?: never;
@@ -6902,6 +6919,57 @@ export interface components {
             sex?: string | null;
             /** Short Name */
             short_name: string;
+        };
+        /** PortalChild */
+        PortalChild: {
+            /** Results */
+            results?: components["schemas"]["PortalResult"][];
+            /** Student Id */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Student Name Am */
+            student_name_am?: string | null;
+            /** Student Number */
+            student_number: string;
+        };
+        /**
+         * PortalResult
+         * @description One published sheet as a single child sees it.
+         */
+        PortalResult: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "term" | "year";
+            /** Level Name */
+            level_name: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            result: components["schemas"]["StudentResult"];
+            /** Section Code */
+            section_code: string;
+            /** Section Id */
+            section_id: string;
+            /** Snapshot Id */
+            snapshot_id: string;
+            /** Term Id */
+            term_id?: string | null;
+            /** Term Name */
+            term_name?: string | null;
+            /** Year Code */
+            year_code: string;
+            /** Year Id */
+            year_id: string;
+        };
+        /** PortalResults */
+        PortalResults: {
+            /** Children */
+            children?: components["schemas"]["PortalChild"][];
         };
         /** PositionInput */
         PositionInput: {
@@ -13278,6 +13346,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReminderResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    portal_results_route_api_v1_assessment_portal_results_get: {
+        parameters: {
+            query?: {
+                year_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalResults"];
                 };
             };
             /** @description Validation Error */

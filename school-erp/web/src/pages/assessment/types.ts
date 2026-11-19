@@ -713,3 +713,70 @@ export interface ReminderResult {
   skipped: number;
   recipients: ReminderRecipient[];
 }
+
+// ------------------------------------------------------- portal results (P4-16)
+
+export interface SubjectResult {
+  subject_id: string;
+  subject_name: string;
+  structure_id: string | null;
+  structure_version: number;
+  scale_id: string | null;
+  scale_version: number | null;
+  total: string;
+  out_of: string;
+  percent: string;
+  grade_label: string | null;
+  grade_remark: string | null;
+  gpa_points: string | null;
+  is_pass: boolean;
+  rank: number | null;
+  rank_size: number | null;
+  status: string;
+  terms: Record<string, string> | null;
+}
+
+export interface StudentResult {
+  student_id: string;
+  student_number: string;
+  student_name: string;
+  student_name_am: string | null;
+  roll_number: string | null;
+  subjects: SubjectResult[];
+  total: string;
+  out_of: string;
+  percent: string;
+  grade_label: string | null;
+  grade_remark: string | null;
+  gpa_points: string | null;
+  is_pass: boolean;
+  rank: number | null;
+  rank_size: number | null;
+  status: string;
+}
+
+export interface PortalResult {
+  snapshot_id: string;
+  kind: "term" | "year";
+  year_id: string;
+  year_code: string;
+  term_id: string | null;
+  term_name: string | null;
+  section_id: string;
+  section_code: string;
+  level_name: string;
+  published_at: string;
+  result: StudentResult;
+}
+
+export interface PortalChild {
+  student_id: string;
+  student_number: string;
+  student_name: string;
+  student_name_am: string | null;
+  results: PortalResult[];
+}
+
+export interface PortalResults {
+  children: PortalChild[];
+}

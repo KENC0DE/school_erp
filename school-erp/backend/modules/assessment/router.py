@@ -37,6 +37,7 @@ from modules.assessment.actions import (
     get_submission,
     get_window,
     lock_marks,
+    portal_results,
     publish_marks,
     publish_term_results,
     publish_year_results,
@@ -85,6 +86,7 @@ from modules.assessment.schemas import (
     GradeScaleList,
     GradeScaleOut,
     GradeScaleUpdate,
+    PortalResults,
     ReminderRequest,
     ReminderResult,
     ResultSnapshotList,
@@ -723,6 +725,19 @@ async def reject_correction_route(
     return await reject_correction(
         _context(principal, session, request),
         {"correction_id": str(correction_id), **payload.model_dump(mode="json")},
+    )
+
+
+@router.get("/portal/results", response_model=PortalResults)
+async def portal_results_route(
+    request: Request,
+    year_id: uuid.UUID | None = Query(None),
+    principal: Principal = Depends(require("assessment.view")),
+    session: AsyncSession = Depends(db_session),
+) -> PortalResults:
+    return await portal_results(
+        _context(principal, session, request),
+        {"year_id": str(year_id) if year_id else None},
     )
 
 

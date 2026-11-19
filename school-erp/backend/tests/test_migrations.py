@@ -224,7 +224,7 @@ def test_upgrade_heads_on_empty_database(tmp_path, monkeypatch):
         "assessment_result_snapshots",
     } <= tables
     assert {"audit_log_no_update", "audit_log_no_delete"} <= triggers
-    assert version == "0028_assessment"
+    assert version == "0029_portal_links"
 
     assert {
         "failed_login_count",

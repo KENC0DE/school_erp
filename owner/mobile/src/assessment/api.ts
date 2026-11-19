@@ -2,6 +2,7 @@ import { authorizedJson } from "../session/session";
 import type {
   AssessmentList,
   AssessmentSummary,
+  PortalResults,
   ScoreBulkResult,
   ScoreInput,
   ScoreSheet,
@@ -87,5 +88,15 @@ export function listSubmissions(
   return authorizedJson<SubmissionList>(
     instanceId,
     `${ASSESSMENT}/submissions${query({ ...filters, limit: 50 })}`,
+  );
+}
+
+export function getPortalResults(
+  instanceId: string,
+  yearId: string,
+): Promise<PortalResults> {
+  return authorizedJson<PortalResults>(
+    instanceId,
+    `${ASSESSMENT}/portal/results${query({ year_id: yearId || undefined })}`,
   );
 }

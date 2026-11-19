@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 
 import { listAssessments } from "../../../src/assessment/api";
+import PortalResultsScreen from "../../../src/assessment/PortalResultsScreen";
 import {
   assessmentErrorKey,
   hasPermission,
@@ -39,7 +40,15 @@ function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {
   return result;
 }
 
-export default function AssessmentListScreen() {
+export default function AssessmentScreen() {
+  const { user } = useApp();
+  const portal = (user?.roles ?? []).some(
+    (role) => role === "parent" || role === "student",
+  );
+  return portal ? <PortalResultsScreen /> : <AssessmentListScreen />;
+}
+
+function AssessmentListScreen() {
   const router = useRouter();
   const { profile, user } = useApp();
   const { t } = useSchoolI18n();

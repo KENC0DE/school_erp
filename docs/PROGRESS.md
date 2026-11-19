@@ -152,7 +152,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P4-13 — Mobile mark entry
 - [x] P4-14 — Manager dashboard
 - [x] P4-15 — Approvals UI
-- [ ] P4-16 — Parent and student read views
+- [x] P4-16 — Parent and student read views
 - [ ] P4-17 — Assessment actions and document fields
 - [x] P4-SEED — Seed
 

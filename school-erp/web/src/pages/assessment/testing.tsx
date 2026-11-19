@@ -13,6 +13,9 @@ import type {
   DashboardRow,
   GradeScale,
   MarkingWindow,
+  PortalChild,
+  PortalResult,
+  PortalResults,
   ScaleAssignment,
   ScoreSheet,
   Structure,
@@ -42,13 +45,16 @@ export function json(body: unknown, status = 200): Response {
   });
 }
 
-export function session(permissions: string[]) {
+export function session(
+  permissions: string[],
+  roles: string[] = ["academic_head"],
+) {
   return {
     id: "u-1",
-    email: "academichead@demo.school",
+    email: `${roles[0] ?? "user"}@demo.school`,
     display_name: "Academic Head",
     locale: "en",
-    roles: ["academic_head"],
+    roles,
     permissions,
     is_controller: false,
   };
@@ -73,12 +79,14 @@ function navigation() {
 export function stubAssessment(
   permissions: string[],
   handler: (request: MockRequest) => Response,
+  roles: string[] = ["academic_head"],
 ): void {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.endsWith("/api/v1/auth/me")) return json(session(permissions));
+      if (url.endsWith("/api/v1/auth/me"))
+        return json(session(permissions, roles));
       if (url.endsWith("/api/v1/auth/me/navigation")) return json(navigation());
       return handler({
         url,
@@ -907,4 +915,100 @@ export function approvalRoutes(
   return markRoutes(request, {
     sheets: options.sheets ?? { "exam-1": scoreSheet() },
   });
+}
+
+// ------------------------------------------------------- portal results (P4-16)
+
+export function portalResult(
+  overrides: Partial<PortalResult> = {},
+): PortalResult {
+  return {
+    snapshot_id: "snap-1",
+    kind: "term",
+    year_id: "year-1",
+    year_code: "2026",
+    term_id: "term-1",
+    term_name: "Semester 1",
+    section_id: "sec-1",
+    section_code: "G5A",
+    level_name: "Grade 5",
+    published_at: "2026-11-15T09:00:00Z",
+    result: {
+      student_id: "stu-1",
+      student_number: "STU-2026-0001",
+      student_name: "Abel Bekele",
+      student_name_am: null,
+      roll_number: "1",
+      subjects: [
+        {
+          subject_id: "sub-1",
+          subject_name: "Mathematics",
+          structure_id: "structure-1",
+          structure_version: 1,
+          scale_id: "scale-1",
+          scale_version: 1,
+          total: "35.69",
+          out_of: "50",
+          percent: "71.38",
+          grade_label: "C",
+          grade_remark: "Good",
+          gpa_points: "2",
+          is_pass: true,
+          rank: 1,
+          rank_size: 3,
+          status: "published",
+          terms: null,
+        },
+      ],
+      total: "35.69",
+      out_of: "50",
+      percent: "71.38",
+      grade_label: "C",
+      grade_remark: "Good",
+      gpa_points: "2",
+      is_pass: true,
+      rank: 1,
+      rank_size: 3,
+      status: "published",
+    },
+    ...overrides,
+  };
+}
+
+export function portalChild(overrides: Partial<PortalChild> = {}): PortalChild {
+  return {
+    student_id: "stu-1",
+    student_number: "STU-2026-0001",
+    student_name: "Abel Bekele",
+    student_name_am: null,
+    results: [portalResult()],
+    ...overrides,
+  };
+}
+
+export function portalResults(
+  overrides: Partial<PortalResults> = {},
+): PortalResults {
+  return { children: [portalChild()], ...overrides };
+}
+
+export interface PortalRouteOptions {
+  data?: PortalResults;
+  years?: unknown;
+  fail?: boolean;
+}
+
+export function portalRoutes(
+  request: MockRequest,
+  options: PortalRouteOptions = {},
+): Response {
+  const { url } = request;
+  if (url.includes("/api/v1/assessment/portal/results")) {
+    if (options.fail) return json({ error: { message: "Failed" } }, 500);
+    return json(options.data ?? portalResults());
+  }
+  if (url.includes("/api/v1/academics/academic-years")) {
+    return json(options.years ?? YEARS);
+  }
+  return baseRoutes(request);
 }

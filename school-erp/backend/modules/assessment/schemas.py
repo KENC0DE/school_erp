@@ -669,6 +669,38 @@ class ResultSnapshotList(BaseModel):
     total: int | None = None
 
 
+class PortalResult(BaseModel):
+    """One published sheet as a single child sees it."""
+
+    snapshot_id: str
+    kind: Literal["term", "year"]
+    year_id: str
+    year_code: str
+    term_id: str | None = None
+    term_name: str | None = None
+    section_id: str
+    section_code: str
+    level_name: str
+    published_at: datetime
+    result: StudentResult
+
+
+class PortalChild(BaseModel):
+    student_id: str
+    student_number: str
+    student_name: str
+    student_name_am: str | None = None
+    results: list[PortalResult] = Field(default_factory=list)
+
+
+class PortalResults(BaseModel):
+    children: list[PortalChild] = Field(default_factory=list)
+
+
+class PortalResultQuery(BaseModel):
+    year_id: uuid.UUID | None = None
+
+
 def _as_utc(value: datetime) -> datetime:
     """Compare window timestamps even when a client sends a naive datetime."""
     return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
