@@ -6,6 +6,7 @@ from modules.staff import actions as _actions  # noqa: F401 - registers actions
 from modules.staff import attendance_actions as _attendance_actions  # noqa: F401
 from modules.staff import leave_actions as _leave_actions  # noqa: F401 - registers actions
 from modules.staff import models as _models  # noqa: F401 - registers models
+from modules.staff.fields import FIELDS as DOCUMENT_FIELDS
 from modules.staff.router import router
 
 MANIFEST = ModuleManifest(
@@ -46,6 +47,7 @@ MANIFEST = ModuleManifest(
     router=router,
     actions=[*_actions.__all__, *_leave_actions.__all__, *_attendance_actions.__all__],
     i18n_namespaces=["staff"],
+    document_fields=list(DOCUMENT_FIELDS),
     licensable=True,
     default_enabled=True,
     core=False,

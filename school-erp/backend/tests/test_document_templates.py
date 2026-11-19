@@ -18,6 +18,7 @@ BUNDLE = Path(__file__).resolve().parents[1] / "modules" / "documents" / "i18n"
 
 STARTER_KEYS = {
     "report_card",
+    "transcript",
     "certificate_completion",
     "certificate_appreciation",
     "id_card",

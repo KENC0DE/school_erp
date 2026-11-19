@@ -201,12 +201,13 @@ class DocumentPreviewOut(BaseModel):
 
 
 class GenerationTarget(BaseModel):
-    """Who a batch is for: one student, one section or a whole grade."""
+    """Who a batch is for: one student, one staff member, a section or a grade."""
 
     model_config = ConfigDict(extra="forbid")
 
-    type: Literal["student", "section", "level"]
+    type: Literal["student", "staff", "section", "level"]
     student_id: uuid.UUID | None = None
+    staff_id: uuid.UUID | None = None
     section_id: uuid.UUID | None = None
     level_id: uuid.UUID | None = None
     year_id: uuid.UUID | None = None
@@ -215,6 +216,7 @@ class GenerationTarget(BaseModel):
     def _exactly_one_target(self) -> GenerationTarget:
         chosen = {
             "student": self.student_id,
+            "staff": self.staff_id,
             "section": self.section_id,
             "level": self.level_id,
         }[self.type]
@@ -224,6 +226,7 @@ class GenerationTarget(BaseModel):
             field
             for field, value in (
                 ("student_id", self.student_id),
+                ("staff_id", self.staff_id),
                 ("section_id", self.section_id),
                 ("level_id", self.level_id),
             )
@@ -290,6 +293,18 @@ class GenerationStudentOut(BaseModel):
 
 class GenerationStudentList(BaseModel):
     items: list[GenerationStudentOut] = Field(default_factory=list)
+
+
+class GenerationStaffOut(BaseModel):
+    id: str
+    staff_number: str
+    full_name: str
+    position_name: str | None = None
+    department_name: str | None = None
+
+
+class GenerationStaffList(BaseModel):
+    items: list[GenerationStaffOut] = Field(default_factory=list)
 
 
 class GenerationBatchOut(BaseModel):

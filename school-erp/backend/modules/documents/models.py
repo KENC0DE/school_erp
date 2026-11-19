@@ -144,6 +144,9 @@ class DocumentBatch(BusinessModel):
     level_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
     section_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
     student_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
+    # Staff-targeted batches (experience letters and staff certificates) keep
+    # the staff id beside the student id, without a cross-module foreign key.
+    staff_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True))
     combine: Mapped[bool] = mapped_column(default=False, nullable=False)
     # Certificates may need a second pair of eyes before anything is numbered.
     # The flag is copied at request time so changing the school policy later

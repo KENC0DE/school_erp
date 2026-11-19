@@ -2619,7 +2619,7 @@ figure includes the commit and the audit row):
 - **Template keys are unique among live templates.** The key is what exports,
   imports and later APIs name a design by, so a second live template may not
   reuse it. An import that collides is rejected rather than silently renamed.
-- **The starter library is code, not seed data.** Seven starters (report card,
+- **The starter library is code, not seed data.** Eight starters (report card,
   transcript, certificate of completion, certificate of appreciation, ID card,
   admission letter, receipt, experience letter) live in `starters.py` as
   validated layouts so a fresh school can design from a known-good shape. They
@@ -2844,3 +2844,39 @@ figure includes the commit and the audit row):
   reason. The generation dialog now renders `pending_approval` as a warning and
   shows the rejection reason instead of pretending a held batch is still
   running.
+
+## 2026-11-19 — P5-11 wiring students, assessment and staff
+
+- **The staff module owns `staff.*` fields.** Experience letters no longer bind
+  tokens that only the sample preview knows. The staff manifest declares full
+  name in both scripts, staff number, status, position, department, employment
+  dates, notes, photo and signature, so the palette hides them when the staff
+  module is off and the renderer resolves them from the live record.
+- **Staff generation reuses the student path.** A batch target may now be one
+  staff member; the batch keeps a plain `staff_id` beside `student_id` (no
+  cross-module foreign key), and the worker calls a staff context builder that
+  produces the same numbers, verification codes, stored files, snapshots and
+  audit entries as a student document. Reprints therefore behave identically.
+- **The staff picker is generation-scoped.** `GET
+  /api/v1/documents/generation/staff` is gated by `documents.generate` like the
+  student picker. It returns only the name, number and position/department
+  labels the dialog needs; it is not a second staff directory.
+- **Report cards and transcripts use different snapshots.** The report card
+  starter binds the published term result (`student.marks.term.*` and the
+  subject table), while the new transcript starter binds the published year
+  result (`student.marks.year.*`, rank and the same subject rows). Both render
+  from the assessment module's snapshots, so changing a grade band later cannot
+  alter an issued document.
+- **ID cards already bind student data.** The ID card starter uses
+  `student.photo`, `student.full_name`, `student.student_number`, grade and
+  section, all registered by the students module; P5-11 only confirms the
+  wiring with a generated snapshot rather than adding a parallel record.
+- **Receipts wait for the fees module.** The receipt starter remains a layout
+  with literal/sample amounts and dates. Live `fees.*` fields arrive with
+  Phase 7, when invoices and payments exist to snapshot; inventing fee data now
+  would make an issued receipt a lie.
+- **Experience letters default to the staff target.** When an experience-letter
+  template is chosen the dialog preselects "Staff member"; certificates and
+  custom templates also offer staff, because the architecture allows staff
+  certificates without a second template type. Student-only paperwork keeps
+  the student picker.

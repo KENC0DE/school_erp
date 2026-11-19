@@ -188,7 +188,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P5-08 — Generation: single, section and grade batches as separate or one combined PDF through background jobs with progress; issued documents snapshot layout + data, yearly numbers, random verification codes, audited reprints (12 backend tests incl. a 300-document stress, generation/issued web tests, Playwright publish + dialog + issued page)
 - [x] P5-09 — Public verification page `/verify/{code}` showing only minimal data, rate-limited (4 backend tests: minimal public view, generic 404, per-client 429, module gate; public web page with valid/not-found/error states + 3 web tests; Playwright public not-found page and axe sweep)
 - [x] P5-10 — Permissions and workflow: separate `documents.approve` permission, optional approval setting for certificate templates only, held batches that the worker refuses to run, approve/reject routes with locked transitions and audit entries, an approvals queue and web screen with required rejection reason (5 backend tests, 3 approvals web tests + generation pending-state test, Playwright axe sweep)
-- [ ] P5-11 — Wire existing modules
+- [x] P5-11 — Wire existing modules: staff `document_fields` (name, number, position, department, dates, notes, photo, signature), staff-targeted experience letters with a generation picker, transcript starter bound to year snapshots, report card/ID card confirmed against live student snapshots (4 backend tests, staff picker dialog test; receipts stay deferred to Phase 7 as recorded in `DECISIONS.md`)
 - [ ] P5-12 — Mobile view/share/print
 - [ ] P5-SEED — Seed
 

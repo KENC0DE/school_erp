@@ -236,6 +236,20 @@ export function generationStudents() {
   };
 }
 
+export function generationStaff() {
+  return {
+    items: [
+      {
+        id: "staff-1",
+        staff_number: "STF-2026-0001",
+        full_name: "Solomon Tesfaye Gebre",
+        position_name: "Mathematics Teacher",
+        department_name: "Science",
+      },
+    ],
+  };
+}
+
 export function generationBatch(overrides: Record<string, unknown> = {}) {
   return {
     id: "batch-1",

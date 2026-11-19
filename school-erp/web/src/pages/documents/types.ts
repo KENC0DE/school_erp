@@ -203,7 +203,19 @@ export interface GenerationStudentList {
   items: GenerationStudent[];
 }
 
-export type GenerationTargetType = "student" | "section" | "level";
+export interface GenerationStaff {
+  id: string;
+  staff_number: string;
+  full_name: string;
+  position_name: string | null;
+  department_name: string | null;
+}
+
+export interface GenerationStaffList {
+  items: GenerationStaff[];
+}
+
+export type GenerationTargetType = "student" | "staff" | "section" | "level";
 
 export interface GenerationRequest {
   template_id: string;
@@ -211,6 +223,7 @@ export interface GenerationRequest {
   combine: boolean;
   target:
     | { type: "student"; student_id: string; year_id?: string | null }
+    | { type: "staff"; staff_id: string }
     | { type: "section"; section_id: string; year_id?: string | null }
     | { type: "level"; level_id: string; year_id?: string | null };
 }

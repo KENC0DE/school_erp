@@ -55,11 +55,13 @@ from modules.documents.models import (
     IssuedDocument,
 )
 from modules.documents.numbering import allocate_number, new_verification_code
-from modules.documents.preview import common_context, student_context
+from modules.documents.preview import common_context, staff_context, student_context
 from modules.documents.schemas import (
     DocumentGenerationRequest,
     GenerationLevelOut,
     GenerationSectionOut,
+    GenerationStaffList,
+    GenerationStaffOut,
     GenerationStudentList,
     GenerationStudentOut,
     GenerationTarget,
@@ -68,6 +70,7 @@ from modules.documents.schemas import (
 )
 from modules.documents.service import parse_layout
 from modules.documents.settings import DocumentSettings
+from modules.staff.models import StaffDepartment, StaffPosition, StaffProfile
 from modules.students.lookups import AcademicLabels
 from modules.students.models import StudentEnrollment, StudentProfile
 
@@ -141,6 +144,20 @@ async def resolve_targets(
             )
         year_id = target.year_id or await _student_year(session, student.id)
         return [Target("student", student.id, year_id)]
+
+    if target.type == "staff":
+        assert target.staff_id is not None  # guarded by the request schema
+        staff = (
+            await session.execute(
+                select(StaffProfile).where(
+                    StaffProfile.id == target.staff_id,
+                    StaffProfile.deleted_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        if staff is None:
+            raise NotFound("The staff member does not exist", message_key="staff.error.not_found")
+        return [Target("staff", staff.id, None)]
 
     if target.type == "section":
         assert target.section_id is not None
@@ -281,6 +298,7 @@ async def create_batch(
         level_id=payload.target.level_id,
         section_id=payload.target.section_id,
         student_id=payload.target.student_id,
+        staff_id=payload.target.staff_id,
         combine=payload.combine,
         count=len(targets),
         approval_required=needs_approval,
@@ -527,7 +545,10 @@ async def _issue_one(
     settings: Settings,
 ) -> tuple[IssuedDocument, bytes, str]:
     """Render, number, store and audit one document. Commits on success."""
-    data, recipient_name = await student_context(session, principal, target.recipient_id)
+    if target.recipient_type == "staff":
+        data, recipient_name = await staff_context(session, principal, target.recipient_id)
+    else:
+        data, recipient_name = await student_context(session, principal, target.recipient_id)
     data = {**data, **await common_context(session)}
     data["person"] = {"full_name": recipient_name}
     if "school" in data:
@@ -737,6 +758,11 @@ async def _batch_targets(session: AsyncSession, batch: DocumentBatch) -> list[Ta
             Target("student", batch.student_id, batch.year_id)
             for batch.student_id in ([batch.student_id] if batch.student_id else [])
         ]
+    if batch.mode == "staff":
+        return [
+            Target("staff", batch.staff_id, None)
+            for batch.staff_id in ([batch.staff_id] if batch.staff_id else [])
+        ]
     return await _enrollment_targets(
         session,
         batch.year_id,
@@ -870,6 +896,58 @@ async def search_generation_students(
     return GenerationStudentList(items=items)
 
 
+def _localized(english: str, amharic: str | None, locale: str) -> str:
+    return amharic if locale == "am" and amharic else english
+
+
+async def search_generation_staff(
+    session: AsyncSession,
+    *,
+    q: str | None,
+    limit: int,
+    locale: str,
+) -> GenerationStaffList:
+    """A lightweight staff picker for experience letters and staff certificates."""
+    stmt = (
+        select(StaffProfile, Person)
+        .join(Person, Person.id == StaffProfile.person_id)
+        .where(
+            StaffProfile.deleted_at.is_(None),
+            Person.deleted_at.is_(None),
+        )
+        .order_by(StaffProfile.staff_number)
+    )
+    if q and q.strip():
+        terms = normalize_name(q).split()
+        matches = [StaffProfile.staff_number.ilike(f"%{q.strip()}%")]
+        if terms:
+            matches.append(and_(*[Person.search_name.like(f"%{term}%") for term in terms]))
+        stmt = stmt.where(or_(*matches))
+    rows = (await session.execute(stmt.limit(max(1, min(limit, 50))))).all()
+    items: list[GenerationStaffOut] = []
+    for profile, person in rows:
+        position_name = None
+        department_name = None
+        if profile.position_id is not None:
+            position = await session.get(StaffPosition, profile.position_id)
+            if position is not None:
+                position_name = _localized(position.name, position.name_am, locale)
+        if profile.department_id is not None:
+            department = await session.get(StaffDepartment, profile.department_id)
+            if department is not None:
+                department_name = _localized(department.name, department.name_am, locale)
+        items.append(
+            GenerationStaffOut(
+                id=str(profile.id),
+                staff_number=profile.staff_number,
+                full_name=full_name(person, locale),
+                position_name=position_name,
+                department_name=department_name,
+            )
+        )
+    return GenerationStaffList(items=items)
+
+
 def _batch_result(batch: DocumentBatch) -> dict[str, Any]:
     return {
         "batch_id": str(batch.id),
@@ -916,6 +994,7 @@ __all__ = [
     "generation_targets",
     "reject_batch",
     "resolve_targets",
+    "search_generation_staff",
     "search_generation_students",
     "system_principal",
 ]

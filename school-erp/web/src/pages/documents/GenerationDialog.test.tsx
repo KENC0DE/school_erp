@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fieldsResponse,
   generationBatch,
+  generationStaff,
   generationStudents,
   generationTargets,
   json,
@@ -121,6 +122,55 @@ describe("document generation dialog", () => {
       "This certificate batch is waiting for approval before anything is issued.",
     );
     expect(screen.getByText("Awaiting approval")).toBeInTheDocument();
+  });
+
+  it("generates an experience letter for a staff member", async () => {
+    const posts: MockRequest[] = [];
+    stubDocuments(
+      ["*"],
+      handler((request) => {
+        if (request.url.includes("/api/v1/documents/templates?")) {
+          return json({
+            items: [
+              template({
+                key: "experience-letter",
+                name: "Experience letter",
+                doc_type: "experience_letter",
+              }),
+            ],
+            total: 1,
+          });
+        }
+        if (request.url.includes("/api/v1/documents/generation/staff?")) {
+          return json(generationStaff());
+        }
+        if (request.method === "POST" && request.url.endsWith("/api/v1/documents/generation")) {
+          posts.push(request);
+          return json(
+            { job_id: "job-1", batch_id: "batch-1", count: 1, status: "queued" },
+            202,
+          );
+        }
+        return null;
+      }),
+    );
+    renderDocuments();
+
+    fireEvent.click(await screen.findByTestId("template-generate-experience-letter"));
+    expect(await screen.findByTestId("generation-target-type")).toHaveValue("staff");
+
+    const member = await screen.findByTestId("generation-staff");
+    await waitFor(() => expect(member.querySelectorAll("option")).toHaveLength(2));
+    expect(member).toHaveTextContent("STF-2026-0001 — Solomon Tesfaye Gebre");
+    fireEvent.change(member, { target: { value: "staff-1" } });
+    fireEvent.click(screen.getByTestId("generation-start"));
+
+    await waitFor(() => expect(posts).toHaveLength(1));
+    expect(posts[0].body).toEqual({
+      template_id: "tpl-1",
+      combine: false,
+      target: { type: "staff", staff_id: "staff-1" },
+    });
   });
 
   it("offers section and grade targets from the current year", async () => {

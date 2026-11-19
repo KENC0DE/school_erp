@@ -376,5 +376,14 @@
   "generation.status.rejected": "ተገልብጧል",
   "generation.awaiting_approval": "ይህ የሰርተፊኬት ስብስብ ከመሰጠቱ በፊት ማረጋገጫ ይጠብቃል።",
   "approvals.requester": "የጠየቀው",
-  "approvals.documents": "ሰነዶች"
+  "approvals.documents": "ሰነዶች",
+  "starter.transcript.name": "የትምህርት ማስታወሻ",
+  "starter.transcript.description": "የዓመቱ የትምህርት ውጤቶች ከድምር፣ ከአማካይ፣ ከደረጃ እና ከመዝጋቢ ፊርማ ጋር።",
+  "generation.target_staff": "ሠራተኛ",
+  "generation.staff_search": "ሠራተኛ ፈልግ",
+  "generation.staff_placeholder": "ስም ወይም የሠራተኛ ቁጥር ያስገቡ",
+  "generation.staff": "ሠራተኛ",
+  "generation.choose_staff": "ሠራተኛ ይምረጡ",
+  "generation.loading_staff": "ሠራተኞች በመጫን ላይ…",
+  "generation.no_staff": "ከዚህ ፍለጋ ጋር የሚዛመድ ሠራተኛ የለም።"
 }

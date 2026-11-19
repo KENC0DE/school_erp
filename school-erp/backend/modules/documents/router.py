@@ -36,6 +36,7 @@ from modules.documents.generation import (
     create_batch,
     generation_targets,
     reject_batch,
+    search_generation_staff,
     search_generation_students,
 )
 from modules.documents.issued import (
@@ -67,6 +68,7 @@ from modules.documents.schemas import (
     FileLinkOut,
     GenerationBatchList,
     GenerationBatchOut,
+    GenerationStaffList,
     GenerationStudentList,
     GenerationTargetsOut,
     IssuedDocumentDetail,
@@ -379,6 +381,21 @@ async def generation_students_route(
     session: AsyncSession = Depends(db_session),
 ) -> GenerationStudentList:
     return await search_generation_students(
+        session,
+        q=q,
+        limit=limit,
+        locale=principal.locale,
+    )
+
+
+@router.get("/generation/staff", response_model=GenerationStaffList)
+async def generation_staff_route(
+    q: str | None = Query(None, max_length=120),
+    limit: int = Query(20, ge=1, le=50),
+    principal: Principal = Depends(require(GENERATE)),
+    session: AsyncSession = Depends(db_session),
+) -> GenerationStaffList:
+    return await search_generation_staff(
         session,
         q=q,
         limit=limit,

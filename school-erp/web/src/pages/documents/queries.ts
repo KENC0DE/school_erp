@@ -8,6 +8,7 @@ import type {
   FieldsResponse,
   GenerationBatch,
   GenerationBatchList,
+  GenerationStaffList,
   GenerationStudentList,
   GenerationTargets,
   IssuedDocumentList,
@@ -111,6 +112,20 @@ export function useGenerationStudents(query: string, enabled: boolean) {
     queryFn: () =>
       api.get<GenerationStudentList>(
         `/api/v1/documents/generation/students?${params.toString()}`,
+      ),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+export function useGenerationStaff(query: string, enabled: boolean) {
+  const params = new URLSearchParams({ limit: "25" });
+  if (query.trim()) params.set("q", query.trim());
+  return useQuery({
+    queryKey: ["documents", "generation", "staff", query],
+    queryFn: () =>
+      api.get<GenerationStaffList>(
+        `/api/v1/documents/generation/staff?${params.toString()}`,
       ),
     enabled,
     staleTime: 30_000,

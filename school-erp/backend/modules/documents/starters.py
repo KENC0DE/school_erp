@@ -7,8 +7,9 @@ the library, and sends the translated name it showed back when it creates the
 template, so the backend never invents user-facing text.
 
 The layouts use the field vocabulary the enabled modules offer. A module that is
-not enabled simply renders those tokens as empty text until it is turned on
-(P5-11 connects the remaining modules).
+not enabled simply renders those tokens as empty text. P5-11 registers the
+staff fields, so experience letters bind live employment data; fee fields wait
+for the fees module in Phase 7.
 """
 
 from __future__ import annotations
@@ -361,6 +362,156 @@ def _report_card() -> dict[str, Any]:
             ),
         ],
         name="Report card",
+    )
+
+
+def _transcript() -> dict[str, Any]:
+    return _layout(
+        {"size": "A4", "margins_mm": {"top": 14, "right": 14, "bottom": 14, "left": 14}},
+        [
+            _shape("band", "rect", (0, 0, 210, 24), fill=BRAND),
+            _text(
+                "school",
+                "{{school.name}}",
+                (14, 5, 182, 9),
+                size=15,
+                family=ETHIOPIC,
+                bold=True,
+                align="center",
+                colour="#ffffff",
+            ),
+            _text(
+                "heading",
+                "Academic Transcript",
+                (14, 15, 182, 6),
+                size=9,
+                align="center",
+                colour="#ffffff",
+                spacing=1.2,
+            ),
+            _text(
+                "student",
+                "{{student.full_name}}",
+                (14, 31, 120, 9),
+                size=15,
+                family=ETHIOPIC,
+                bold=True,
+            ),
+            _text(
+                "identity",
+                "Student number {{student.student_number}} · Grade {{student.grade}} — "
+                "Section {{student.section}}",
+                (14, 41, 150, 6),
+                size=9,
+                family=ETHIOPIC,
+            ),
+            _text(
+                "year",
+                "Academic year {{student.academic_year}}",
+                (14, 48, 150, 6),
+                size=9,
+                family=ETHIOPIC,
+            ),
+            _text(
+                "grid",
+                "Subject",
+                (14, 62, 60, 5),
+                size=8,
+                bold=True,
+                colour="#6b6b6b",
+                condition={"op": "exists", "field": "student.marks.subjects"},
+            ),
+            {
+                "id": "results",
+                "type": "table",
+                "rect": _rect(14, 68, 182, 120),
+                "table": {
+                    "source": "student.marks.subjects",
+                    "row_height_mm": 7,
+                    "columns": [
+                        {"key": "subject", "label": "Subject", "binding": "subject", "width_mm": 56},
+                        {
+                            "key": "total",
+                            "label": "Total",
+                            "binding": "total",
+                            "width_mm": 22,
+                            "align": "right",
+                            "format": {"number_decimals": 2},
+                        },
+                        {
+                            "key": "out_of",
+                            "label": "Out of",
+                            "binding": "out_of",
+                            "width_mm": 22,
+                            "align": "right",
+                            "format": {"number_decimals": 2},
+                        },
+                        {
+                            "key": "percent",
+                            "label": "Percent",
+                            "binding": "percent",
+                            "width_mm": 24,
+                            "align": "right",
+                            "format": {"number_decimals": 2},
+                        },
+                        {
+                            "key": "grade",
+                            "label": "Grade",
+                            "binding": "grade",
+                            "width_mm": 18,
+                            "align": "center",
+                        },
+                        {"key": "remark", "label": "Remark", "binding": "remark", "width_mm": 40},
+                    ],
+                    "summaries": [
+                        {"column": "total", "aggregate": "sum", "label": "Total"},
+                        {"column": "percent", "aggregate": "average", "label": "Average"},
+                    ],
+                },
+                "style": {"font_family": ETHIOPIC, "font_size_pt": 9},
+            },
+            _text(
+                "year_total",
+                "Year total {{student.marks.year.total}} / {{student.marks.year.out_of}}",
+                (14, 194, 120, 7),
+                size=10,
+                family=ETHIOPIC,
+            ),
+            _text(
+                "year_grade",
+                "{{student.marks.year.grade}}",
+                (150, 190, 46, 14),
+                size=20,
+                bold=True,
+                align="center",
+            ),
+            _text(
+                "rank",
+                "Rank {{student.rank}} of {{student.rank_size}}",
+                (14, 204, 120, 6),
+                size=9,
+                family=ETHIOPIC,
+            ),
+            _line("signature_line", 120, 252, 70, width=0.3, colour="#9a9a9a"),
+            _text("signature", "Registrar", (120, 254, 70, 5), size=8, align="center"),
+            _text(
+                "issued",
+                "Issued {{date.issued}}",
+                (14, 272, 120, 6),
+                size=8,
+                family=ETHIOPIC,
+                format={"calendar": "both"},
+            ),
+            _text(
+                "issuer",
+                "{{document.number}}",
+                (120, 272, 70, 5),
+                size=8,
+                align="right",
+                colour="#777777",
+            ),
+        ],
+        name="Academic transcript",
     )
 
 
@@ -752,6 +903,13 @@ STARTERS: tuple[Starter, ...] = (
         name_key="documents.starter.report_card.name",
         description_key="documents.starter.report_card.description",
         layout=_report_card(),
+    ),
+    Starter(
+        key="transcript",
+        doc_type="transcript",
+        name_key="documents.starter.transcript.name",
+        description_key="documents.starter.transcript.description",
+        layout=_transcript(),
     ),
     Starter(
         key="certificate_completion",

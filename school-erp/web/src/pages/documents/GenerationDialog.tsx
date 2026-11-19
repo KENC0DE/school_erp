@@ -5,15 +5,30 @@ import { Link } from "react-router-dom";
 
 import { api } from "../../lib/api";
 import { useI18n } from "../../providers/I18nProvider";
-import { useBatch, useGenerationStudents, useGenerationTargets } from "./queries";
+import { useBatch, useGenerationStaff, useGenerationStudents, useGenerationTargets } from "./queries";
 import type {
   GenerationStarted,
   GenerationTargetType,
   TemplateSummary,
 } from "./types";
 
+const STAFF_DOC_TYPES = new Set([
+  "experience_letter",
+  "certificate_completion",
+  "certificate_appreciation",
+  "custom",
+]);
+
 function published(templates: TemplateSummary[]): TemplateSummary[] {
   return templates.filter((template) => Boolean(template.current_version_id));
+}
+
+function supportsStaff(template: TemplateSummary | undefined): boolean {
+  return Boolean(template && STAFF_DOC_TYPES.has(template.doc_type));
+}
+
+function defaultTarget(template: TemplateSummary | undefined): GenerationTargetType {
+  return template?.doc_type === "experience_letter" ? "staff" : "student";
 }
 
 export function GenerationDialog({
@@ -33,6 +48,8 @@ export function GenerationDialog({
   const [targetType, setTargetType] = useState<GenerationTargetType>("student");
   const [studentSearch, setStudentSearch] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [staffSearch, setStaffSearch] = useState("");
+  const [staffId, setStaffId] = useState("");
   const [sectionId, setSectionId] = useState("");
   const [levelId, setLevelId] = useState("");
   const [combine, setCombine] = useState(false);
@@ -42,14 +59,21 @@ export function GenerationDialog({
 
   const targets = useGenerationTargets(open);
   const students = useGenerationStudents(studentSearch, open && targetType === "student");
+  const staff = useGenerationStaff(staffSearch, open && targetType === "staff");
   const batch = useBatch(started?.batch_id ?? null);
+  const selected = choices.find((choice) => choice.id === templateId);
+  const staffAllowed = supportsStaff(selected);
 
   useEffect(() => {
     if (!open) return;
-    setTemplateId(initialTemplateId ?? choices[0]?.id ?? "");
-    setTargetType("student");
+    const initial =
+      choices.find((choice) => choice.id === initialTemplateId) ?? choices[0];
+    setTemplateId(initial?.id ?? "");
+    setTargetType(defaultTarget(initial));
     setStudentSearch("");
     setStudentId("");
+    setStaffSearch("");
+    setStaffId("");
     setSectionId("");
     setLevelId("");
     setCombine(false);
@@ -72,9 +96,11 @@ export function GenerationDialog({
       !busy &&
       (targetType === "student"
         ? studentId
-        : targetType === "section"
-          ? sectionId
-          : levelId),
+        : targetType === "staff"
+          ? staffId
+          : targetType === "section"
+            ? sectionId
+            : levelId),
   );
 
   const submit = async () => {
@@ -84,17 +110,19 @@ export function GenerationDialog({
       const target =
         targetType === "student"
           ? { type: "student" as const, student_id: studentId }
-          : targetType === "section"
-            ? {
-                type: "section" as const,
-                section_id: sectionId,
-                year_id: targets.data?.year?.id ?? null,
-              }
-            : {
-                type: "level" as const,
-                level_id: levelId,
-                year_id: targets.data?.year?.id ?? null,
-              };
+          : targetType === "staff"
+            ? { type: "staff" as const, staff_id: staffId }
+            : targetType === "section"
+              ? {
+                  type: "section" as const,
+                  section_id: sectionId,
+                  year_id: targets.data?.year?.id ?? null,
+                }
+              : {
+                  type: "level" as const,
+                  level_id: levelId,
+                  year_id: targets.data?.year?.id ?? null,
+                };
       const result = await api.post<GenerationStarted>("/api/v1/documents/generation", {
         template_id: templateId,
         combine,
@@ -219,7 +247,15 @@ export function GenerationDialog({
               <Select
                 value={templateId}
                 data-testid="generation-template"
-                onChange={(event) => setTemplateId(event.target.value)}
+                onChange={(event) => {
+                  const next = choices.find((choice) => choice.id === event.target.value);
+                  setTemplateId(event.target.value);
+                  if (next?.doc_type === "experience_letter") {
+                    setTargetType("staff");
+                  } else if (!supportsStaff(next) && targetType === "staff") {
+                    setTargetType("student");
+                  }
+                }}
               >
                 {choices.map((template) => (
                   <option key={template.id} value={template.id}>
@@ -235,6 +271,9 @@ export function GenerationDialog({
                 onChange={(event) => setTargetType(event.target.value as GenerationTargetType)}
               >
                 <option value="student">{t("documents.generation.target_student")}</option>
+                {staffAllowed ? (
+                  <option value="staff">{t("documents.generation.target_staff")}</option>
+                ) : null}
                 <option value="section">{t("documents.generation.target_section")}</option>
                 <option value="level">{t("documents.generation.target_level")}</option>
               </Select>
@@ -269,6 +308,37 @@ export function GenerationDialog({
                   <p className="ui-help">{t("documents.generation.loading_students")}</p>
                 ) : (students.data?.items.length ?? 0) === 0 ? (
                   <p className="ui-help">{t("documents.generation.no_students")}</p>
+                ) : null}
+              </>
+            ) : targetType === "staff" ? (
+              <>
+                <Field label={t("documents.generation.staff_search")}>
+                  <Input
+                    value={staffSearch}
+                    onChange={(event) => setStaffSearch(event.target.value)}
+                    placeholder={t("documents.generation.staff_placeholder")}
+                    data-testid="generation-staff-search"
+                  />
+                </Field>
+                <Field label={t("documents.generation.staff")} required>
+                  <Select
+                    value={staffId}
+                    data-testid="generation-staff"
+                    onChange={(event) => setStaffId(event.target.value)}
+                  >
+                    <option value="">{t("documents.generation.choose_staff")}</option>
+                    {(staff.data?.items ?? []).map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.staff_number} — {member.full_name}
+                        {member.position_name ? ` (${member.position_name})` : ""}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                {staff.isPending ? (
+                  <p className="ui-help">{t("documents.generation.loading_staff")}</p>
+                ) : (staff.data?.items.length ?? 0) === 0 ? (
+                  <p className="ui-help">{t("documents.generation.no_staff")}</p>
                 ) : null}
               </>
             ) : targetType === "section" ? (

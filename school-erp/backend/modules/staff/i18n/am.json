@@ -289,5 +289,19 @@
   "attendance.status.leave": "በፈቃድ ላይ",
   "error.attendance_staff_not_found": "ሠራተኛው አልተገኘም",
   "error.attendance_not_employed": "መገኘት የሚመዘገበው ለተቀጠሩ ሠራተኞች ብቻ ነው",
-  "error.attendance_range": "የመጨረሻው ቀን ከመጀመሪያው ቀን በፊት መሆን የለበትም"
+  "error.attendance_range": "የመጨረሻው ቀን ከመጀመሪያው ቀን በፊት መሆን የለበትም",
+  "field.full_name": "ሙሉ ስም",
+  "field.short_name": "አጭር ስም",
+  "field.first_name": "የመጀመሪያ ስም",
+  "field.middle_name": "የአባት ስም",
+  "field.last_name": "የአያት ስም",
+  "field.staff_number": "የሠራተኛ ቁጥር",
+  "field.status": "ሁኔታ",
+  "field.position": "የሥራ መደብ",
+  "field.department": "ክፍል",
+  "field.start_date": "የሥራ መጀመሪያ ቀን",
+  "field.end_date": "የሥራ ማብቂያ ቀን",
+  "field.notes": "ማስታወሻ",
+  "field.photo": "ፎቶ",
+  "field.signature": "ፊርማ"
 }

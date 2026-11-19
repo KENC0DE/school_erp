@@ -289,5 +289,19 @@
   "attendance.status.leave": "On leave",
   "error.attendance_staff_not_found": "The staff member does not exist",
   "error.attendance_not_employed": "Attendance can only be recorded for employed staff",
-  "error.attendance_range": "The end date must not be before the start date"
+  "error.attendance_range": "The end date must not be before the start date",
+  "field.full_name": "Full name",
+  "field.short_name": "Short name",
+  "field.first_name": "First name",
+  "field.middle_name": "Father's name",
+  "field.last_name": "Grandfather's name",
+  "field.staff_number": "Staff number",
+  "field.status": "Status",
+  "field.position": "Position",
+  "field.department": "Department",
+  "field.start_date": "Employment start date",
+  "field.end_date": "Employment end date",
+  "field.notes": "Notes",
+  "field.photo": "Photo",
+  "field.signature": "Signature"
 }

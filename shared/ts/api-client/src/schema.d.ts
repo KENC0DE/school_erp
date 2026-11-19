@@ -2257,6 +2257,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/documents/generation/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Generation Staff Route */
+        get: operations["generation_staff_route_api_v1_documents_generation_staff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/documents/generation/students": {
         parameters: {
             query?: never;
@@ -6628,6 +6645,24 @@ export interface components {
             /** Year Id */
             year_id: string;
         };
+        /** GenerationStaffList */
+        GenerationStaffList: {
+            /** Items */
+            items?: components["schemas"]["GenerationStaffOut"][];
+        };
+        /** GenerationStaffOut */
+        GenerationStaffOut: {
+            /** Department Name */
+            department_name?: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Id */
+            id: string;
+            /** Position Name */
+            position_name?: string | null;
+            /** Staff Number */
+            staff_number: string;
+        };
         /** GenerationStudentList */
         GenerationStudentList: {
             /** Items */
@@ -6648,20 +6683,22 @@ export interface components {
         };
         /**
          * GenerationTarget
-         * @description Who a batch is for: one student, one section or a whole grade.
+         * @description Who a batch is for: one student, one staff member, a section or a grade.
          */
         GenerationTarget: {
             /** Level Id */
             level_id?: string | null;
             /** Section Id */
             section_id?: string | null;
+            /** Staff Id */
+            staff_id?: string | null;
             /** Student Id */
             student_id?: string | null;
             /**
              * Type
              * @enum {string}
              */
-            type: "student" | "section" | "level";
+            type: "student" | "staff" | "section" | "level";
             /** Year Id */
             year_id?: string | null;
         };
@@ -17435,6 +17472,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GenerationBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generation_staff_route_api_v1_documents_generation_staff_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationStaffList"];
                 };
             };
             /** @description Validation Error */

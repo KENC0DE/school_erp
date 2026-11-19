@@ -20,9 +20,11 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any
 
+from app.errors import NotFound
 from core.auth.principal import Principal
 from core.documents.registry import RegisteredField
 from core.documents.render import RenderContext, layout_to_html, page_trim_mm
+from core.people.models import Person, full_name
 from core.settings.core_schema import CoreSettings
 from core.settings.service import load_model
 from sqlalchemy import func, select
@@ -33,6 +35,7 @@ from modules.assessment.results import list_snapshots
 from modules.assessment.schemas import ResultSnapshotQuery
 from modules.attendance.models import AttendanceRecord, AttendanceSession
 from modules.documents.service import parse_layout
+from modules.staff.models import StaffDepartment, StaffPosition, StaffProfile
 from modules.students import service as student_service
 
 
@@ -297,6 +300,62 @@ async def student_context(
     return data, full_english or detail.student_number
 
 
+async def staff_context(
+    session: AsyncSession,
+    principal: Principal,
+    staff_id: uuid.UUID,
+) -> tuple[dict[str, Any], str]:
+    """Real data for one staff member, for experience letters and certificates."""
+    profile = (
+        await session.execute(
+            select(StaffProfile).where(
+                StaffProfile.id == staff_id,
+                StaffProfile.deleted_at.is_(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if profile is None:
+        raise NotFound("The staff member does not exist", message_key="staff.error.not_found")
+    person = (
+        await session.execute(
+            select(Person).where(Person.id == profile.person_id, Person.deleted_at.is_(None))
+        )
+    ).scalar_one_or_none()
+    if person is None:
+        raise NotFound("The staff member does not exist", message_key="staff.error.not_found")
+
+    full_english, full_amharic, short_english, short_amharic = _names(person)
+    data: dict[str, Any] = {}
+    _assign(data, "staff.full_name", full_english)
+    _assign(data, "staff.full_name_am", full_amharic or None)
+    _assign(data, "staff.short_name", short_english)
+    _assign(data, "staff.short_name_am", short_amharic or None)
+    _assign(data, "staff.first_name", person.given_name_en)
+    _assign(data, "staff.first_name_am", person.given_name_am or None)
+    _assign(data, "staff.middle_name", person.father_name_en)
+    _assign(data, "staff.middle_name_am", person.father_name_am or None)
+    _assign(data, "staff.last_name", person.grandfather_name_en)
+    _assign(data, "staff.last_name_am", person.grandfather_name_am or None)
+    _assign(data, "staff.staff_number", profile.staff_number)
+    _assign(data, "staff.status", profile.status)
+    _assign(data, "staff.notes", profile.notes)
+    _assign(data, "staff.photo", person.photo_file_id)
+    _assign(data, "staff.start_date", profile.hire_date.isoformat() if profile.hire_date else None)
+    _assign(data, "staff.end_date", profile.end_date.isoformat() if profile.end_date else None)
+
+    if profile.position_id is not None:
+        position = await session.get(StaffPosition, profile.position_id)
+        if position is not None:
+            _assign(data, "staff.position", position.name)
+            _assign(data, "staff.position_am", position.name_am or None)
+    if profile.department_id is not None:
+        department = await session.get(StaffDepartment, profile.department_id)
+        if department is not None:
+            _assign(data, "staff.department", department.name)
+            _assign(data, "staff.department_am", department.name_am or None)
+    return data, full_name(person, principal.locale) or profile.staff_number
+
+
 async def _next_level_name(session: AsyncSession, level: GradeLevel) -> str | None:
     row = (
         await session.execute(
@@ -335,5 +394,6 @@ __all__ = [
     "common_context",
     "render_preview",
     "sample_context",
+    "staff_context",
     "student_context",
 ]

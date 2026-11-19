@@ -376,5 +376,14 @@
   "generation.status.rejected": "Rejected",
   "generation.awaiting_approval": "This certificate batch is waiting for approval before anything is issued.",
   "approvals.requester": "Requested by",
-  "approvals.documents": "Documents"
+  "approvals.documents": "Documents",
+  "starter.transcript.name": "Academic transcript",
+  "starter.transcript.description": "Year-long subject results with totals, average, grade and a registrar signature.",
+  "generation.target_staff": "Staff member",
+  "generation.staff_search": "Search staff",
+  "generation.staff_placeholder": "Type a name or staff number",
+  "generation.staff": "Staff member",
+  "generation.choose_staff": "Choose a staff member",
+  "generation.loading_staff": "Loading staff…",
+  "generation.no_staff": "No staff member matches that search."
 }
