@@ -2284,3 +2284,39 @@ and recorded here (date, decision, reason).
   then polls the API until all thirty raw scores are stored. The whole backend
   suite ran immediately because the RBAC defaults changed.
 
+
+## 2026-11-19 — P4-13 mobile mark entry
+
+- **Mark entry gets its own assessment tab instead of reusing attendance.** The
+  list screen derives year, section, subject and term from the assessments the
+  signed-in teacher may read, so every filter combination has a result. Row
+  badges show how many marks are already entered.
+- **The outbox is keyed by `(assessment, student)`.** Repeated edits of the same
+  mark coalesce into one queued entry, and a replay sends one PUT per row and
+  removes an entry only after the server accepted it. Repeating "Sync now" is
+  therefore safe: a student can never receive a second score from a replay. The
+  queue lives in the per-school cache, so two verified schools never share it.
+- **An edit saves directly when it can and queues only when it cannot.** A
+  network failure queues the row and marks it pending; a 409 queues it as a
+  conflict. Other errors stay visible on the row and are not silently queued.
+- **Conflicts are a teacher decision, never an automatic overwrite.** The
+  conflict card shows the queued value next to the row and offers "Keep mine"
+  (requeue with the fresh `row_version` read from the server) and "Use server
+  value" (drop the queued entry and reload the row). Neither choice writes a
+  value the teacher did not choose.
+- **The last good sheet is cached for offline entry.** Opening an assessment
+  offline loads the cached summary, sheet, windows and submission, so a teacher
+  can start entering without a connection; the cache is read-only and every
+  mark still goes through the outbox.
+- **Card mode is the default and list mode is compact.** Both use the decimal
+  keypad and submit-to-advance (Enter saves the row and focuses the next one);
+  list mode keeps the short P/A/E/X/– status keys, card mode shows the full
+  translated labels. The additive `Field` `inputRef` prop is what lets the
+  screen move focus without duplicating the input primitive.
+- **The converted preview uses the backend's arithmetic.** Marks are parsed to
+  integer micro-units and rounded with the same scale/precision rules as the
+  web grid and API, so the mobile preview matches the saved converted value.
+- **Read-only follows the same precedence as the web grid:** permission,
+  archived assessment, non-draft submission (submitted/approved/published/
+  locked), then a closed marking window. A read-only screen disables the input
+  and status buttons but still shows the marks.

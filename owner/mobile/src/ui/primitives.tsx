@@ -1,5 +1,5 @@
 import type { ReactNativeTheme } from "@erp/tokens";
-import type { ReactNode } from "react";
+import type { ComponentRef, ReactNode, Ref } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -100,8 +100,15 @@ export function Field({
   label,
   hint,
   required = false,
+  inputRef,
   ...props
-}: TextInputProps & { colors: Palette; label: string; hint?: string; required?: boolean }) {
+}: TextInputProps & {
+  colors: Palette;
+  label: string;
+  hint?: string;
+  required?: boolean;
+  inputRef?: Ref<ComponentRef<typeof TextInput>>;
+}) {
   return (
     <View style={styles.field}>
       <Text style={[styles.label, { color: colors.foreground }]}>
@@ -114,6 +121,7 @@ export function Field({
       </Text>
       <TextInput
         {...props}
+        ref={inputRef}
         accessibilityLabel={props.accessibilityLabel ?? label}
         placeholderTextColor={colors.mutedForeground}
         style={[
