@@ -178,7 +178,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 
 ## Phase 5 — Document Studio
 
-- [ ] P5-01 — Layout JSON schema
+- [x] P5-01 — Layout JSON schema
 - [ ] P5-02 — Fields registry
 - [ ] P5-03 — Renderer
 - [ ] P5-04 — Template models

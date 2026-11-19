@@ -2486,3 +2486,38 @@ figure includes the commit and the audit row):
   network round-trips the in-process SQLite benchmark does not show; the jobs
   UI still reports elapsed time per run so the owner can compare on real
   hardware.
+
+## 2026-11-19 — P5-01 document layout schema
+
+- **One authoring source, two validators.** The layout is defined once in Zod
+  (`shared/ts/documents/src/layout.ts`). `scripts/gen-schema.ts` exports the
+  committed `shared/schema/document-layout.v1.json`, the Pydantic models in
+  `core/documents/layout.py` mirror it, and both suites validate the same
+  `shared/schema/document-layout.fixtures.json` corpus. The TypeScript test also
+  fails when the committed JSON is stale, so editing the Zod file without
+  regenerating cannot pass CI.
+- **Geometry is JSON numbers in millimetres.** A layout is drawing data, like a
+  canvas coordinate, not a monetary or mark value; exact decimal arithmetic
+  buys nothing and would make the editor awkward. Money and marks still arrive
+  only through bound fields and are formatted by the renderer, never stored as
+  layout literals.
+- **Conditions are recursive and serialise through `$defs`.** Zod uses
+  `z.lazy`; `z.toJSONSchema` emits the recursive union once as `$defs/__schema0`
+  and references it. Pydantic cannot use a discriminated union because the
+  group forms have no common tag, so `Condition` is one closed model with an
+  exact-shape validator that accepts and rejects the same documents.
+- **The version is a literal, not a hint.** `version: 1` is required and the
+  `$id` names the same version. A future format is a new file and model
+  (`v2`) chosen by the template row; v1 layouts keep parsing unchanged, which
+  keeps old templates renderable.
+- **Strict objects reject unknown keys and explicit nulls.** A typo in the
+  canvas or an importer fails at save time instead of silently dropping a
+  property. Optional properties are absent, never `null`.
+- **Refinements JSON Schema cannot express live in both validators.** Unique
+  element ids, the custom-page dimension rule, unique table column keys and
+  summaries that name a real column are enforced by `superRefine` in Zod and by
+  matching `model_validator`s in Pydantic. The fixture corpus contains a case
+  for each, so a one-sided change fails the other suite.
+- **Fonts are named or uploaded.** A bundled family is identified by name with
+  an optional fallback; an uploaded font carries the `file_id` of a stored file
+  as a UUID. The renderer resolves both, and no layout embeds font bytes.

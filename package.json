@@ -12,6 +12,7 @@
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",
     "gen:api": "bash scripts/gen-api.sh",
+    "gen:documents": "node shared/ts/documents/scripts/gen-schema.ts --write",
     "format": "prettier --write ."
   },
   "devDependencies": {

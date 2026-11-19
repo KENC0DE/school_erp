@@ -1,0 +1,552 @@
+{
+  "$comment": "Shared conformance corpus for the version 1 document layout. The TypeScript (Zod) and Python (Pydantic) suites both validate this file, so a schema change that only lands on one side fails here. 'valid' entries must parse and survive a round-trip; 'invalid' entries must be rejected.",
+  "valid": [
+    {
+      "name": "minimal A4 page",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" }
+      }
+    },
+    {
+      "name": "certificate with every element kind",
+      "layout": {
+        "version": 1,
+        "name": "Certificate of completion",
+        "page": {
+          "size": "A4",
+          "orientation": "landscape",
+          "margins_mm": { "top": 15, "right": 15, "bottom": 20, "left": 15 },
+          "bleed_mm": 3,
+          "background_colour": "#fdfaf3"
+        },
+        "fonts": [
+          { "family": "Noto Sans Ethiopic", "fallback": "Inter" },
+          {
+            "family": "Inter",
+            "file_id": "3f0e8f5e-2c2f-4d3c-9b0a-5b6f6b7c8d9e"
+          }
+        ],
+        "elements": [
+          {
+            "id": "title",
+            "type": "text",
+            "rect": { "x_mm": 15, "y_mm": 20, "w_mm": 267, "h_mm": 20 },
+            "z": 1,
+            "content": "Certificate of Completion",
+            "style": {
+              "font_family": "Noto Sans Ethiopic",
+              "font_size_pt": 28,
+              "bold": true
+            },
+            "align": "center",
+            "format": { "script": "both" }
+          },
+          {
+            "id": "student_name",
+            "type": "text",
+            "rect": { "x_mm": 15, "y_mm": 60, "w_mm": 267, "h_mm": 14 },
+            "content": "{{student.full_name}}",
+            "style": {
+              "font_family": "Noto Sans Ethiopic",
+              "font_size_pt": 22,
+              "italic": true
+            },
+            "align": "center",
+            "vertical_align": "middle"
+          },
+          {
+            "id": "promoted_note",
+            "type": "text",
+            "rect": { "x_mm": 15, "y_mm": 80, "w_mm": 267, "h_mm": 10 },
+            "content": "Promoted to {{student.next_grade}}",
+            "style": { "font_family": "Inter", "font_size_pt": 12 },
+            "align": "center",
+            "visible_when": {
+              "all": [
+                { "op": "eq", "field": "student.status", "value": "promoted" },
+                {
+                  "any": [
+                    { "op": "exists", "field": "student.rank" },
+                    { "op": "gte", "field": "student.total", "value": 50 }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "id": "photo",
+            "type": "image",
+            "rect": { "x_mm": 15, "y_mm": 15, "w_mm": 25, "h_mm": 30 },
+            "source": { "kind": "field", "value": "student.photo" },
+            "fit": "cover",
+            "alt": "Student photograph"
+          },
+          {
+            "id": "logo",
+            "type": "image",
+            "rect": { "x_mm": 247, "y_mm": 15, "w_mm": 35, "h_mm": 20 },
+            "source": { "kind": "url", "value": "https://erp.local/logo.png" },
+            "fit": "contain"
+          },
+          {
+            "id": "rule",
+            "type": "shape",
+            "rect": { "x_mm": 15, "y_mm": 52, "w_mm": 267, "h_mm": 0.5 },
+            "shape": "line",
+            "stroke": { "colour": "#8b5e3c", "width_mm": 0.6 }
+          },
+          {
+            "id": "marks",
+            "type": "table",
+            "rect": { "x_mm": 15, "y_mm": 110, "w_mm": 267, "h_mm": 80 },
+            "table": {
+              "source": "student.marks.subjects",
+              "row_height_mm": 7,
+              "columns": [
+                {
+                  "key": "subject",
+                  "label": "Subject",
+                  "binding": "subject",
+                  "width_mm": 120
+                },
+                {
+                  "key": "score",
+                  "label": "Score",
+                  "binding": "score",
+                  "width_mm": 40,
+                  "align": "right",
+                  "format": { "number_decimals": 2 }
+                },
+                {
+                  "key": "grade",
+                  "label": "Grade",
+                  "binding": "grade",
+                  "width_mm": 30,
+                  "align": "center"
+                }
+              ],
+              "summaries": [
+                { "column": "score", "aggregate": "sum", "label": "Total" },
+                {
+                  "column": "score",
+                  "aggregate": "average",
+                  "label": "Average"
+                },
+                { "column": "subject", "aggregate": "count", "label": "Subjects" }
+              ]
+            },
+            "style": { "font_family": "Inter", "font_size_pt": 10 }
+          },
+          {
+            "id": "verify_qr",
+            "type": "qr",
+            "rect": { "x_mm": 250, "y_mm": 200, "w_mm": 25, "h_mm": 25 },
+            "data": "https://erp.local/verify/{{document.code}}",
+            "error_correction": "H"
+          },
+          {
+            "id": "serial",
+            "type": "barcode",
+            "rect": { "x_mm": 15, "y_mm": 205, "w_mm": 60, "h_mm": 15 },
+            "data": "{{document.number}}",
+            "symbology": "code128",
+            "show_text": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "custom ID card page",
+      "layout": {
+        "version": 1,
+        "name": "Student ID card",
+        "page": {
+          "size": "custom",
+          "width_mm": 85.6,
+          "height_mm": 54,
+          "margins_mm": { "top": 4, "right": 4, "bottom": 4, "left": 4 },
+          "orientation": "landscape"
+        },
+        "elements": [
+          {
+            "id": "name",
+            "type": "text",
+            "rect": { "x_mm": 28, "y_mm": 6, "w_mm": 50, "h_mm": 8 },
+            "content": "{{student.full_name}}",
+            "style": { "font_family": "Inter", "font_size_pt": 11, "bold": true }
+          },
+          {
+            "id": "portrait",
+            "type": "image",
+            "rect": { "x_mm": 4, "y_mm": 6, "w_mm": 20, "h_mm": 24 },
+            "source": { "kind": "field", "value": "student.photo" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "report card with formatted fields",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4", "margins_mm": { "top": 18, "bottom": 18 } },
+        "elements": [
+          {
+            "id": "issued",
+            "type": "text",
+            "rect": { "x_mm": 20, "y_mm": 250, "w_mm": 120, "h_mm": 8 },
+            "content": "Issued {{date.issued}}",
+            "style": { "font_family": "Noto Sans Ethiopic", "font_size_pt": 10 },
+            "format": { "calendar": "ec", "date_pattern": "dd/MM/yyyy" }
+          },
+          {
+            "id": "balance",
+            "type": "text",
+            "rect": { "x_mm": 140, "y_mm": 250, "w_mm": 50, "h_mm": 8 },
+            "content": "{{fees.balance}}",
+            "style": { "font_family": "Inter", "font_size_pt": 10 },
+            "format": { "money": "etb", "number_decimals": 2 }
+          }
+        ]
+      }
+    },
+    {
+      "name": "letter page with bleed",
+      "layout": {
+        "version": 1,
+        "page": {
+          "size": "Letter",
+          "orientation": "landscape",
+          "bleed_mm": 5
+        },
+        "elements": [
+          {
+            "id": "body",
+            "type": "text",
+            "rect": { "x_mm": 20, "y_mm": 20, "w_mm": 239, "h_mm": 150 },
+            "content": "Dear {{student.guardian_name}},",
+            "style": {
+              "font_family": "Inter",
+              "font_size_pt": 12,
+              "line_height": 1.5,
+              "letter_spacing_pt": 0.2
+            },
+            "wrap": true
+          }
+        ]
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "unknown schema version",
+      "layout": { "version": 2, "page": { "size": "A4" } }
+    },
+    {
+      "name": "missing version",
+      "layout": { "page": { "size": "A4" } }
+    },
+    {
+      "name": "missing page",
+      "layout": { "version": 1 }
+    },
+    {
+      "name": "unknown element type",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "clip",
+            "type": "video",
+            "rect": { "x_mm": 0, "y_mm": 0, "w_mm": 10, "h_mm": 10 }
+          }
+        ]
+      }
+    },
+    {
+      "name": "custom page without dimensions",
+      "layout": { "version": 1, "page": { "size": "custom" } }
+    },
+    {
+      "name": "preset page with explicit dimensions",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4", "width_mm": 210, "height_mm": 297 }
+      }
+    },
+    {
+      "name": "duplicate element ids",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "same",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "One",
+            "style": { "font_family": "Inter", "font_size_pt": 12 }
+          },
+          {
+            "id": "same",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 30, "w_mm": 50, "h_mm": 10 },
+            "content": "Two",
+            "style": { "font_family": "Inter", "font_size_pt": 12 }
+          }
+        ]
+      }
+    },
+    {
+      "name": "table with duplicate column keys",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "table",
+            "type": "table",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 180, "h_mm": 60 },
+            "table": {
+              "source": "student.marks.subjects",
+              "columns": [
+                { "key": "score", "label": "Score", "binding": "score" },
+                { "key": "score", "label": "Again", "binding": "score" }
+              ]
+            },
+            "style": { "font_family": "Inter", "font_size_pt": 10 }
+          }
+        ]
+      }
+    },
+    {
+      "name": "table summary names an unknown column",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "table",
+            "type": "table",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 180, "h_mm": 60 },
+            "table": {
+              "source": "student.marks.subjects",
+              "columns": [{ "key": "score", "label": "Score", "binding": "score" }],
+              "summaries": [
+                { "column": "rank", "aggregate": "sum", "label": "Total" }
+              ]
+            },
+            "style": { "font_family": "Inter", "font_size_pt": 10 }
+          }
+        ]
+      }
+    },
+    {
+      "name": "table without columns",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "table",
+            "type": "table",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 180, "h_mm": 60 },
+            "table": { "source": "student.marks.subjects", "columns": [] },
+            "style": { "font_family": "Inter", "font_size_pt": 10 }
+          }
+        ]
+      }
+    },
+    {
+      "name": "negative width",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "box",
+            "type": "shape",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": -5, "h_mm": 10 },
+            "shape": "rect"
+          }
+        ]
+      }
+    },
+    {
+      "name": "short hex colour",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4", "background_colour": "#fff" }
+      }
+    },
+    {
+      "name": "element id with a space",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "bad id",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "Hello",
+            "style": { "font_family": "Inter", "font_size_pt": 12 }
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown property on an element",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "note",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "Hello",
+            "style": { "font_family": "Inter", "font_size_pt": 12 },
+            "colour": "#000000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown property on the layout",
+      "layout": { "version": 1, "page": { "size": "A4" }, "author": "someone" }
+    },
+    {
+      "name": "empty condition group",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "note",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "Hello",
+            "style": { "font_family": "Inter", "font_size_pt": 12 },
+            "visible_when": { "all": [] }
+          }
+        ]
+      }
+    },
+    {
+      "name": "condition mixing all and any",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "note",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "Hello",
+            "style": { "font_family": "Inter", "font_size_pt": 12 },
+            "visible_when": {
+              "all": [{ "op": "exists", "field": "student.rank" }],
+              "any": [{ "op": "empty", "field": "student.rank" }]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "comparison condition without a value",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "note",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "Hello",
+            "style": { "font_family": "Inter", "font_size_pt": 12 },
+            "visible_when": { "op": "eq", "field": "student.status" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown condition operator",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "note",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "Hello",
+            "style": { "font_family": "Inter", "font_size_pt": 12 },
+            "visible_when": { "op": "matches", "field": "student.status", "value": "x" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "unsupported page orientation",
+      "layout": { "version": 1, "page": { "size": "A4", "orientation": "diagonal" } }
+    },
+    {
+      "name": "money format other than ETB",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "amount",
+            "type": "text",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 50, "h_mm": 10 },
+            "content": "{{fees.balance}}",
+            "style": { "font_family": "Inter", "font_size_pt": 12 },
+            "format": { "money": "usd" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "font file id that is not a UUID",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "fonts": [{ "family": "Custom", "file_id": "not-a-uuid" }]
+      }
+    },
+    {
+      "name": "unknown QR error correction level",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "qr",
+            "type": "qr",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 20, "h_mm": 20 },
+            "data": "https://erp.local/verify/ABC",
+            "error_correction": "X"
+          }
+        ]
+      }
+    },
+    {
+      "name": "image source with an unknown kind",
+      "layout": {
+        "version": 1,
+        "page": { "size": "A4" },
+        "elements": [
+          {
+            "id": "photo",
+            "type": "image",
+            "rect": { "x_mm": 10, "y_mm": 10, "w_mm": 30, "h_mm": 40 },
+            "source": { "kind": "camera", "value": "student.photo" }
+          }
+        ]
+      }
+    }
+  ]
+}
