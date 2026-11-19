@@ -507,5 +507,20 @@
   "portal.load_error": "Your results could not be loaded.",
   "portal.overall": "Overall",
   "portal.of": "{{total}} of {{out_of}}",
-  "portal.terms": "{{count}} term result(s)"
+  "portal.terms": "{{count}} term result(s)",
+  "field.marks_term_total": "Term total",
+  "field.marks_term_out_of": "Term maximum",
+  "field.marks_term_percent": "Term percent",
+  "field.marks_term_grade": "Term grade",
+  "field.marks_term_remark": "Term remark",
+  "field.marks_term_gpa": "Term GPA",
+  "field.marks_term_pass": "Term pass status",
+  "field.marks_year_total": "Year total",
+  "field.marks_year_out_of": "Year maximum",
+  "field.marks_year_percent": "Year percent",
+  "field.marks_year_grade": "Year grade",
+  "field.marks_subjects": "Subject results table",
+  "field.rank": "Class rank",
+  "field.rank_size": "Class size for rank",
+  "error.submission_not_approved": "Only approved marks can be published."
 }

@@ -507,5 +507,20 @@
   "portal.load_error": "ውጤቶችዎ ሊጫኑ አልቻሉም።",
   "portal.overall": "አጠቃላይ",
   "portal.of": "{{total}} ከ{{out_of}}",
-  "portal.terms": "{{count}} የወረፋ ውጤቶች"
+  "portal.terms": "{{count}} የወረፋ ውጤቶች",
+  "field.marks_term_total": "የወረፋ ድምር",
+  "field.marks_term_out_of": "የወረፋ ከፍተኛ ነጥብ",
+  "field.marks_term_percent": "የወረፋ መቶኛ",
+  "field.marks_term_grade": "የወረፋ ደረጃ",
+  "field.marks_term_remark": "የወረፋ አስተያየት",
+  "field.marks_term_gpa": "የወረፋ GPA",
+  "field.marks_term_pass": "የወረፋ ማለፍ ሁኔታ",
+  "field.marks_year_total": "የዓመት ድምር",
+  "field.marks_year_out_of": "የዓመት ከፍተኛ ነጥብ",
+  "field.marks_year_percent": "የዓመት መቶኛ",
+  "field.marks_year_grade": "የዓመት ደረጃ",
+  "field.marks_subjects": "የትምህርት ውጤቶች ሰንጠረዥ",
+  "field.rank": "የክፍል ደረጃ ተርታ",
+  "field.rank_size": "ለደረጃ ተርታ የክፍል ብዛት",
+  "error.submission_not_approved": "የተፈቀዱ ነጥቦች ብቻ ሊታተሙ ይችላሉ።"
 }

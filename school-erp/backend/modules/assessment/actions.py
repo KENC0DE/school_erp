@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import uuid
 
+from app.errors import Conflict
 from core.actions.registry import ActionContext, action
 
+from modules.assessment import common, results, scales, scoping, service, workflow
 from modules.assessment import dashboard as progress
 from modules.assessment import portal as portal_service
-from modules.assessment import results, scales, service, workflow
 from modules.assessment.schemas import (
     AssessmentCreate,
     AssessmentList,
@@ -276,6 +277,12 @@ async def score_sheet(ctx: ActionContext, payload: dict) -> ScoreSheet:
     return await service.score_sheet(ctx.session, ctx.principal, _id(payload, "assessment_id"))
 
 
+async def preview_scores(ctx: ActionContext, payload: dict) -> dict:
+    assessment_id = _id(payload, "assessment_id")
+    data = ScoreBulkInput.model_validate(_body(payload, "assessment_id"))
+    return await service.preview_scores(ctx.session, ctx.principal, assessment_id, data)
+
+
 @action(
     key="assessment.scores.upsert",
     module="assessment",
@@ -284,6 +291,7 @@ async def score_sheet(ctx: ActionContext, payload: dict) -> ScoreSheet:
     describe="Enter or update scores for one assessment in bulk",
     input=ScoreBulkInput,
     output=ScoreBulkResult,
+    preview=preview_scores,
 )
 async def upsert_scores(ctx: ActionContext, payload: dict) -> ScoreBulkResult:
     assessment_id = _id(payload, "assessment_id")
@@ -451,6 +459,29 @@ async def reject_marks(ctx: ActionContext, payload: dict) -> SubmissionOut:
     return await workflow.reject_marks(ctx.session, ctx.principal, submission_id, data, via=ctx.via)
 
 
+async def preview_publish_marks(ctx: ActionContext, payload: dict) -> dict:
+    submission_id = _id(payload, "submission_id")
+    row = await common.live_submission(ctx.session, submission_id)
+    await scoping.assert_visible(
+        ctx.session,
+        ctx.principal,
+        "assessment.publish",
+        section_id=row.section_id,
+        subject_id=row.subject_id,
+    )
+    if row.status != "approved":
+        raise Conflict(
+            "Only approved marks can be published",
+            message_key="assessment.error.submission_not_approved",
+            details={"submission_id": str(row.id)},
+        )
+    return {
+        "submission_id": str(row.id),
+        "status": row.status,
+        "row_version": row.row_version,
+    }
+
+
 @action(
     key="assessment.submissions.publish",
     module="assessment",
@@ -459,6 +490,7 @@ async def reject_marks(ctx: ActionContext, payload: dict) -> SubmissionOut:
     describe="Publish approved marks to students and parents",
     input=SubmissionAction,
     output=SubmissionOut,
+    preview=preview_publish_marks,
 )
 async def publish_marks(ctx: ActionContext, payload: dict) -> SubmissionOut:
     submission_id = _id(payload, "submission_id")
@@ -594,6 +626,16 @@ async def portal_results(ctx: ActionContext, payload: dict | None = None) -> Por
     return await portal_service.my_results(ctx.session, ctx.principal, year_id=query.year_id)
 
 
+async def preview_publish_term_results(ctx: ActionContext, payload: dict) -> dict:
+    data = TermResultPublish.model_validate(payload)
+    return await results.preview_term_results(ctx.session, ctx.principal, data)
+
+
+async def preview_republish_term_results(ctx: ActionContext, payload: dict) -> dict:
+    data = TermResultPublish.model_validate(payload)
+    return await results.preview_term_results(ctx.session, ctx.principal, data, republish=True)
+
+
 @action(
     key="assessment.results.publish_term",
     module="assessment",
@@ -602,6 +644,7 @@ async def portal_results(ctx: ActionContext, payload: dict | None = None) -> Por
     describe="Publish a term result sheet as an immutable snapshot",
     input=TermResultPublish,
     output=ResultSnapshotOut,
+    preview=preview_publish_term_results,
 )
 async def publish_term_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
     data = TermResultPublish.model_validate(payload)
@@ -616,10 +659,21 @@ async def publish_term_results(ctx: ActionContext, payload: dict) -> ResultSnaps
     describe="Publish a corrected term result sheet, superseding the last snapshot",
     input=TermResultPublish,
     output=ResultSnapshotOut,
+    preview=preview_republish_term_results,
 )
 async def republish_term_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
     data = TermResultPublish.model_validate(payload)
     return await results.republish_term_results(ctx.session, ctx.principal, data, via=ctx.via)
+
+
+async def preview_publish_year_results(ctx: ActionContext, payload: dict) -> dict:
+    data = YearResultPublish.model_validate(payload)
+    return await results.preview_year_results(ctx.session, ctx.principal, data)
+
+
+async def preview_republish_year_results(ctx: ActionContext, payload: dict) -> dict:
+    data = YearResultPublish.model_validate(payload)
+    return await results.preview_year_results(ctx.session, ctx.principal, data, republish=True)
 
 
 @action(
@@ -630,6 +684,7 @@ async def republish_term_results(ctx: ActionContext, payload: dict) -> ResultSna
     describe="Publish a year result sheet as an immutable snapshot",
     input=YearResultPublish,
     output=ResultSnapshotOut,
+    preview=preview_publish_year_results,
 )
 async def publish_year_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
     data = YearResultPublish.model_validate(payload)
@@ -644,6 +699,7 @@ async def publish_year_results(ctx: ActionContext, payload: dict) -> ResultSnaps
     describe="Publish a corrected year result sheet, superseding the last snapshot",
     input=YearResultPublish,
     output=ResultSnapshotOut,
+    preview=preview_republish_year_results,
 )
 async def republish_year_results(ctx: ActionContext, payload: dict) -> ResultSnapshotOut:
     data = YearResultPublish.model_validate(payload)

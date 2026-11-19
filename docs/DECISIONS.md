@@ -2429,3 +2429,35 @@ and recorded here (date, decision, reason).
   roles include `parent` or `student` sees the results view at `/assessment`
   instead of the staff tabs; every other caller keeps the staff page. The views
   share the same endpoint and no portal route is added to the staff navigation.
+
+## 2026-11-19 — P4-17 assessment actions and document fields
+
+- **Confirmation previews reuse the production rules and write nothing.** The
+  score preview runs the same scope, archived-assessment, marking-window,
+  roster, row-version and conversion checks as `upsert_scores`, then reports each
+  row as `create`, `update` or `unchanged` with its converted value. It never
+  commits, so an AI proposal cannot leave a revision or audit entry behind. A
+  preview that says "update" is therefore trustworthy rather than a second,
+  approximate implementation of mark rules.
+- **Publish previews run the real readiness and conflict checks.** A term or
+  year preview computes the live sheet, applies `_assert_ready`, and raises the
+  same empty, not-ready and already-published conflicts as the write. It returns
+  the section, term, student and subject counts plus each student's total,
+  percent, grade and rank, so a caller can confirm the exact snapshot before it
+  exists. Re-publish previews report `already_published` and the snapshot being
+  superseded.
+- **Publishing a submission previews only from `approved`.** The submission
+  preview carries the submission id, status and row version, and rejects any
+  other state with `assessment.error.submission_not_approved`; the AI layer
+  learns the workflow rule instead of being offered an action that will fail.
+- **Document fields live on the manifest, not in a template.** Assessment now
+  contributes `student.marks.term.*`, `student.marks.year.*`,
+  `student.marks.subjects` (a repeating table), `student.rank` and
+  `student.rank_size` through `modules/assessment/fields.py`. Each field is a
+  `core.documents.fields.DocumentField` with a stable key, an i18n label, a kind
+  (`decimal`, `text`, `boolean`, `table`) and a realistic sample. Phase 5 can
+  serve and validate these without changing the assessment module.
+- **Fields describe snapshot values, never live rows.** The report-card keys
+  correspond to a published `ResultSnapshot`, which carries its structure and
+  scale versions. A later scale edit or raw-score correction therefore cannot
+  change a document printed from an earlier publish.

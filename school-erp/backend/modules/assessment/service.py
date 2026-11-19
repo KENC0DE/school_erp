@@ -1595,6 +1595,139 @@ async def upsert_scores(
     )
 
 
+async def preview_scores(
+    session: AsyncSession,
+    principal: Principal,
+    assessment_id: uuid.UUID,
+    data: ScoreBulkInput,
+) -> dict[str, Any]:
+    """Describe the marks a bulk entry would create, update or leave alone.
+
+    The same live assessment, scope, window, roster and conversion rules as
+    :func:`upsert_scores` run here, but nothing is written and no revision or
+    audit row is produced. The AI layer can therefore show a teacher exactly
+    what will change before it asks for confirmation.
+    """
+    row = await common.live_assessment(session, assessment_id)
+    await scoping.assert_visible(
+        session,
+        principal,
+        "assessment.enter_marks",
+        section_id=row.section_id,
+        subject_id=row.subject_id,
+    )
+    if row.status != "active":
+        raise Conflict(
+            "This assessment is archived and cannot change",
+            message_key="assessment.error.assessment_archived",
+            details={"assessment_id": str(row.id)},
+        )
+    await workflow.assert_entry_open(session, row)
+    structure = await _assessment_structure(session, row)
+    component = await common.live_component(session, row.component_id)
+    roster = {
+        profile.id: (profile, person)
+        for profile, person, _enrollment in await common.enrolled_roster(session, row.year_id, row.section_id)
+    }
+    existing = {
+        score.student_id: score
+        for score in (
+            await session.execute(
+                select(Score).where(
+                    Score.assessment_id == row.id,
+                    Score.deleted_at.is_(None),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    }
+    extra_ids = {item.student_id for item in data.items} - set(roster)
+    if extra_ids:
+        for profile, person in (
+            await session.execute(
+                select(StudentProfile, Person)
+                .join(Person, Person.id == StudentProfile.person_id)
+                .where(StudentProfile.id.in_(extra_ids))
+            )
+        ).all():
+            roster[profile.id] = (profile, person)
+
+    seen: set[uuid.UUID] = set()
+    counts = {"create": 0, "update": 0, "unchanged": 0}
+    rows: list[dict[str, Any]] = []
+    for item in data.items:
+        if item.student_id in seen:
+            raise ValidationFailed(
+                "That student appears twice in this request",
+                message_key="assessment.error.duplicate_score_entry",
+                details={"student_id": str(item.student_id)},
+            )
+        seen.add(item.student_id)
+        current = existing.get(item.student_id)
+        profile_person = roster.get(item.student_id)
+        if profile_person is None and current is None:
+            raise ValidationFailed(
+                "The student is not enrolled in this section",
+                message_key="assessment.error.student_not_enrolled",
+                details={"student_id": str(item.student_id)},
+            )
+        if current is not None and item.row_version is not None:
+            ensure_row_version(
+                current,
+                item.row_version,
+                current_state=common.score_state(current),
+            )
+        _validate_mark(row, component, item)
+        converted = common.converted_for(
+            raw=item.raw_score,
+            out_of=row.out_of,
+            status=item.status,
+            component=component,
+            structure=structure,
+        )
+        if current is None:
+            change = "create"
+        elif (
+            current.raw_score == item.raw_score
+            and current.status == item.status
+            and current.note == item.note
+            and current.out_of == row.out_of
+            and current.converted == converted
+        ):
+            change = "unchanged"
+        else:
+            change = "update"
+        counts[change] += 1
+        profile = profile_person[0] if profile_person else None
+        person = profile_person[1] if profile_person else None
+        rows.append(
+            {
+                "student_id": str(item.student_id),
+                "student_number": profile.student_number if profile else None,
+                "student_name": (common.person_name(person, principal.locale) if person else None),
+                "raw_score": decimal_out(item.raw_score),
+                "status": item.status,
+                "converted": decimal_out(converted),
+                "note": item.note,
+                "change": change,
+            }
+        )
+
+    return {
+        "assessment_id": str(row.id),
+        "title": row.title,
+        "section_id": str(row.section_id),
+        "subject_id": str(row.subject_id),
+        "out_of": decimal_out(row.out_of),
+        "entry_open": True,
+        "items": rows,
+        "created": counts["create"],
+        "updated": counts["update"],
+        "unchanged": counts["unchanged"],
+    }
+
+
 __all__ = [
     "create_assessment",
     "create_structure",
@@ -1604,6 +1737,7 @@ __all__ = [
     "get_structure",
     "list_assessments",
     "list_structures",
+    "preview_scores",
     "recalculate_structure",
     "score_sheet",
     "structure_impact",

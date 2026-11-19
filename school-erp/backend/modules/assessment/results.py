@@ -1297,6 +1297,143 @@ async def republish_year_results(
     return await publish_year_results(session, principal, data, republish=True, via=via)
 
 
+def _sheet_preview(
+    *,
+    kind: str,
+    sheet: TermResultSheet | YearResultSheet,
+    previous: ResultSnapshot | None,
+) -> dict[str, Any]:
+    """A compact description of the snapshot a publish would create."""
+    return {
+        "kind": kind,
+        "year_code": sheet.year_code,
+        "term_name": getattr(sheet, "term_name", None),
+        "section_code": sheet.section_code,
+        "level_name": sheet.level_name,
+        "students": len(sheet.students),
+        "subjects": sheet.subject_count,
+        "already_published": previous is not None,
+        "snapshot_id": str(previous.id) if previous is not None else None,
+        "rows": [
+            {
+                "student_number": student.student_number,
+                "student_name": student.student_name,
+                "total": student.total,
+                "out_of": student.out_of,
+                "percent": student.percent,
+                "grade_label": student.grade_label,
+                "rank": student.rank,
+                "rank_size": student.rank_size,
+            }
+            for student in sheet.students
+        ],
+    }
+
+
+async def preview_term_results(
+    session: AsyncSession,
+    principal: Principal,
+    data: TermResultPublish,
+    *,
+    republish: bool = False,
+) -> dict[str, Any]:
+    """Describe the term snapshot a publish would write, without writing it.
+
+    The readiness, empty-sheet and publish-state checks are the same ones the
+    real action runs, so a preview cannot promise a publish that would fail.
+    """
+    await _assert_can_publish(session, principal)
+    year, term, section, level = await _term_inputs(session, data.year_id, data.term_id, data.section_id)
+    refs, assignments = await _scale_refs(session)
+    computed = await _compute_term(
+        session,
+        year=year,
+        term=term,
+        section=section,
+        level=level,
+        refs=refs,
+        assignments=assignments,
+    )
+    if not computed.rows:
+        raise ValidationFailed(
+            "There are no results to publish",
+            message_key="assessment.error.results_empty",
+        )
+    _assert_ready([computed])
+    previous = await _previous_snapshot(
+        session,
+        kind="term",
+        year_id=year.id,
+        term_id=term.id,
+        section_id=section.id,
+    )
+    if previous is not None and not republish:
+        raise Conflict(
+            "These results are already published; use re-publish",
+            message_key="assessment.error.results_already_published",
+            details={"snapshot_id": str(previous.id)},
+        )
+    if previous is None and republish:
+        raise Conflict(
+            "These results have not been published yet",
+            message_key="assessment.error.no_published_result",
+        )
+    return _sheet_preview(
+        kind="term",
+        sheet=_term_sheet(computed, None, refs, assignments),
+        previous=previous,
+    )
+
+
+async def preview_year_results(
+    session: AsyncSession,
+    principal: Principal,
+    data: YearResultPublish,
+    *,
+    republish: bool = False,
+) -> dict[str, Any]:
+    """Describe the year snapshot a publish would write, without writing it."""
+    await _assert_can_publish(session, principal)
+    year = await common.live_year(session, data.year_id)
+    section = await common.live_section(session, data.section_id)
+    if section.year_id != year.id:
+        raise ValidationFailed(
+            "The section does not belong to that academic year",
+            message_key="assessment.error.section_year",
+        )
+    level = await common.live_level(session, section.level_id)
+    terms, sheets, refs, assignments = await _year_sheets(session, year=year, section=section, level=level)
+    if not any(sheet.rows for sheet in sheets):
+        raise ValidationFailed(
+            "There are no results to publish",
+            message_key="assessment.error.results_empty",
+        )
+    _assert_ready(sheets)
+    previous = await _previous_snapshot(
+        session,
+        kind="year",
+        year_id=year.id,
+        term_id=None,
+        section_id=section.id,
+    )
+    if previous is not None and not republish:
+        raise Conflict(
+            "These results are already published; use re-publish",
+            message_key="assessment.error.results_already_published",
+            details={"snapshot_id": str(previous.id)},
+        )
+    if previous is None and republish:
+        raise Conflict(
+            "These results have not been published yet",
+            message_key="assessment.error.no_published_result",
+        )
+    return _sheet_preview(
+        kind="year",
+        sheet=_year_sheet(year, section, level, terms, sheets, None, refs, assignments),
+        previous=previous,
+    )
+
+
 async def _snapshot_visible(
     session: AsyncSession,
     principal: Principal,
@@ -1380,6 +1517,8 @@ async def list_snapshots(
 __all__ = [
     "get_snapshot",
     "list_snapshots",
+    "preview_term_results",
+    "preview_year_results",
     "publish_term_results",
     "publish_year_results",
     "republish_term_results",

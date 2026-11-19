@@ -4,6 +4,7 @@ from core.modules.manifest import ModuleManifest, Nav, Perm
 
 from modules.assessment import actions as _actions  # noqa: F401 - registers actions
 from modules.assessment import models as _models  # noqa: F401 - registers models
+from modules.assessment.fields import FIELDS
 from modules.assessment.router import router
 
 MANIFEST = ModuleManifest(
@@ -15,6 +16,7 @@ MANIFEST = ModuleManifest(
         "submissions, corrections and published term and year results."
     ),
     depends_on=["academics", "students", "staff"],
+    document_fields=list(FIELDS),
     permissions=[
         Perm(
             "assessment.view",
