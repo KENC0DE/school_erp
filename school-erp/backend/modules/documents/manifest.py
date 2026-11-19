@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core.modules.manifest import ModuleManifest, Perm
 
+from modules.documents import models as _models  # noqa: F401 - register tables
 from modules.documents.router import router
 
 MANIFEST = ModuleManifest(

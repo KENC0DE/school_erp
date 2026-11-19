@@ -666,5 +666,15 @@
   "design.stat.staff": "ሠራተኞች",
   "design.stat.attendance": "የዛሬ ክትትል",
   "design.stat.fees": "በዚህ ወቅት የተሰበሰበ",
-  "jobs.error.assessment": "ነጥቦቹ እንደገና ሊሰሉ አልቻሉም። እንደገና ይሞክሩ፤ ደጋግሞ ካልተሳካ ድጋፍን ያግኙ።"
+  "jobs.error.assessment": "ነጥቦቹ እንደገና ሊሰሉ አልቻሉም። እንደገና ይሞክሩ፤ ደጋግሞ ካልተሳካ ድጋፍን ያግኙ።",
+  "error.documents.template_not_found": "የሰነድ አብነቱ አልተገኘም",
+  "error.documents.template_key_taken": "ይህ የአብነት ቁልፍ አስቀድሞ አለ",
+  "error.documents.draft_exists": "ይህ አብነት አስቀድሞ ረቂቅ ቅጂ አለው",
+  "error.documents.version_not_found": "ያ የአብነት ቅጂ አልተገኘም",
+  "error.documents.version_not_draft": "ረቂቅ ቅጂ ብቻ ማሻሻል ወይም ማተም ይችላል",
+  "error.documents.layout_invalid": "አቀራረቡ ከሰነድ ንድፍ መስፈርት ጋር አይመሳሰልም",
+  "error.documents.starter_unknown": "በዚህ ቁልፍ የመነሻ አብነት የለም",
+  "error.documents.starter_type_mismatch": "የመነሻ አብነቱ ለሌላ የሰነድ ዓይነት ነው",
+  "error.documents.starter_layout_conflict": "የመነሻ አብነት ወይም አቀራረብ ይምረጡ፣ ሁለቱንም አይደለም",
+  "error.documents.import_invalid": "ፋይሉ ትክክለኛ የሰነድ አብነት ውጤት አይደለም"
 }

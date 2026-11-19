@@ -2603,3 +2603,30 @@ figure includes the commit and the audit row):
   (A4 landscape with bleed, A4 portrait, custom ID card, Letter landscape with
   bleed). A renderer or font change that moves the page or drops text fails the
   test, while harmless antialiasing differences do not.
+
+## 2026-11-19 — P5-04 template models and version lifecycle
+
+- **A template is identity, a version is the design.** `doc_templates` keeps the
+  stable key, name, description and document type; every `doc_template_versions`
+  row owns one layout. Create always makes version 1 as a draft, saving edits
+  changes only the draft, and publishing freezes that version. Generation will
+  store the version id, so a reprint never picks up a later design.
+- **One live draft per template, enforced by the database.** A partial unique
+  index (`status = 'draft' AND deleted_at IS NULL`) makes two racing editors
+  impossible; the service returns `409` for a second draft instead of silently
+  forking. Published versions stay untouched, so a new draft starts from a copy
+  of the current published layout.
+- **Template keys are unique among live templates.** The key is what exports,
+  imports and later APIs name a design by, so a second live template may not
+  reuse it. An import that collides is rejected rather than silently renamed.
+- **The starter library is code, not seed data.** Seven starters (report card,
+  transcript, certificate of completion, certificate of appreciation, ID card,
+  admission letter, receipt, experience letter) live in `starters.py` as
+  validated layouts so a fresh school can design from a known-good shape. They
+  are translations-free: the API returns i18n keys and the client translates,
+  and the demo seed will materialise the ones the demo school needs.
+- **Interchange is a versioned JSON file.** `format:
+  school-erp.doc-template`, `format_version: 1` carries the template plus every
+  version (layout, note, publish time). Import validates every layout and the
+  draft/published shape before inserting, so a hand-edited file cannot create a
+  template the editor could not have produced.

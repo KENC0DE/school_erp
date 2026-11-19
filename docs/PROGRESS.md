@@ -181,7 +181,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P5-01 — Layout JSON schema
 - [x] P5-02 — Fields registry
 - [x] P5-03 — Renderer
-- [ ] P5-04 — Template models
+- [x] P5-04 — Template models: draft/publish lifecycle, duplicate, JSON import/export, 7 starters (12 tests)
 - [ ] P5-05 — Canvas editor (web)
 - [ ] P5-06 — Repeating tables
 - [ ] P5-07 — Preview with sample or real data

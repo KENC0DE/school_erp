@@ -1,11 +1,29 @@
-"""API models for the document module (P5-02)."""
+"""API models for the document module (P5-04 templates)."""
 
 from __future__ import annotations
 
-from typing import Any
+import uuid
+from datetime import datetime
+from typing import Any, Literal
 
 from core.documents.fields import FieldKind
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+DocType = Literal[
+    "report_card",
+    "transcript",
+    "certificate_completion",
+    "certificate_appreciation",
+    "id_card",
+    "admission_letter",
+    "receipt",
+    "invoice",
+    "experience_letter",
+    "custom",
+]
+VersionStatus = Literal["draft", "published"]
+
+KEY_PATTERN = r"^[a-z0-9][a-z0-9-]{2,79}$"
 
 
 class DocumentFieldOut(BaseModel):
@@ -32,4 +50,181 @@ class DocumentFieldsOut(BaseModel):
     format_options: DocumentFormatOptions
 
 
-__all__ = ["DocumentFieldOut", "DocumentFieldsOut", "DocumentFormatOptions"]
+# --- starter library --------------------------------------------------------
+
+
+class StarterOut(BaseModel):
+    """A library entry; its name and description are translation keys."""
+
+    key: str
+    doc_type: DocType
+    name_key: str
+    description_key: str
+    layout: dict[str, Any]
+
+
+class StarterList(BaseModel):
+    items: list[StarterOut] = Field(default_factory=list)
+
+
+# --- template and version views --------------------------------------------
+
+
+class VersionSummary(BaseModel):
+    id: uuid.UUID
+    version_number: int
+    status: VersionStatus
+    change_note: str | None = None
+    published_at: datetime | None = None
+    row_version: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class VersionDetail(VersionSummary):
+    template_id: uuid.UUID
+    layout: dict[str, Any]
+
+
+class TemplateSummary(BaseModel):
+    id: uuid.UUID
+    key: str
+    name: str
+    description: str | None = None
+    doc_type: DocType
+    row_version: int
+    current_version_id: uuid.UUID | None = None
+    current_version_number: int | None = None
+    draft_version_id: uuid.UUID | None = None
+    draft_version_number: int | None = None
+    version_count: int = 0
+    updated_at: datetime
+
+
+class TemplateDetail(TemplateSummary):
+    versions: list[VersionSummary] = Field(default_factory=list)
+
+
+class TemplateList(BaseModel):
+    items: list[TemplateSummary] = Field(default_factory=list)
+    total: int
+
+
+class VersionList(BaseModel):
+    items: list[VersionSummary] = Field(default_factory=list)
+    total: int
+
+
+class TemplateDeleted(BaseModel):
+    id: uuid.UUID
+    key: str
+    deleted: bool
+    versions_deleted: int
+
+
+# --- requests ---------------------------------------------------------------
+
+
+class TemplateCreate(BaseModel):
+    """Create from a starter, an explicit layout, or an empty A4 page."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+    doc_type: DocType | None = None
+    starter: str | None = Field(default=None, max_length=80)
+    layout: dict[str, Any] | None = None
+    key: str | None = Field(default=None, pattern=KEY_PATTERN)
+    change_note: str | None = Field(default=None, max_length=500)
+
+
+class TemplateUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+    doc_type: DocType | None = None
+    row_version: int = Field(ge=1)
+
+
+class TemplateDuplicate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+    key: str | None = Field(default=None, pattern=KEY_PATTERN)
+
+
+class VersionCreate(BaseModel):
+    """Start a draft from the current published layout, or from a layout."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    layout: dict[str, Any] | None = None
+    change_note: str | None = Field(default=None, max_length=500)
+
+
+class VersionSave(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    layout: dict[str, Any]
+    change_note: str | None = Field(default=None, max_length=500)
+    row_version: int = Field(ge=1)
+
+
+class TemplateFileTemplate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: str = Field(min_length=1, max_length=80)
+    name: str = Field(min_length=1, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+    doc_type: DocType
+
+
+class TemplateFileVersion(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version_number: int = Field(ge=1)
+    status: VersionStatus
+    change_note: str | None = Field(default=None, max_length=500)
+    published_at: datetime | None = None
+    layout: dict[str, Any]
+
+
+class TemplateFile(BaseModel):
+    """The deterministic export format; import accepts exactly this shape."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    format: Literal["school-erp.doc-template"]
+    format_version: Literal[1]
+    exported_at: datetime | None = None
+    template: TemplateFileTemplate
+    versions: list[TemplateFileVersion] = Field(min_length=1)
+
+
+__all__ = [
+    "DocType",
+    "DocumentFieldOut",
+    "DocumentFieldsOut",
+    "DocumentFormatOptions",
+    "StarterList",
+    "StarterOut",
+    "TemplateCreate",
+    "TemplateDeleted",
+    "TemplateDetail",
+    "TemplateDuplicate",
+    "TemplateFile",
+    "TemplateFileTemplate",
+    "TemplateFileVersion",
+    "TemplateList",
+    "TemplateSummary",
+    "TemplateUpdate",
+    "VersionCreate",
+    "VersionDetail",
+    "VersionList",
+    "VersionSave",
+    "VersionStatus",
+    "VersionSummary",
+]

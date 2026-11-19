@@ -26,8 +26,20 @@ registry = ModuleRegistry.load()
 MODULE_KEYS = [manifest.key for manifest in registry.all()]
 SELECTED_MODULE = os.getenv("ALEMBIC_MODULE", "core").strip() or "core"
 
+# Tables whose names do not start with their module key. Document Studio uses
+# the architecture's `doc_` prefix and the `issued_documents` table name, but all
+# of them belong to the `documents` branch.
+TABLE_ALIASES = {
+    "doc_templates": "documents",
+    "doc_template_versions": "documents",
+    "doc_fields_registry": "documents",
+    "issued_documents": "documents",
+}
+
 
 def table_module(name: str) -> str:
+    if name in TABLE_ALIASES:
+        return TABLE_ALIASES[name]
     for key in MODULE_KEYS:
         if name.startswith(f"{key}_"):
             return key

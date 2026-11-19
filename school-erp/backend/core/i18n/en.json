@@ -666,5 +666,15 @@
   "design.stat.staff": "Staff",
   "design.stat.attendance": "Attendance today",
   "design.stat.fees": "Collected this term",
-  "jobs.error.assessment": "The marks could not be recalculated. Retry, and contact support if it keeps failing."
+  "jobs.error.assessment": "The marks could not be recalculated. Retry, and contact support if it keeps failing.",
+  "error.documents.template_not_found": "The document template does not exist",
+  "error.documents.template_key_taken": "That template key is already in use",
+  "error.documents.draft_exists": "This template already has a draft version",
+  "error.documents.version_not_found": "That template version does not exist",
+  "error.documents.version_not_draft": "Only a draft version can be changed or published",
+  "error.documents.layout_invalid": "The layout does not match the document schema",
+  "error.documents.starter_unknown": "No starter template has that key",
+  "error.documents.starter_type_mismatch": "That starter belongs to a different document type",
+  "error.documents.starter_layout_conflict": "Choose a starter or a layout, not both",
+  "error.documents.import_invalid": "The file is not a valid document template export"
 }
