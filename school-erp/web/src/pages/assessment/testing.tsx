@@ -6,7 +6,15 @@ import { vi } from "vitest";
 import coreEn from "../../../../backend/core/i18n/en.json";
 import assessmentEn from "../../../../backend/modules/assessment/i18n/en.json";
 import { AppProviders, AppRoutes } from "../../App";
-import type { GradeScale, ScaleAssignment, Structure } from "./types";
+import type {
+  AssessmentListItem,
+  GradeScale,
+  MarkingWindow,
+  ScaleAssignment,
+  ScoreSheet,
+  Structure,
+  Submission,
+} from "./types";
 
 export const assessmentMessages: Record<string, string> = {
   ...coreEn,
@@ -398,4 +406,257 @@ export function gradeRoutes(
   }
   if (url.includes("/api/v1/assessment/assessments")) return json(ASSESSMENTS);
   return baseRoutes(request);
+}
+
+// ---------------------------------------------------------- mark entry (P4-12)
+
+export const MARK_STUDENTS = [
+  {
+    studentId: "stu-1",
+    studentNumber: "STU-2026-0001",
+    studentName: "Abel Bekele",
+    rollNumber: "1",
+  },
+  {
+    studentId: "stu-2",
+    studentNumber: "STU-2026-0002",
+    studentName: "Sara Tesfaye",
+    rollNumber: "2",
+  },
+  {
+    studentId: "stu-3",
+    studentNumber: "STU-2026-0003",
+    studentName: "Miki Alemu",
+    rollNumber: "3",
+  },
+];
+
+function assessment(
+  id: string,
+  title: string,
+  component: string,
+  componentId: string,
+  maxPoints: string,
+  outOf: string,
+  date: string,
+): AssessmentListItem {
+  return {
+    id,
+    title,
+    year_id: "year-1",
+    year_code: "2026",
+    term_id: "term-1",
+    term_name: "Semester 1",
+    section_id: "sec-1",
+    section_code: "G5A",
+    level_id: "lvl-1",
+    level_name: "Grade 5",
+    subject_id: "sub-1",
+    subject_name: "Mathematics",
+    component_id: componentId,
+    component_name: component,
+    component_key: component.toLowerCase().replace(/\s+/g, "-"),
+    component_max_points: maxPoints,
+    assessment_date: date,
+    out_of: outOf,
+    allow_bonus: false,
+    status: "active",
+    scores: 0,
+    entered: 0,
+    row_version: 1,
+  };
+}
+
+export const MARK_ASSESSMENTS = {
+  items: [
+    assessment("exam-1", "Quiz 1", "Quizzes", "comp-1", "10", "15", "2026-10-05"),
+    assessment("exam-2", "Quiz 2", "Quizzes", "comp-1", "10", "13", "2026-11-09"),
+    assessment("exam-3", "Midterm", "Midterm exam", "comp-2", "30", "30", "2026-11-25"),
+  ],
+  next_cursor: null,
+  total: 3,
+};
+
+export function scoreItem(
+  student: (typeof MARK_STUDENTS)[number],
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    score_id: null as string | null,
+    student_id: student.studentId,
+    student_number: student.studentNumber,
+    student_name: student.studentName,
+    student_name_am: null,
+    roll_number: student.rollNumber,
+    enrolled: true,
+    raw_score: null as string | null,
+    out_of: "15",
+    status: "present" as const,
+    converted: null as string | null,
+    note: null,
+    row_version: null as number | null,
+    entered_at: null,
+    ...overrides,
+  };
+}
+
+export function scoreSheet(overrides: Partial<ScoreSheet> = {}): ScoreSheet {
+  const sheet: ScoreSheet = {
+    assessment_id: "exam-1",
+    title: "Quiz 1",
+    component_key: "quizzes",
+    component_max_points: "10",
+    out_of: "15",
+    allow_bonus: false,
+    editable: true,
+    items: MARK_STUDENTS.map((student) => scoreItem(student)),
+    stats: {
+      total: MARK_STUDENTS.length,
+      entered: 0,
+      missing: MARK_STUDENTS.length,
+      present: 0,
+      absent: 0,
+      excused: 0,
+      exempt: 0,
+      not_taken: 0,
+      out_of: "15",
+      component_max_points: "10",
+      average_converted: null,
+      average_percent: null,
+      highest_converted: null,
+      lowest_converted: null,
+    },
+    ...overrides,
+  };
+  return sheet;
+}
+
+export function markingWindow(overrides: Partial<MarkingWindow> = {}): MarkingWindow {
+  return {
+    id: "window-1",
+    year_id: "year-1",
+    term_id: "term-1",
+    level_id: null,
+    section_id: "sec-1",
+    scope_key: "section:sec-1",
+    opens_at: "2026-10-01T00:00:00Z",
+    closes_at: "2027-01-01T00:00:00Z",
+    is_active: true,
+    state: "open",
+    note: null,
+    row_version: 1,
+    ...overrides,
+  };
+}
+
+export function markSubmission(overrides: Partial<Submission> = {}): Submission {
+  return {
+    id: "submission-1",
+    year_id: "year-1",
+    year_code: "2026",
+    term_id: "term-1",
+    section_id: "sec-1",
+    section_code: "G5A",
+    subject_id: "sub-1",
+    subject_name: "Mathematics",
+    status: "draft",
+    submitted_at: null,
+    approved_at: null,
+    published_at: null,
+    locked_at: null,
+    note: null,
+    assessments: 3,
+    scores: 0,
+    entered: 0,
+    row_version: 1,
+    ...overrides,
+  };
+}
+
+export interface MarkRouteOptions {
+  assessments?: typeof MARK_ASSESSMENTS;
+  sheets?: Record<string, ScoreSheet>;
+  windows?: MarkingWindow[];
+  submissions?: Submission[];
+  saved?: MockRequest[];
+  onSave?: (request: MockRequest) => Response | null;
+}
+
+/** Routes for the mark-entry grid: assessments, sheets, windows, submissions. */
+export function markRoutes(request: MockRequest, options: MarkRouteOptions = {}): Response {
+  const { url, method, body } = request;
+  const sheets = options.sheets ?? {};
+
+  const scores = url.match(/\/api\/v1\/assessment\/assessments\/([^/]+)\/scores$/);
+  if (scores) {
+    const assessmentId = scores[1];
+    if (method === "PUT") {
+      options.saved?.push(request);
+      const custom = options.onSave?.(request);
+      if (custom) return custom;
+      const changes = ((body?.items as Record<string, unknown>[]) ?? []).map((item) => item);
+      const base = sheets[assessmentId] ?? scoreSheet({ assessment_id: assessmentId });
+      const updated: ScoreSheet = {
+        ...base,
+        items: base.items.map((item) => {
+          const change = changes.find((entry) => entry.student_id === item.student_id);
+          if (!change) return item;
+          const raw = (change.raw_score as string | null) ?? null;
+          const converted =
+            raw === null
+              ? null
+              : String(
+                  Math.round(
+                    (Number(raw) / Number(base.out_of)) * Number(base.component_max_points) * 100,
+                  ) / 100,
+                );
+          return {
+            ...item,
+            score_id: item.score_id ?? `score-${assessmentId}-${item.student_id}`,
+            raw_score: raw,
+            status: change.status as ScoreSheet["items"][number]["status"],
+            converted,
+            row_version: (item.row_version ?? 0) + 1,
+            entered_at: "2026-11-19T00:00:00Z",
+          };
+        }),
+      };
+      sheets[assessmentId] = updated;
+      return json({ sheet: updated, created: 0, updated: changes.length, unchanged: 0 });
+    }
+    return json(sheets[assessmentId] ?? scoreSheet({ assessment_id: assessmentId }));
+  }
+  if (url.includes("/api/v1/assessment/windows")) {
+    const windows = options.windows ?? [markingWindow()];
+    return json({ items: windows, next_cursor: null, total: windows.length });
+  }
+  if (url.includes("/api/v1/assessment/submissions")) {
+    const submissions = options.submissions ?? [markSubmission()];
+    return json({ items: submissions, next_cursor: null, total: submissions.length });
+  }
+  if (url.endsWith("/api/v1/assessment/corrections") && method === "POST") {
+    options.saved?.push(request);
+    return json({ id: "correction-1", status: "pending" }, 201);
+  }
+  if (url.includes("/api/v1/assessment/assessments")) {
+    return json(options.assessments ?? MARK_ASSESSMENTS);
+  }
+  return baseRoutes(request);
+}
+
+export function threeSheets(): Record<string, ScoreSheet> {
+  return {
+    "exam-1": scoreSheet(),
+    "exam-2": scoreSheet({ assessment_id: "exam-2", title: "Quiz 2", out_of: "13" }),
+    "exam-3": scoreSheet({
+      assessment_id: "exam-3",
+      title: "Midterm",
+      out_of: "30",
+      component_max_points: "30",
+    }),
+  };
+}
+
+export function openMarks() {
+  return null;
 }

@@ -71,6 +71,10 @@ async def test_all_default_roles_are_seeded_with_declared_permissions(
     assert roles["teacher"]["permissions"] == [
         {"permission": "academics.view", "scope": "all"},
         {"permission": "ai.use", "scope": "all"},
+        {"permission": "assessment.correct", "scope": "assigned_subjects"},
+        {"permission": "assessment.enter_marks", "scope": "assigned_subjects"},
+        {"permission": "assessment.submit", "scope": "assigned_subjects"},
+        {"permission": "assessment.view", "scope": "assigned_subjects"},
         {"permission": "attendance.record", "scope": "assigned_subjects"},
         {"permission": "attendance.view", "scope": "assigned_subjects"},
         {"permission": "sample.notes.create", "scope": "all"},
@@ -161,6 +165,10 @@ async def test_reset_permissions_restores_the_shipped_matrix(client, app, supera
     assert roles["teacher"]["permissions"] == [
         {"permission": "academics.view", "scope": "all"},
         {"permission": "ai.use", "scope": "all"},
+        {"permission": "assessment.correct", "scope": "assigned_subjects"},
+        {"permission": "assessment.enter_marks", "scope": "assigned_subjects"},
+        {"permission": "assessment.submit", "scope": "assigned_subjects"},
+        {"permission": "assessment.view", "scope": "assigned_subjects"},
         {"permission": "attendance.record", "scope": "assigned_subjects"},
         {"permission": "attendance.view", "scope": "assigned_subjects"},
         {"permission": "sample.notes.create", "scope": "all"},

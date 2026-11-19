@@ -2229,3 +2229,58 @@ and recorded here (date, decision, reason).
 - **The committed OpenAPI client was regenerated.** `shared/ts/api-client/src/schema.d.ts`
   now carries the assessment CRUD added since Phase 2 (including P4-11's scale
   routes); the change stays additive inside `/api/v1`.
+
+## 2026-11-19 — P4-12 web mark-entry grid
+
+- **Mark entry is the third assessment tab and derives its filters from the
+  assessments themselves.** A teacher only sees the sections, subjects and
+  terms that have an assessment they may read, so the grid never offers an
+  empty combination. The year defaults to the current year; section, subject
+  and term auto-select the first available pair and can then be changed.
+- **One column per assessment, one row per enrolled student.** The sheet for
+  every assessment in the selected term is fetched and merged by student, so
+  the grid shows the whole term's marks at once instead of one assessment at a
+  time. Footer statistics are computed live from the current edits with the
+  same micro-unit arithmetic as the backend; the server value replaces the
+  preview after each save.
+- **Saving is optimistic and per cell.** A changed cell is debounced 800 ms;
+  Enter, blur and status keys save immediately. Each request sends the
+  `row_version` the cell was read with, so two teachers editing the same mark
+  cannot silently overwrite each other. Any 409 from the bulk endpoint shows a
+  conflict banner and pauses further edits until "Reload marks" refetches the
+  sheet; a non-conflict save error keeps the edit in place and shows the API
+  message.
+- **Read-only is inferred client-side.** The sheet's `editable` flag only covers
+  the assessment's `active` status, so the panel also reads the term's marking
+  windows and the section/subject submission. The precedence is permission,
+  archived assessment, non-draft submission, then closed window; a locked
+  submission shows the requested correction state.
+- **Paste and upload share one parser.** A pasted TSV block fills cells from the
+  focused cell and flushes every touched cell immediately. Template download
+  writes the same header format the upload reads back ("title (out of N)"), so
+  a downloaded file can be edited in a spreadsheet and returned unchanged. The
+  upload preview lists unknown students/columns, invalid values, over-maximum
+  marks and duplicate cells before any request is sent, and applies only the
+  valid cells in one bulk PUT per assessment.
+- **Corrections are requested from the grid, not edited in it.** Once the
+  submission is locked, the grid disables every cell and a `assessment.correct`
+  holder gets a dialog that posts to `/corrections` with the current score id,
+  a new value/status and a required reason. The dialog never writes the score.
+- **The wildcard permission is honoured by the assessment page.** The shipped
+  super admin has `*` rather than every permission code, so `AssessmentPage`
+  now checks `*` explicitly; without this the demo owner saw "permission
+  denied" on an otherwise reachable page.
+- **Default roles now include the assessment permissions.** Teachers receive
+  view/enter/submit/correct scoped to `assigned_subjects`; academic heads own
+  the rules and approvals; directors approve and publish; department heads
+  review their department; homeroom teachers see `own_class`; parents and
+  students see `own_children`/`self`. These are grants on existing shipped
+  roles, so the seed's `reset_permissions=True` is what applies them to an
+  existing demo database.
+- **The e2e proof creates its own writable term.** The seed's only submission is
+  published, which is intentionally read-only. The Playwright spec creates ten
+  English assessments for Grade 5 A through the API, enters fifteen marks with
+  the keyboard (Enter saves and moves down) and fifteen with a pasted column,
+  then polls the API until all thirty raw scores are stored. The whole backend
+  suite ran immediately because the RBAC defaults changed.
+

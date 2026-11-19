@@ -148,7 +148,7 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P4-09 — Events
 - [x] P4-10 — Mark structure UI
 - [x] P4-11 — Grade rules UI
-- [ ] P4-12 — Web mark-entry grid
+- [x] P4-12 — Web mark-entry grid
 - [ ] P4-13 — Mobile mark entry
 - [ ] P4-14 — Manager dashboard
 - [ ] P4-15 — Approvals UI

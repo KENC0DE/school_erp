@@ -3,11 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import type { LevelList, SubjectList, YearList } from "../academics/types";
 import type {
+  AssessmentList,
   AssessmentSummaryList,
   GradeScaleList,
+  MarkingWindowList,
   ScaleAssignmentList,
+  ScoreSheet,
   StageList,
   StructureList,
+  SubmissionList,
 } from "./types";
 
 export const ASSESSMENT = "/api/v1/assessment";
@@ -96,6 +100,67 @@ export function useScaleAssessments(yearId: string | null) {
         withQuery(`${ASSESSMENT}/assessments`, { year_id: yearId ?? undefined, limit: 200 }),
       ),
     enabled: Boolean(yearId),
+    retry: false,
+  });
+}
+
+export function useMarkAssessments(yearId: string | null) {
+  return useQuery({
+    queryKey: ["assessment", "mark-assessments", yearId],
+    queryFn: () =>
+      api.get<AssessmentList>(
+        withQuery(`${ASSESSMENT}/assessments`, { year_id: yearId ?? undefined, limit: 200 }),
+      ),
+    enabled: Boolean(yearId),
+    retry: false,
+  });
+}
+
+export function useMarkSheets(assessmentIds: string[]) {
+  return useQuery({
+    queryKey: ["assessment", "mark-sheets", assessmentIds],
+    queryFn: () =>
+      Promise.all(
+        assessmentIds.map((id) => api.get<ScoreSheet>(`${ASSESSMENT}/assessments/${id}/scores`)),
+      ),
+    enabled: assessmentIds.length > 0,
+    retry: false,
+  });
+}
+
+export function useMarkWindows(yearId: string | null, sectionId: string | null) {
+  return useQuery({
+    queryKey: ["assessment", "mark-windows", yearId, sectionId],
+    queryFn: () =>
+      api.get<MarkingWindowList>(
+        withQuery(`${ASSESSMENT}/windows`, {
+          year_id: yearId ?? undefined,
+          section_id: sectionId ?? undefined,
+          limit: 200,
+        }),
+      ),
+    enabled: Boolean(yearId && sectionId),
+    retry: false,
+  });
+}
+
+export function useMarkSubmission(
+  yearId: string | null,
+  sectionId: string | null,
+  subjectId: string | null,
+) {
+  return useQuery({
+    queryKey: ["assessment", "mark-submission", yearId, sectionId, subjectId],
+    queryFn: () =>
+      api.get<SubmissionList>(
+        withQuery(`${ASSESSMENT}/submissions`, {
+          year_id: yearId ?? undefined,
+          section_id: sectionId ?? undefined,
+          subject_id: subjectId ?? undefined,
+          limit: 10,
+        }),
+      ),
+    enabled: Boolean(yearId && sectionId && subjectId),
     retry: false,
   });
 }
