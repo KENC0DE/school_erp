@@ -156,6 +156,12 @@ steps green, `./e2e/run.sh` smoke + UI gate green; see
 - [x] P4-17 — Assessment actions and document fields
 - [x] P4-SEED — Seed
 
+### Checkpoint P4
+- [ ] Engine tests exhaustive and green; conversion-bound and recalculation-idempotency property tests.
+- [ ] Owner script: academic head defines components and bands, teacher enters 15- and 13-mark assessments, submit → approve → publish, band change relabels without touching raw marks, correction after lock, parent sees only published results (automated in `tests/test_owner_script_assessment.py`).
+- [ ] Performance recorded in `docs/DECISIONS.md` (60-student entry, 3,000-student recalculation).
+- [ ] Tag `v0.4-assessment`.
+
 ## Phase 5 — Document Studio
 
 - [ ] P5-01 — Layout JSON schema

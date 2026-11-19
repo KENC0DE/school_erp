@@ -2461,3 +2461,28 @@ and recorded here (date, decision, reason).
   correspond to a published `ResultSnapshot`, which carries its structure and
   scale versions. A later scale edit or raw-score correction therefore cannot
   change a document printed from an earlier publish.
+
+## 2026-11-19 — Phase 4 performance
+
+Measured with `scripts/bench_assessment.py` on the development host (SQLite,
+in-process, `via=automation`, the same service functions the API calls use; each
+figure includes the commit and the audit row):
+
+| Operation | Dataset | Wall clock |
+| --- | --- | --- |
+| Enter marks (create 60 scores + revisions + audit) | 60-student section | 0.17 s |
+| Recalculate a term (15,000 scores, 5 assessments) | 3,000 students | 1.2 s |
+
+- **Entering a class's marks is a single request, not 60.** The grid sends one
+  bulk upsert, the service touches the 60 rows in one transaction, and the
+  commit dominates. Repeating the measurement gives the same figure, so the
+  60-student case is instant on ordinary hardware.
+- **The 3,000-student term is smaller than the guide's threshold.** The
+  recalculation job loads the structure's score/assessment pairs once and
+  rewrites only `Score.converted`; 15,000 rows finish in about a second, well
+  inside a background job's budget. A worst-case run (every row changes) is the
+  figure above; a rerun with no changes is faster because it writes no rows.
+- **The number is a dev-host floor, not a production promise.** PostgreSQL adds
+  network round-trips the in-process SQLite benchmark does not show; the jobs
+  UI still reports elapsed time per run so the owner can compare on real
+  hardware.

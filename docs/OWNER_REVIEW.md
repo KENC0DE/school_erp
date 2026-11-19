@@ -56,3 +56,35 @@ The owner files any requested change as a new task.
   @erp/e2e exec playwright test tests/design-mobile-screenshots.spec.ts` while
   Expo web runs on port 8081. No device was available, so this is Expo web at
   phone viewports (see `docs/DECISIONS.md`).
+
+## 2026-11-19 — Phase 4 assessment flow (owner script)
+
+- **What:** the marks and grading module end to end — mark structures, grade
+  bands, the web mark-entry grid, mobile entry with the offline outbox, the
+  manager dashboard, approvals, published parent/student results, and the AI
+  previews for entering marks and publishing.
+- **How to look:** `./scripts/dev.sh up && ./scripts/dev.sh seed`, then sign in
+  as the demo accounts (`DevPass#2026`):
+  - `academichead@demo.school` — open **Assessment**; the seeded school
+    structure totals 100 and the default scale has the custom C+ band (75–<85);
+    the grade test tool shows `80 → C+`.
+  - `teacher1@demo.school` — Grade 5 A Mathematics; open **Quiz 1** (out of 15)
+    and **Quiz 2** (out of 13), enter marks, and watch the converted column
+    (`12/15 → 8.00`, `10/13 → 7.69`). Submit the section's marks.
+  - `academichead@demo.school` — approve, publish, then lock in **Approvals**.
+  - `academichead@demo.school` — widen a band in **Grade rules**; live result
+    labels change, the raw marks in the grid do not, and an already published
+    snapshot keeps its original labels.
+  - `teacher1@demo.school` — request a correction on a locked mark.
+  - `parent1@demo.school` / `student1@demo.school` — the assessment page shows
+    the published results view, and only published results.
+- **Good:** entering marks for a 60-student section feels immediate; converted
+  values agree with the structure; a parent never sees a draft, submitted or
+  approved mark; raw marks survive every band and structure edit.
+- **Automation:** the whole script also runs headless over the API in
+  `school-erp/backend/tests/test_owner_script_assessment.py`. The two
+  performance figures are produced by `scripts/bench_assessment.py` and
+  recorded in `docs/DECISIONS.md`.
+- **Checked against:** `docs/UI_CHECKLIST.md` for the new assessment screens;
+  the Playwright mark-entry test (`e2e/tests/marks.spec.ts`) enters 30 marks with
+  the keyboard and a pasted column.
