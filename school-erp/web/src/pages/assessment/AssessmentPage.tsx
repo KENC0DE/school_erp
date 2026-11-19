@@ -3,14 +3,21 @@ import { useState } from "react";
 
 import { useAuth } from "../../providers/AuthProvider";
 import { useI18n } from "../../providers/I18nProvider";
+import { ApprovalsPanel } from "./ApprovalsPanel";
 import { AssessmentDashboardPanel } from "./AssessmentDashboardPanel";
 import { GradePanel } from "./GradePanel";
 import { MarkEntryPanel } from "./MarkEntryPanel";
 import { StructurePanel } from "./StructurePanel";
 
-type Panel = "structure" | "marks" | "grades" | "dashboard";
+type Panel = "structure" | "marks" | "grades" | "approvals" | "dashboard";
 
-const PANELS: Panel[] = ["structure", "marks", "grades", "dashboard"];
+const PANELS: Panel[] = [
+  "structure",
+  "marks",
+  "grades",
+  "approvals",
+  "dashboard",
+];
 
 export function AssessmentPage() {
   const { t } = useI18n();
@@ -22,6 +29,8 @@ export function AssessmentPage() {
   const canManage = can("assessment.manage");
   const canEnter = can("assessment.enter_marks");
   const canCorrect = can("assessment.correct");
+  const canApprove = can("assessment.approve");
+  const canPublish = can("assessment.publish");
   const [panel, setPanel] = useState<Panel>("structure");
 
   if (!allowed) {
@@ -74,6 +83,9 @@ export function AssessmentPage() {
           <MarkEntryPanel canEnter={canEnter} canCorrect={canCorrect} />
         ) : null}
         {panel === "grades" ? <GradePanel canManage={canManage} /> : null}
+        {panel === "approvals" ? (
+          <ApprovalsPanel canApprove={canApprove} canPublish={canPublish} />
+        ) : null}
         {panel === "dashboard" ? (
           <AssessmentDashboardPanel canManage={canManage} />
         ) : null}

@@ -2363,3 +2363,33 @@ and recorded here (date, decision, reason).
   a table whose teacher column names who to chase, and an anomaly list. The
   reminder button is hidden without `assessment.manage` so nobody is offered an
   action they cannot take.
+
+## 2026-11-19 — P4-15 marks approvals UI
+
+- **Approvals are a fifth assessment tab over the existing workflow endpoints.**
+  No backend change was needed: the submission transition routes already enforce
+  `assessment.approve` (approve/reject) and `assessment.publish` (publish with a
+  result snapshot). The panel only reads `GET /assessment/submissions` and posts
+  the action the submission's current state allows.
+- **The queue defaults to `submitted` and can be narrowed by status.** A head who
+  opens the tab sees the work waiting on them first; `approved` shows what is
+  ready to publish, and `all` is available for audit-style browsing. Year and
+  term follow the assessment page's current-year/term defaults.
+- **A rejection requires a comment, enforced in the UI.** The backend accepts an
+  optional note on every transition, so the panel blocks the reject button until
+  the head writes why the marks went back; approve and publish accept an
+  optional note but never demand one. The note travels in `SubmissionAction.note`
+  and stays on the submission for the teacher to read.
+- **Decision buttons follow the permission, not the role name.** Approve/reject
+  appear only with `assessment.approve` on a `submitted` row; publish appears
+  only with `assessment.publish` on an `approved` row. A department head who can
+  approve but not publish therefore reviews and approves, while an academic head
+  or director publishes — without the panel pretending the next step exists.
+- **The review dialog shows what is being approved, not just a button.** It
+  loads the section/subject assessments and each score sheet, listing entered
+  versus total marks and the converted average, so an approval is informed and a
+  rejection comment can name what is missing.
+- **Actions send the row version and refresh the queue.** The transition carries
+  `row_version` so a stale review cannot silently overwrite another head's
+  decision (the API answers 409 and the message is shown), and success
+  invalidates the submission queue, review sheets and dashboard reminders.

@@ -202,3 +202,54 @@ export function useAssessmentDashboard(
     retry: false,
   });
 }
+
+export function useApprovalSubmissions(
+  yearId: string | null,
+  termId: string | null,
+  status: string,
+) {
+  return useQuery({
+    queryKey: ["assessment", "approval-submissions", yearId, termId, status],
+    queryFn: () =>
+      api.get<SubmissionList>(
+        withQuery(`${ASSESSMENT}/submissions`, {
+          year_id: yearId ?? undefined,
+          term_id: termId ?? undefined,
+          status: status === "all" ? undefined : status,
+          limit: 200,
+        }),
+      ),
+    enabled: Boolean(yearId && termId),
+    retry: false,
+  });
+}
+
+export function useApprovalAssessments(
+  yearId: string | null,
+  termId: string | null,
+  sectionId: string | null,
+  subjectId: string | null,
+) {
+  return useQuery({
+    queryKey: [
+      "assessment",
+      "approval-assessments",
+      yearId,
+      termId,
+      sectionId,
+      subjectId,
+    ],
+    queryFn: () =>
+      api.get<AssessmentList>(
+        withQuery(`${ASSESSMENT}/assessments`, {
+          year_id: yearId ?? undefined,
+          term_id: termId ?? undefined,
+          section_id: sectionId ?? undefined,
+          subject_id: subjectId ?? undefined,
+          limit: 200,
+        }),
+      ),
+    enabled: Boolean(yearId && termId && sectionId && subjectId),
+    retry: false,
+  });
+}

@@ -851,3 +851,60 @@ export function dashboardRoutes(
   }
   return baseRoutes(request);
 }
+
+// ------------------------------------------------------------ approvals (P4-15)
+
+export interface ApprovalRouteOptions {
+  submissions?: Submission[];
+  sheets?: Record<string, ScoreSheet>;
+  actions?: MockRequest[];
+}
+
+/** Routes for the approvals panel: the queue, the review sheets and actions. */
+export function approvalRoutes(
+  request: MockRequest,
+  options: ApprovalRouteOptions = {},
+): Response {
+  const { url, method, body } = request;
+  const action = url.match(
+    /\/api\/v1\/assessment\/submissions\/([^/]+)\/(approve|reject|publish)$/,
+  );
+  if (action && method === "POST") {
+    options.actions?.push(request);
+    const id = action[1];
+    const verb = action[2];
+    const current =
+      (options.submissions ?? []).find((item) => item.id === id) ??
+      markSubmission({ status: "submitted" });
+    return json({
+      ...current,
+      status:
+        verb === "approve"
+          ? "approved"
+          : verb === "reject"
+            ? "draft"
+            : "published",
+      note: (body?.note as string | null) ?? null,
+      row_version: current.row_version + 1,
+    });
+  }
+  if (
+    url.match(/\/api\/v1\/assessment\/submissions(\?|$)/) &&
+    method === "GET"
+  ) {
+    const items = options.submissions ?? [
+      markSubmission({ status: "submitted" }),
+    ];
+    return json({ items, next_cursor: null, total: items.length });
+  }
+  if (url.match(/\/api\/v1\/assessment\/assessments\?/) && method === "GET") {
+    return json({
+      items: [MARK_ASSESSMENTS.items[0]],
+      next_cursor: null,
+      total: 1,
+    });
+  }
+  return markRoutes(request, {
+    sheets: options.sheets ?? { "exam-1": scoreSheet() },
+  });
+}
