@@ -1,0 +1,47 @@
+{
+  "$comment": "P5-03 golden properties. Each case names a validated layout from shared/schema/document-layout.fixtures.json and the key facts a correct render must show: the printed page box, the media box (page plus bleed) and text that must be extractable from the PDF. Sizes are millimetres and compared with a tolerance because Chromium rounds the page box to its internal device units. Regenerate deliberately: a change here is a change to printed output.",
+  "tolerance_mm": 0.6,
+  "cases": [
+    {
+      "name": "certificate of completion (A4 landscape with 3 mm bleed)",
+      "fixture": "certificate with every element kind",
+      "page_mm": [297.0, 210.0],
+      "media_mm": [303.0, 216.0],
+      "text": [
+        "Certificate of Completion",
+        "Abebe Bekele",
+        "Promoted to Grade 9",
+        "Subject",
+        "Maths",
+        "88.50",
+        "English",
+        "72.00",
+        "Total 160.50",
+        "Average 80.25",
+        "Subjects 2",
+        "SN-0001"
+      ]
+    },
+    {
+      "name": "report card with Ethiopian date and ETB amount (A4 portrait)",
+      "fixture": "report card with formatted fields",
+      "page_mm": [210.0, 297.0],
+      "media_mm": [210.0, 297.0],
+      "text": ["Issued Hidar 10, 2019", "ETB 1,234.50"]
+    },
+    {
+      "name": "student ID card (custom landscape size)",
+      "fixture": "custom ID card page",
+      "page_mm": [85.6, 54.0],
+      "media_mm": [85.6, 54.0],
+      "text": ["Abebe Bekele"]
+    },
+    {
+      "name": "letter with bleed (Letter landscape)",
+      "fixture": "letter page with bleed",
+      "page_mm": [279.4, 215.9],
+      "media_mm": [289.4, 225.9],
+      "text": ["Dear Bekele Tesfaye,"]
+    }
+  ]
+}

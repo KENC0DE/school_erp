@@ -1,0 +1,6 @@
+packages:
+  - "shared/ts/*"
+  - "school-erp/web"
+  - "owner/controller-web"
+  - "owner/mobile"
+  - "e2e"

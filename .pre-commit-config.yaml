@@ -1,0 +1,26 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: bash -c 'PATH="$HOME/.local/bin:$PATH" ruff check --fix'
+        language: system
+        types: [python]
+      - id: import-linter
+        name: import-linter
+        entry: bash -c 'PATH="$HOME/.local/bin:$PATH" lint-imports'
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: prettier
+        name: prettier
+        entry: bash -c 'PATH="$HOME/.local/bin:$PATH" pnpm exec prettier --check'
+        language: system
+        pass_filenames: false
+        files: \.(ts|tsx|js|jsx|json|css|md|yaml|yml)$
+      - id: eslint
+        name: eslint
+        entry: bash -c 'PATH="$HOME/.local/bin:$PATH" pnpm -r --if-present lint'
+        language: system
+        pass_filenames: false
+        files: \.(ts|tsx)$

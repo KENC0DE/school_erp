@@ -1,0 +1,33 @@
+[project]
+name = "erp-platform"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["shared/py", "school-erp/backend", "owner/controller-api"]
+
+[tool.uv.sources]
+erp-shared = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4",
+  "pytest-asyncio>=1.2",
+  "httpx>=0.28",
+  "ruff>=0.14",
+  "import-linter>=2.7",
+  "mypy>=1.19",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+ignore = ["B008", "E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests", "school-erp/backend/tests", "owner/controller-api/tests", "shared/py/tests"]

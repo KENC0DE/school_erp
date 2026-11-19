@@ -1,0 +1,258 @@
+name: CI
+
+"on":
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.18.3"
+  APP_ENV: test
+  DEV_MODE: "true"
+  DATABASE_URL: sqlite+aiosqlite:///./data/ci-school.db
+  CONTROLLER_DATABASE_URL: sqlite+aiosqlite:///./data/ci-controller.db
+  SECRET_KEY: ci-school-secret-0123456789abcdef012345
+  REFRESH_SECRET: ci-refresh-secret-0123456789abcdef
+  CONTROLLER_SECRET_KEY: ci-controller-secret-0123456789abcdef
+
+jobs:
+  python:
+    name: Python (lint, boundaries, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Sync workspace
+        run: uv sync --all-packages --python ${{ env.PYTHON_VERSION }}
+
+      - name: Create local data directory
+        run: mkdir -p data
+
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Import boundaries
+        run: uv run lint-imports
+
+      - name: Pytest (backend, controller, shared)
+        run: uv run pytest
+
+  node:
+    name: Node (typecheck, lint, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm -r --if-present typecheck
+
+      - name: Lint
+        run: pnpm -r --if-present lint
+
+      - name: Unit tests
+        run: pnpm -r --if-present test
+
+      - name: Build school web
+        run: pnpm --filter @erp/school-web build
+
+      - name: Build controller web
+        run: pnpm --filter @erp/controller-web build
+
+      - name: Typecheck mobile
+        run: pnpm --filter @erp/mobile typecheck
+
+      - name: Build mobile bundle
+        run: pnpm --filter @erp/mobile exec expo export --platform android --output-dir dist/ci-android
+
+  e2e:
+    name: Playwright smoke (P0-26)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Sync workspace
+        run: uv sync --all-packages --python ${{ env.PYTHON_VERSION }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @erp/e2e exec playwright install --with-deps chromium
+
+      - name: Run the smoke e2e
+        run: bash e2e/run.sh
+
+  api-client:
+    name: API client generation diff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Sync workspace
+        run: uv sync --all-packages --python ${{ env.PYTHON_VERSION }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate school OpenAPI client
+        run: bash scripts/gen-api.sh
+
+      - name: Fail on a stale committed schema
+        run: git diff --exit-code -- shared/ts/api-client/src/schema.d.ts
+
+  api-compat:
+    name: API v1 compatibility guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Sync workspace
+        run: uv sync --all-packages --python ${{ env.PYTHON_VERSION }}
+
+      - name: Compare /api/v1 with the last release snapshot
+        run: uv run python scripts/check-api-compat.py
+
+  i18n:
+    name: i18n keys
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Check referenced and missing keys
+        run: python scripts/check-i18n.py
+
+  boundaries:
+    name: Zone boundaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Sync workspace
+        run: uv sync --all-packages --python ${{ env.PYTHON_VERSION }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Import-linter + ESLint restricted imports
+        run: bash scripts/check-boundaries.sh
